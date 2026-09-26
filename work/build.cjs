@@ -1,0 +1,11 @@
+const fs=require('fs');
+const path=require('path');
+const {marked}=require('marked');
+const root=path.resolve(__dirname,'..');
+const md=fs.readFileSync(path.join(root,'outputs','impuls-project.md'),'utf8');
+const chapters=md.split(/^## /m).slice(1).map((v,i)=>{const n=v.indexOf('\n');return {id:'chapter-'+(i+1),title:v.slice(0,n).trim(),body:marked.parse(v.slice(n+1))}});
+const docs=chapters.map((c,i)=>`<details id="${c.id}"${i===0?' open':''}><summary>${c.title}</summary><div class="chapter">${c.body.replace(/<table>/g,'<div class="table-scroll"><table>').replace(/<\/table>/g,'</table></div>')}</div></details>`).join('\n');
+let html=fs.readFileSync(path.join(__dirname,'presentation.html'),'utf8');
+html=html.replace('/*FONT*/',fs.readFileSync(path.join(__dirname,'fonts-embedded.css'),'utf8')).replace('/*APP*/',fs.readFileSync(path.join(__dirname,'app.js'),'utf8')).replace('<!--DOC-->',docs).replace('<!--TOC-->',chapters.map(c=>`<a href="#${c.id}">${c.title}</a>`).join('\n')).replace('<!--OPTIONS-->',chapters.map(c=>`<option value="${c.id}">${c.title}</option>`).join('\n'));
+fs.writeFileSync(path.join(root,'outputs','impuls-presentation.html'),html,'utf8');
+console.log(JSON.stringify({chapters:chapters.length,bytes:Buffer.byteLength(html),output:path.join(root,'outputs','impuls-presentation.html')}));

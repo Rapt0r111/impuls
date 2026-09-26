@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-22T17:50:12.360Z",
+  "title": "Design System: Импульс",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0234 233.22)",
+          "oklch(26% 0.0234 233.22)",
+          "oklch(38% 0.0234 233.22)",
+          "oklch(49% 0.0234 233.22)",
+          "oklch(61% 0.0234 233.22)",
+          "oklch(72% 0.0234 233.22)",
+          "oklch(84% 0.0234 233.22)",
+          "oklch(95% 0.0234 233.22)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "tonalRamp": [
+          "oklch(15% 0.0318 227.81)",
+          "oklch(26% 0.0318 227.81)",
+          "oklch(38% 0.0318 227.81)",
+          "oklch(49% 0.0318 227.81)",
+          "oklch(61% 0.0318 227.81)",
+          "oklch(72% 0.0318 227.81)",
+          "oklch(84% 0.0318 227.81)",
+          "oklch(95% 0.0318 227.81)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "tonalRamp": [
+          "oklch(15% 0.0335 227.05)",
+          "oklch(26% 0.0335 227.05)",
+          "oklch(38% 0.0335 227.05)",
+          "oklch(49% 0.0335 227.05)",
+          "oklch(61% 0.0335 227.05)",
+          "oklch(72% 0.0335 227.05)",
+          "oklch(84% 0.0335 227.05)",
+          "oklch(95% 0.0335 227.05)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0093 171.80)",
+          "oklch(26% 0.0093 171.80)",
+          "oklch(38% 0.0093 171.80)",
+          "oklch(49% 0.0093 171.80)",
+          "oklch(61% 0.0093 171.80)",
+          "oklch(72% 0.0093 171.80)",
+          "oklch(84% 0.0093 171.80)",
+          "oklch(95% 0.0093 171.80)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15% 0.0235 217.68)",
+          "oklch(26% 0.0235 217.68)",
+          "oklch(38% 0.0235 217.68)",
+          "oklch(49% 0.0235 217.68)",
+          "oklch(61% 0.0235 217.68)",
+          "oklch(72% 0.0235 217.68)",
+          "oklch(84% 0.0235 217.68)",
+          "oklch(95% 0.0235 217.68)"
+        ]
+      },
+      "mint": {
+        "role": "primary",
+        "displayName": "Mint",
+        "tonalRamp": [
+          "oklch(15% 0.1136 173.19)",
+          "oklch(26% 0.1136 173.19)",
+          "oklch(38% 0.1136 173.19)",
+          "oklch(49% 0.1136 173.19)",
+          "oklch(61% 0.1136 173.19)",
+          "oklch(72% 0.1136 173.19)",
+          "oklch(84% 0.1136 173.19)",
+          "oklch(95% 0.1136 173.19)"
+        ]
+      },
+      "gold": {
+        "role": "secondary",
+        "displayName": "Gold",
+        "tonalRamp": [
+          "oklch(15% 0.1079 84.78)",
+          "oklch(26% 0.1079 84.78)",
+          "oklch(38% 0.1079 84.78)",
+          "oklch(49% 0.1079 84.78)",
+          "oklch(61% 0.1079 84.78)",
+          "oklch(72% 0.1079 84.78)",
+          "oklch(84% 0.1079 84.78)",
+          "oklch(95% 0.1079 84.78)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0069 124.45)",
+          "oklch(26% 0.0069 124.45)",
+          "oklch(38% 0.0069 124.45)",
+          "oklch(49% 0.0069 124.45)",
+          "oklch(61% 0.0069 124.45)",
+          "oklch(72% 0.0069 124.45)",
+          "oklch(84% 0.0069 124.45)",
+          "oklch(95% 0.0069 124.45)"
+        ]
+      },
+      "paperink": {
+        "role": "neutral",
+        "displayName": "Paperink",
+        "tonalRamp": [
+          "oklch(15% 0.0281 218.94)",
+          "oklch(26% 0.0281 218.94)",
+          "oklch(38% 0.0281 218.94)",
+          "oklch(49% 0.0281 218.94)",
+          "oklch(61% 0.0281 218.94)",
+          "oklch(72% 0.0281 218.94)",
+          "oklch(84% 0.0281 218.94)",
+          "oklch(95% 0.0281 218.94)"
+        ]
+      },
+      "screen": {
+        "role": "neutral",
+        "displayName": "Screen",
+        "tonalRamp": [
+          "oklch(15% 0.0261 233.34)",
+          "oklch(26% 0.0261 233.34)",
+          "oklch(38% 0.0261 233.34)",
+          "oklch(49% 0.0261 233.34)",
+          "oklch(61% 0.0261 233.34)",
+          "oklch(72% 0.0261 233.34)",
+          "oklch(84% 0.0261 233.34)",
+          "oklch(95% 0.0261 233.34)"
+        ]
+      },
+      "button-hover": {
+        "role": "neutral",
+        "displayName": "Button Hover",
+        "tonalRamp": [
+          "oklch(15% 0.0390 225.35)",
+          "oklch(26% 0.0390 225.35)",
+          "oklch(38% 0.0390 225.35)",
+          "oklch(49% 0.0390 225.35)",
+          "oklch(61% 0.0390 225.35)",
+          "oklch(72% 0.0390 225.35)",
+          "oklch(84% 0.0390 225.35)",
+          "oklch(95% 0.0390 225.35)"
+        ]
+      },
+      "mint-hover": {
+        "role": "primary",
+        "displayName": "Mint Hover",
+        "tonalRamp": [
+          "oklch(15% 0.0828 174.73)",
+          "oklch(26% 0.0828 174.73)",
+          "oklch(38% 0.0828 174.73)",
+          "oklch(49% 0.0828 174.73)",
+          "oklch(61% 0.0828 174.73)",
+          "oklch(72% 0.0828 174.73)",
+          "oklch(84% 0.0828 174.73)",
+          "oklch(95% 0.0828 174.73)"
+        ]
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field Border",
+        "tonalRamp": [
+          "oklch(15% 0.0368 222.03)",
+          "oklch(26% 0.0368 222.03)",
+          "oklch(38% 0.0368 222.03)",
+          "oklch(49% 0.0368 222.03)",
+          "oklch(61% 0.0368 222.03)",
+          "oklch(72% 0.0368 222.03)",
+          "oklch(84% 0.0368 222.03)",
+          "oklch(95% 0.0368 222.03)"
+        ]
+      },
+      "badge-bg": {
+        "role": "neutral",
+        "displayName": "Badge Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0426 183.64)",
+          "oklch(26% 0.0426 183.64)",
+          "oklch(38% 0.0426 183.64)",
+          "oklch(49% 0.0426 183.64)",
+          "oklch(61% 0.0426 183.64)",
+          "oklch(72% 0.0426 183.64)",
+          "oklch(84% 0.0426 183.64)",
+          "oklch(95% 0.0426 183.64)"
+        ]
+      },
+      "badge-ink": {
+        "role": "neutral",
+        "displayName": "Badge Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0883 171.17)",
+          "oklch(26% 0.0883 171.17)",
+          "oklch(38% 0.0883 171.17)",
+          "oklch(49% 0.0883 171.17)",
+          "oklch(61% 0.0883 171.17)",
+          "oklch(72% 0.0883 171.17)",
+          "oklch(84% 0.0883 171.17)",
+          "oklch(95% 0.0883 171.17)"
+        ]
+      },
+      "badge-amber-bg": {
+        "role": "neutral",
+        "displayName": "Badge Amber Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0288 84.30)",
+          "oklch(26% 0.0288 84.30)",
+          "oklch(38% 0.0288 84.30)",
+          "oklch(49% 0.0288 84.30)",
+          "oklch(61% 0.0288 84.30)",
+          "oklch(72% 0.0288 84.30)",
+          "oklch(84% 0.0288 84.30)",
+          "oklch(95% 0.0288 84.30)"
+        ]
+      },
+      "badge-muted-bg": {
+        "role": "neutral",
+        "displayName": "Badge Muted Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0339 230.80)",
+          "oklch(26% 0.0339 230.80)",
+          "oklch(38% 0.0339 230.80)",
+          "oklch(49% 0.0339 230.80)",
+          "oklch(61% 0.0339 230.80)",
+          "oklch(72% 0.0339 230.80)",
+          "oklch(84% 0.0339 230.80)",
+          "oklch(95% 0.0339 230.80)"
+        ]
+      },
+      "mission-bg": {
+        "role": "neutral",
+        "displayName": "Mission Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0350 183.61)",
+          "oklch(26% 0.0350 183.61)",
+          "oklch(38% 0.0350 183.61)",
+          "oklch(49% 0.0350 183.61)",
+          "oklch(61% 0.0350 183.61)",
+          "oklch(72% 0.0350 183.61)",
+          "oklch(84% 0.0350 183.61)",
+          "oklch(95% 0.0350 183.61)"
+        ]
+      },
+      "reading-muted": {
+        "role": "neutral",
+        "displayName": "Reading Muted",
+        "tonalRamp": [
+          "oklch(15% 0.0256 222.23)",
+          "oklch(26% 0.0256 222.23)",
+          "oklch(38% 0.0256 222.23)",
+          "oklch(49% 0.0256 222.23)",
+          "oklch(61% 0.0256 222.23)",
+          "oklch(72% 0.0256 222.23)",
+          "oklch(84% 0.0256 222.23)",
+          "oklch(95% 0.0256 222.23)"
+        ]
+      },
+      "error": {
+        "role": "secondary",
+        "displayName": "Error",
+        "tonalRamp": [
+          "oklch(15% 0.0849 33.27)",
+          "oklch(26% 0.0849 33.27)",
+          "oklch(38% 0.0849 33.27)",
+          "oklch(49% 0.0849 33.27)",
+          "oklch(61% 0.0849 33.27)",
+          "oklch(72% 0.0849 33.27)",
+          "oklch(84% 0.0849 33.27)",
+          "oklch(95% 0.0849 33.27)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Hero display",
+        "purpose": "Large presentation statement."
+      },
+      "headline": {
+        "displayName": "Document headline",
+        "purpose": "Specification title."
+      },
+      "title": {
+        "displayName": "App title",
+        "purpose": "Mini App screen heading."
+      },
+      "reading": {
+        "displayName": "Reading prose",
+        "purpose": "Long chapters with relaxed leading."
+      }
+    },
+    "shadows": [
+      {
+        "name": "toast",
+        "value": "0 8px 30px #0003",
+        "purpose": "Transient status feedback only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-transition",
+        "value": "background .18s, transform .18s",
+        "purpose": "Button fill response."
+      },
+      {
+        "name": "progress-transition",
+        "value": "width .7s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Confirmed progress change."
+      },
+      {
+        "name": "reward-entry",
+        "value": "rewardEnter .65s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Enter from translateY(22px) scale(.93) and blur(3px); disabled by reduced-motion preference or effects toggle."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1050px"
+      },
+      {
+        "name": "stacked",
+        "value": "780px"
+      },
+      {
+        "name": "small-phone",
+        "value": "420px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Turquoise confirmed action.",
+      "html": "<button class=\"ds-button ds-primary\">Принять и начислить</button>",
+      "css": ".ds-button{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 18px;min-height:44px;border-radius:9px;background:var(--panel,#11262f);color:var(--ink,#edf5f2);border:1px solid var(--line,#29404a);font-size:13px;font-weight:700;line-height:1.65;cursor:pointer;transition:background .18s,transform .18s;font-family:Manrope,Segoe UI,sans-serif;}.ds-button:hover{background:#203c47}.ds-button:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}.ds-button:disabled{cursor:not-allowed;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}.ds-primary{background:var(--mint,#70e1c2);color:var(--bg,#08151c);border-color:transparent}.ds-primary:hover{background:#a1efd9}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Bordered supporting action.",
+      "html": "<button class=\"ds-button\">Показать всех 40</button>",
+      "css": ".ds-button{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 18px;min-height:44px;border-radius:9px;background:var(--panel,#11262f);color:var(--ink,#edf5f2);border:1px solid var(--line,#29404a);font-size:13px;font-weight:700;line-height:1.65;cursor:pointer;transition:background .18s,transform .18s;font-family:Manrope,Segoe UI,sans-serif;}.ds-button:hover{background:#203c47}.ds-button:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}.ds-button:disabled{cursor:not-allowed;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}"
+    },
+    {
+      "name": "Quiet button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Transparent alternative action.",
+      "html": "<button class=\"ds-button ds-quiet\">Вернуть на доработку</button>",
+      "css": ".ds-button{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 18px;min-height:44px;border-radius:9px;background:var(--panel,#11262f);color:var(--ink,#edf5f2);border:1px solid var(--line,#29404a);font-size:13px;font-weight:700;line-height:1.65;cursor:pointer;transition:background .18s,transform .18s;font-family:Manrope,Segoe UI,sans-serif;}.ds-button:hover{background:#203c47}.ds-button:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}.ds-button:disabled{cursor:not-allowed;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}.ds-quiet{background:transparent}"
+    },
+    {
+      "name": "Report field",
+      "kind": "input",
+      "refersTo": "report-field",
+      "description": "Labeled report textarea with visible keyboard focus.",
+      "html": "<label class=\"ds-field\">Описание результата<textarea class=\"ds-textarea\" rows=\"3\">Структура страницы обновлена, ссылки проверены.</textarea></label>",
+      "css": ".ds-field{display:block;font-size:11px;color:var(--muted,#acc0c6);line-height:1.65;font-family:Manrope,Segoe UI,sans-serif;}.ds-textarea{display:block;background:#0a1921;border:1px solid #45616b;border-radius:8px;color:var(--ink,#edf5f2);padding:10px;width:100%;max-width:340px;margin-top:6px;font-size:12px;line-height:1.65;min-height:83px;resize:vertical;caret-color:var(--mint,#70e1c2);font-family:Manrope,Segoe UI,sans-serif;}.ds-textarea:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}"
+    },
+    {
+      "name": "Status badges",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Ordinary, pending and muted status labels.",
+      "html": "<div class=\"ds-badges\"><span class=\"ds-badge\">Принято</span><span class=\"ds-badge ds-amber\">На проверке</span><span class=\"ds-badge ds-muted\">В работе</span></div>",
+      "css": ".ds-badges{display:flex;gap:6px;flex-wrap:wrap}.ds-badge{display:inline-flex;gap:4px;align-items:center;background:#1c403b;color:#99eacf;border-radius:5px;font-size:11px;line-height:1.65;padding:3px 7px;white-space:nowrap;font-family:Manrope,Segoe UI,sans-serif;}.ds-amber{color:var(--gold,#f0ca7a);background:#3b3323}.ds-muted{color:var(--muted,#acc0c6);background:#233944}"
+    },
+    {
+      "name": "Role selector",
+      "kind": "nav",
+      "description": "Demonstration role state expressed with aria-pressed.",
+      "html": "<div class=\"ds-segmented\" aria-label=\"Демонстрационная роль\"><button aria-pressed=\"true\">Военнослужащий</button><button aria-pressed=\"false\">Командир</button></div>",
+      "css": ".ds-segmented{display:inline-flex;padding:3px;background:#142832;border:1px solid var(--line,#29404a);border-radius:10px}.ds-segmented button{padding:8px 12px;font-size:12px;line-height:1.65;background:transparent;color:var(--muted,#acc0c6);border:0;border-radius:7px;min-height:38px;cursor:pointer;font-family:Manrope,Segoe UI,sans-serif;}.ds-segmented button[aria-pressed=true]{background:var(--mint,#70e1c2);color:var(--bg,#08151c);font-weight:800}.ds-segmented button:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}"
+    },
+    {
+      "name": "Request card",
+      "kind": "card",
+      "refersTo": "request-card",
+      "description": "Thin-bordered approval request with a secondary action.",
+      "html": "<div class=\"ds-request\"><h4>Благодарность</h4><p>На согласовании · 100 баллов</p><p>Баллы в резерве. Заявка не является разрешением.</p><button class=\"ds-button ds-quiet\">Отменить заявку</button></div>",
+      "css": ".ds-button{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 18px;min-height:44px;border-radius:9px;background:var(--panel,#11262f);color:var(--ink,#edf5f2);border:1px solid var(--line,#29404a);font-size:13px;font-weight:700;line-height:1.65;cursor:pointer;transition:background .18s,transform .18s;font-family:Manrope,Segoe UI,sans-serif;}.ds-button:hover{background:#203c47}.ds-button:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}.ds-button:disabled{cursor:not-allowed;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button{transition:none}}.ds-request{padding:14px;border:1px solid var(--line,#29404a);border-radius:12px;color:var(--ink,#edf5f2);background:var(--bg,#08151c);max-width:340px;font-family:Manrope,Segoe UI,sans-serif;}.ds-request h4{font-size:13px;margin:0 0 5px}.ds-request p{font-size:12px;line-height:1.65;color:var(--muted,#acc0c6);margin:5px 0}.ds-request .ds-button{margin-top:12px;padding:8px 11px;font-size:12px}.ds-quiet{background:transparent}"
+    },
+    {
+      "name": "Team progress",
+      "kind": "custom",
+      "refersTo": "team-progress",
+      "description": "Shared progress with a turquoise bar and compact line illustration.",
+      "html": "<section class=\"ds-mission\"><h4>Общий результат</h4><strong>22 / 40</strong><p>Подтверждённые результаты команды</p><div class=\"ds-progress\"><span></span></div><svg viewBox=\"0 0 300 58\" aria-hidden=\"true\"><path d=\"M0 49h300M22 49V25h46v24M80 49V13h52v36M145 49V20h62v29M223 49V6h52v43\"/></svg></section>",
+      "css": ".ds-mission{background:#17332f;padding:15px;border-radius:12px;max-width:340px;color:var(--ink,#edf5f2);font-family:Manrope,Segoe UI,sans-serif;}.ds-mission h4{margin:0 0 4px;font-size:13px}.ds-mission strong{font-size:20px;color:var(--mint,#70e1c2);font-weight:650}.ds-mission p{color:#b4d1c8;font-size:11px;line-height:1.65;margin:0}.ds-progress{height:5px;background:#315047;border-radius:5px;margin:13px 0 7px;overflow:hidden}.ds-progress span{display:block;width:55%;height:100%;background:var(--mint,#70e1c2);transition:width .7s cubic-bezier(.16,1,.3,1)}.ds-mission svg{width:100%;height:58px;margin-top:6px;stroke:#80cdb9;stroke-width:1;fill:none}@media(prefers-reduced-motion:reduce){.ds-progress span{transition:none}}"
+    },
+    {
+      "name": "Reading chapter",
+      "kind": "custom",
+      "description": "Native expandable chapter on mineral-white paper.",
+      "html": "<div class=\"ds-reading\"><details open><summary>Правила начисления</summary><p>Опыт и баллы учитываются отдельно. Начисление следует за подтверждением результата.</p></details></div>",
+      "css": ".ds-reading{background:var(--paper,#f1f3ee);color:var(--paperink,#182c32);padding:18px;font-family:Manrope,Segoe UI,sans-serif;}.ds-reading details{border-bottom:1px solid #c5ceca}.ds-reading summary{font-size:19px;line-height:1.4;font-weight:700;cursor:pointer;padding:19px 35px 19px 0;list-style:none;position:relative}.ds-reading summary:after{content:\"+\";position:absolute;right:4px;top:18px;color:#49675f;font-size:22px;font-weight:400}.ds-reading details[open]>summary:after{content:\"−\"}.ds-reading summary::-webkit-details-marker{display:none}.ds-reading summary:focus-visible{outline:3px solid var(--gold,#f0ca7a);outline-offset:3px;}.ds-reading p{font-size:14px;line-height:1.85;max-width:78ch;margin:12px 0 28px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Technological research centre",
+    "overview": "The user-selected direction is a technological research centre with dark navy surfaces and turquoise accents. The implemented presentation uses a precise, calm console treatment: compact task rows, outlined controls, line icons and visible numerical progress. Warm gold distinguishes rewards and balances.\n\nA mineral-white reading area gives the detailed proposal a separate, comfortable reading surface. This document records the implemented offline presentation, not an official identity or an approved production design system. It was extracted from `outputs/impuls-presentation.html`, `work/presentation.html` and `work/app.js` after the visual direction was approved.",
+    "keyCharacteristics": [
+      "Navy surfaces, turquoise actions and warm gold reward values.",
+      "Embedded Manrope with compact interface labels and generous reading leading.",
+      "Thin dividers and tonal layers rather than raised cards.",
+      "A working phone-shaped demonstration beside the presentation narrative.",
+      "Readable light documentation, responsive navigation and reduced-motion support."
+    ],
+    "rules": [
+      {
+        "name": "The Meaningful Accent Rule",
+        "body": "Use turquoise for action or progress and gold for reward information; keep text labels alongside state colors.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Preserve flat resting surfaces and use borders or tone to establish grouping; reserve the observed shadow treatment for toast feedback.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** preserve the approved navy and turquoise research-centre direction.",
+      "**Do** use gold to distinguish rewards and keep labels beside status colors.",
+      "**Do** retain flat rows, thin dividers and softly squared controls.",
+      "**Do** preserve embedded typography and self-contained assets for offline viewing.",
+      "**Do** retain keyboard focus, responsive reading navigation and reduced-motion behavior."
+    ],
+    "donts": [
+      "**Don't** treat the presentation styling as an official military identity or production approval.",
+      "**Don't** add elevation to every list item; the implemented hierarchy depends on tone and dividers.",
+      "**Don't** make color or animation the only way to understand progress or state.",
+      "**Don't** remove the light reading surface or constrain long tables inside the phone demo."
+    ]
+  }
+}
