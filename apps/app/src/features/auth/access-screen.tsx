@@ -21,8 +21,9 @@ const stateText = {
     tone: "data",
   },
   outside: {
-    title: "Откройте в Telegram",
-    description: "Вход доступен только при запуске Mini App через бота.",
+    title: "Нет данных запуска Telegram",
+    description:
+      "Закройте окно и снова нажмите «Открыть приложение» в профиле бота.",
     tone: "gold",
   },
   expired: {

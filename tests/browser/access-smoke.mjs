@@ -16,7 +16,7 @@ async function main() {
         await route.fulfill({
           status: 200,
           contentType: "application/javascript",
-          body: "",
+          body: 'window.Telegram={WebApp:{initData:"synthetic",ready(){throw Error("unsupported")},expand(){throw Error("unsupported")},close(){},setHeaderColor(){throw Error("unsupported")},setBackgroundColor(){throw Error("unsupported")}}};',
         });
       },
     );
@@ -25,6 +25,13 @@ async function main() {
         status: 401,
         contentType: "application/json",
         body: '{"code":"UNAUTHORIZED"}',
+      }),
+    );
+    await bridgePage.route("**/api/v1/auth/telegram", (route) =>
+      route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: '{"code":"ACCESS_DENIED"}',
       }),
     );
     await bridgePage.goto("http://localhost:3000", {
@@ -36,11 +43,14 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, 500));
     await bridgePage.clock.fastForward(8_100);
     await bridgePage
-      .getByRole("heading", { name: "Откройте в Telegram" })
+      .getByRole("heading", { name: "Нет данных запуска Telegram" })
       .waitFor({ timeout: 5_000 });
     releaseScript();
+    await bridgePage
+      .getByRole("heading", { name: "Доступ не открыт" })
+      .waitFor({ timeout: 5_000 });
     await bridgePage.close();
-    console.log("Bridge timeout: outside state after 8 seconds");
+    console.log("Late bridge and unsupported cosmetic methods: login attempted");
 
     const apiPage = await browser.newPage();
     await apiPage.clock.install();
