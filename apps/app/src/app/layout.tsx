@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -37,14 +38,14 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru" className={manrope.variable}>
-      <head>
-        <script
+      <body>
+        <Script
           id="telegram-web-app-bridge"
           src="https://telegram.org/js/telegram-web-app.js"
-          async
+          strategy="afterInteractive"
         />
-      </head>
-      <body>{children}</body>
+        {children}
+      </body>
     </html>
   );
 }

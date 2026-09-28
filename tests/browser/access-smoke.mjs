@@ -27,7 +27,7 @@ async function main() {
         body: '{"code":"UNAUTHORIZED"}',
       }),
     );
-    await bridgePage.goto("http://127.0.0.1:3000", {
+    await bridgePage.goto("http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
     await bridgePage.waitForFunction(() =>
@@ -66,7 +66,7 @@ async function main() {
       await apiHeld;
       await route.abort();
     });
-    await apiPage.goto("http://127.0.0.1:3000", {
+    await apiPage.goto("http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
     await started;
@@ -108,7 +108,7 @@ async function main() {
         }),
       }),
     );
-    await loginPage.goto("http://127.0.0.1:3000", {
+    await loginPage.goto("http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
     await loginPage

@@ -16,7 +16,7 @@ Confirmed: track completed assigned work, award points, show a leaderboard and e
 
 ## Operating Context
 
-Confirmed: intended product is a Telegram Mini App. Work ranges from websites and research projects to routine assignments. The repository retains the local presentation and now contains an initial R1 service implementation. A test schema with no rows is installed in the selected existing Supabase project. A Vercel project is configured and linked locally; the service is not deployed or admitted for real participants.
+Confirmed: intended product is a Telegram Mini App. Work ranges from websites and research projects to routine assignments. The repository retains the local presentation and now contains an initial R1 service implementation. A test schema with no rows is installed in the selected existing Supabase project. A Vercel Production deployment is available at `https://impuls-eta.vercel.app`; the service is not admitted for real participants.
 
 ## Capabilities and Constraints
 
@@ -25,7 +25,7 @@ Proposed assumptions for this presentation: two main roles plus administrator; m
 
 ## Stack
 
-Presentation implementation choice: self-contained offline HTML/CSS/JavaScript and a Markdown project specification, built and checked with Bun. The technical direction in IMPLEMENTATION_PLAN.md and ADR-0001 is Bun workspaces and lockfile, Next.js App Router with Node.js Route Handlers on Vercel, Supabase-managed PostgreSQL, Tailwind v4 and adapted shadcn/ui/Radix components, Motion and Phosphor icons. The repository has workspaces, a Next.js access screen, F01 API routes and two auth migrations. Vercel Project `impuls` is configured and linked to the local workspace. The selected existing Supabase project `Rapt0r111's Project` (organization Codex) runs PostgreSQL 17.6; private `impuls` tables are installed with no records. No environment variables or deployment are configured yet. The service has not been exercised against the application runtime role or a real Telegram WebView. Approval of the data and deployment contour and service-reward policy remains open; no real identities are included.
+Presentation implementation choice: self-contained offline HTML/CSS/JavaScript and a Markdown project specification, built and checked with Bun. The technical direction in IMPLEMENTATION_PLAN.md and ADR-0001 is Bun workspaces and lockfile, Next.js App Router with Node.js Route Handlers on Vercel, Supabase-managed PostgreSQL, Tailwind v4 and adapted shadcn/ui/Radix components, Motion and Phosphor icons. The repository has workspaces, a Next.js access screen, F01 API routes and two auth migrations. Vercel Project `impuls` is configured and linked to the local workspace; five Production environment variables are set as Secret. The selected existing Supabase project `Rapt0r111's Project` (organization Codex) runs PostgreSQL 17.6; private `impuls` tables were last confirmed empty. A synthetic `GET /api/v1/me` request to Production returned `401` after a database lookup; this confirms PostgreSQL connectivity from the deployed Function. The app has not been tested in a real Telegram WebView or with an admitted Telegram identity. Approval of the data and deployment contour and service-reward policy remains open; no real identities are included.
 
 ## Evidence on Hand
 
