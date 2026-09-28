@@ -7,6 +7,7 @@ import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
 type AccessState =
   | { kind: "checking" }
   | { kind: "outside" }
+  | { kind: "invalid" }
   | { kind: "expired" }
   | { kind: "denied" }
   | { kind: "revoked" }
@@ -25,6 +26,12 @@ const stateText = {
     description:
       "Закройте окно и снова нажмите «Открыть приложение» в профиле бота.",
     tone: "gold",
+  },
+  invalid: {
+    title: "Не удалось подтвердить запуск",
+    description:
+      "Данные запуска не прошли проверку. Закройте приложение и откройте его снова через профиль бота. Если ошибка повторится, сообщите администратору.",
+    tone: "error",
   },
   expired: {
     title: "Запуск устарел",
@@ -159,7 +166,8 @@ export function AccessScreen() {
         update({ kind: "denied" });
       else if (login.status === 401 && code === "AUTH_EXPIRED")
         update({ kind: "expired" });
-      else if (login.status === 401) update({ kind: "outside" });
+      else if (login.status === 401 && code === "AUTH_INVALID")
+        update({ kind: "invalid" });
       else update({ kind: "unavailable" });
     } catch {
       if (

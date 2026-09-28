@@ -22,6 +22,7 @@ function signedData(fields: Record<string, string>): string {
 const validFields = {
   auth_date: String(now),
   query_id: "AAH3test",
+  signature: "synthetic-ed25519-signature",
   user: JSON.stringify({ id: 7_654_321, first_name: "Test" }),
 };
 
@@ -56,6 +57,30 @@ describe("Telegram initData validation", () => {
     ).toEqual({
       kind: "invalid",
     });
+  });
+
+  it("includes the Telegram third-party signature field in the bot-token hash", () => {
+    const valid = signedData(validFields);
+    expect(verifyTelegramInitData(valid, token, now).kind).toBe("valid");
+    const tampered = new URLSearchParams(valid);
+    tampered.set("signature", "changed-signature");
+    expect(verifyTelegramInitData(tampered.toString(), token, now)).toEqual({
+      kind: "invalid",
+    });
+  });
+
+  it("accepts a signed launch without the optional signature field", () => {
+    expect(
+      verifyTelegramInitData(
+        signedData({
+          auth_date: validFields.auth_date,
+          query_id: validFields.query_id,
+          user: validFields.user,
+        }),
+        token,
+        now,
+      ).kind,
+    ).toBe("valid");
   });
 
   it("rejects old and future launches", () => {

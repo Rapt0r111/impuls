@@ -50,7 +50,9 @@ async function main() {
       .getByRole("heading", { name: "Доступ не открыт" })
       .waitFor({ timeout: 5_000 });
     await bridgePage.close();
-    console.log("Late bridge and unsupported cosmetic methods: login attempted");
+    console.log(
+      "Late bridge and unsupported cosmetic methods: login attempted",
+    );
 
     const apiPage = await browser.newPage();
     await apiPage.clock.install();
@@ -95,7 +97,7 @@ async function main() {
         route.fulfill({
           status: 200,
           contentType: "application/javascript",
-          body: 'window.Telegram={WebApp:{initData:"synthetic",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
+          body: 'const launch=new URLSearchParams(location.hash.slice(1)).get("tgWebAppData")||"";window.Telegram={WebApp:{initData:launch,ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
         }),
     );
     await loginPage.route("**/api/v1/me", (route) =>
@@ -105,8 +107,10 @@ async function main() {
         body: '{"code":"UNAUTHORIZED"}',
       }),
     );
-    await loginPage.route("**/api/v1/auth/telegram", (route) =>
-      route.fulfill({
+    let sentInitData;
+    await loginPage.route("**/api/v1/auth/telegram", (route) => {
+      sentInitData = route.request().postDataJSON().initData;
+      return route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
@@ -116,16 +120,52 @@ async function main() {
           },
           csrfToken: "synthetic-token",
         }),
-      }),
-    );
-    await loginPage.goto("http://localhost:3000", {
+      });
+    });
+    await loginPage.goto("http://localhost:3000/#tgWebAppData=synthetic", {
       waitUntil: "domcontentloaded",
     });
     await loginPage
       .getByRole("heading", { name: "Доступ подтверждён" })
       .waitFor({ timeout: 5_000 });
+    if (sentInitData !== "synthetic") {
+      throw new Error("Telegram initData was not sent to the login API");
+    }
     await loginPage.close();
-    console.log("Bridge and synthetic login: authorized state");
+    console.log("Launch fragment and synthetic login: authorized state");
+
+    const invalidPage = await browser.newPage();
+    await invalidPage.route(
+      "https://telegram.org/js/telegram-web-app.js",
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: 'window.Telegram={WebApp:{initData:"synthetic",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
+        }),
+    );
+    await invalidPage.route("**/api/v1/me", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"code":"UNAUTHORIZED"}',
+      }),
+    );
+    await invalidPage.route("**/api/v1/auth/telegram", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"code":"AUTH_INVALID"}',
+      }),
+    );
+    await invalidPage.goto("http://localhost:3000", {
+      waitUntil: "domcontentloaded",
+    });
+    await invalidPage
+      .getByRole("heading", { name: "Не удалось подтвердить запуск" })
+      .waitFor({ timeout: 5_000 });
+    await invalidPage.close();
+    console.log("Invalid signed launch: distinct error state");
   } finally {
     await browser.close();
   }

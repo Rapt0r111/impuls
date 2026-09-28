@@ -32,7 +32,7 @@ export function verifyTelegramInitData(
     return { kind: "invalid" };
 
   const dataCheckString = [...fields]
-    .filter(([key]) => key !== "hash" && key !== "signature")
+    .filter(([key]) => key !== "hash")
     .sort(([left], [right]) => left.localeCompare(right, "en"))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
