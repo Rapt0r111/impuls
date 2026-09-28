@@ -1,0 +1,58 @@
+# Проверка Vercel и Supabase — 28.09.2026
+
+## Код и локальная проверка
+
+- `apps/app/next.config.ts` не выпускает standalone; `apps/app/src/shared/server/db.ts` ограничивает пул одним соединением и проверяет TLS CA Supabase на Vercel.
+- `db/migrations/000001_auth.js` создаёт изолированную схему `impuls`, таблицы входа и лимита, отзывает доступ `PUBLIC` и стандартных Data API ролей. `db/migrations/000002_auth_trigger_search_path.js` фиксирует `search_path = pg_catalog` у триггерной функции. `db/migrations/000003_runtime_role_rls.js` создаёт ограниченную роль `impuls_app`, выдаёт ей права только на три таблицы приложения и включает RLS; журнал миграций не имеет runtime-политики.
+- `scripts/migrate.mjs` указывает `node-pg-migrate` на схему `impuls_meta`, чтобы журнал миграций не создавался в `public`.
+- `.github/workflows/check.yml` использует PostgreSQL 17.6.
+- Ранее в этом проекте команда `bun run check` прошла: Prettier, ESLint, четыре TypeScript-проверки, 6 unit-тестов и Next.js build; два PostgreSQL integration-теста пропущены без `TEST_DATABASE_URL`. `bun run demo:test` прошёл 23 проверки автономного R0. `node tests/browser/access-smoke.mjs` прошёл три синтетических сценария локального Next.js. Эти локальные результаты не являются проверкой текущего внешнего проекта.
+
+## Supabase: подтверждено
+
+- Проект: `Rapt0r111's Project`, организация `Codex`, project ref `enicnfevahcuiqvwmhgp`, регион `eu-north-1` (Stockholm), статус `ACTIVE_HEALTHY`, PostgreSQL `17.6.1.166` / `server_version = 17.6`.
+- Пользователь подтвердил использование этого существующего проекта для тестовой схемы. Общие настройки проекта не менялись.
+- До применения миграции SQL показал, что `impuls` и `impuls_meta` отсутствуют; журнал Supabase был пуст. В настройках Data API было выбрано две схемы — `public` и `graphql_public`; Data API включён и автоматическая выдача прав новым таблицам включена.
+- MCP применил миграции `impuls_auth_schema`, `impuls_auth_trigger_search_path` и `impuls_runtime_role_rls`. Таблицы `impuls.users`, `impuls.sessions`, `impuls.auth_rate_limits` и `impuls_meta.pgmigrations` созданы; в трёх таблицах приложения — 0 строк, внутренний журнал содержит `000001_auth`, `000002_auth_trigger_search_path` и `000003_runtime_role_rls`.
+- Первая попытка третьей миграции откатилась целиком из-за `NULL` в обязательном поле `impuls_meta.pgmigrations.run_on`; в повторном применении запись получила `CURRENT_TIMESTAMP`. Последующая проверка подтвердила единственную запись третьей миграции, созданную роль, RLS и все ожидаемые ACL.
+- Панель Data API после изменений всё ещё показывает только `public` и `graphql_public` как экспонируемые схемы; `impuls` и `impuls_meta` присутствуют в списке вариантов, но не выбраны. Data API не отключался.
+- Проверочный SQL после миграций показал: роль `impuls_app` существует, может подключаться, не имеет `SUPERUSER`, `CREATEDB`, `CREATEROLE`, `REPLICATION` или `BYPASSRLS`; имеет `USAGE` на `impuls`, CRUD-права и единственные применимые RLS-политики на `users`, `sessions`, `auth_rate_limits`. Все три app-таблицы имеют RLS. Роли `anon`, `authenticated`, `service_role` не имеют schema/table-доступа к этим таблицам. `impuls_app` не имеет `USAGE`/`SELECT` на `impuls_meta.pgmigrations`; RLS включён, политика для журнала отсутствует. `server_version` — 17.6.
+- HTTP `GET https://<project>.supabase.co/rest/v1/users?select=id` с publishable key и `Accept-Profile: impuls` вернул 406 / `PGRST106`: «Only the following schemas are exposed: public, graphql_public». Это подтвердило, что схема `impuls` закрыта в Data API; секретный `service_role` key не использовался.
+- Через shared transaction pooler `aws-0-eu-north-1.pooler.supabase.com:6543` выполнен TLS-запрос с проверкой сертификата официального Supabase Root 2021 CA под ролью `impuls_app`; сервер вернул PostgreSQL 17.6 и `users_count = 0`. Проверка использовала Node.js `pg`, `rejectUnauthorized: true` и точные настройки CA, которые приложение будет использовать на Vercel. Первый запуск без CA завершился `self-signed certificate in certificate chain`; затем CA был добавлен, повторная проверка прошла. Пароль не сохранён в репозитории.
+- Supabase Advisor (`list_tables`) до применения RLS отмечал четыре таблицы без RLS. Отдельный вызов Security Advisor сообщил о существующей `public.rls_auto_enable()` с `SECURITY DEFINER`, доступной `anon` и `authenticated`; этот объект не создавался миграциями «Импульса» и не изменялся. Performance Advisor сообщил о пока неиспользованных индексах новых пустых таблиц.
+- Overview проекта показывал `Last Backup: No backups`. Резервное копирование и текущее содержимое существующих чужих/общих схем в этой проверке не менялись.
+
+## Vercel: подтверждено
+
+- Проект: [Vercel Project impuls](https://vercel.com/antons-projects-fd079868/impuls), workspace `Anton's projects` (Hobby), ID `prj_53KiQdJj40PmRbM9MhOpcpHt0hrs`.
+- Панель ранее подтвердила Next.js preset, Root Directory `apps/app`, включённый доступ к файлам за Root Directory и Node.js 24. Проектная настройка обмена данными для обучения моделей отключена.
+- Vercel CLI 60.1.3 работает с Node.js 24.21.0; `vercel whoami` подтвердил аккаунт владельца, `vercel teams ls` — workspace `antons-projects-fd079868` (Hobby). `bunx vercel link --yes --team antons-projects-fd079868 --project impuls` успешно связал проект с корнем рабочей копии и сохранил `.vercel/project.json`.
+- `git check-ignore -v .env.local .vercel/project.json` подтвердил игнорирование локального Vercel OIDC файла и настроек привязки.
+- Через `bunx vercel env add ... preview --sensitive --yes --scope antons-projects-fd079868` в Preview добавлены `DATABASE_URL`, `CSRF_SECRET` и `SUPABASE_CA_CERT_B64`. `MIGRATION_DATABASE_URL`, `APP_ORIGIN` и `TELEGRAM_BOT_TOKEN` не добавлялись. Vercel env pull заменяет sensitive-значения на `[SENSITIVE]`; скачанный локальный файл удалён. `git remote -v` не вывел удалённый Git-репозиторий.
+
+## Пока не проверено / решение владельца
+
+- Не проверены конкуренция и отзыв сессий на удалённой БД. `APP_ORIGIN` не задан до выбора стабильного Preview URL; Bot token в проект не предоставлялся, поэтому Telegram-вход выключен.
+- Нет проверки Telegram Android/iOS. P-02 остаётся открытым: выбор Vercel/Supabase не утверждает обработку реальных идентификаторов или служебных данных.
+
+## Последующая проверка Preview — 28.09.2026
+
+- Команда `bunx vercel deploy --yes --scope antons-projects-fd079868` создала первый деплой проекта со средой `Production` (поведение Vercel для первого deploy). Пользователь подтвердил, что его можно оставить. Production-переменные отсутствуют. В настройках Deployment Protection включён `Require Log In` / Standard Protection; bypass доступен только через Vercel tooling.
+- Команда `bunx vercel deploy --target preview --yes --scope antons-projects-fd079868` создала отдельный защищённый Preview: `https://impuls-gvwvo9ani-antons-projects-fd079868.vercel.app`, status `READY`. Обе сборки Next.js завершились успешно.
+- `bunx vercel env ls --scope antons-projects-fd079868` показала три `Hidden / Secret`, только для `Preview`: `DATABASE_URL`, `CSRF_SECRET`, `SUPABASE_CA_CERT_B64`. Значения не выводились. Production, Development, `APP_ORIGIN`, `TELEGRAM_BOT_TOKEN` и `MIGRATION_DATABASE_URL` не имеют переменных приложения.
+- `bunx vercel curl / --deployment https://impuls-gvwvo9ani-antons-projects-fd079868.vercel.app --yes` вернула HTML главной страницы (`200`, CLI exit 0).
+- `bunx vercel curl /api/v1/me --deployment https://impuls-gvwvo9ani-antons-projects-fd079868.vercel.app --yes -- --header "Cookie: impuls_session=<43-символьный синтетический base64url-токен>" --include` вернула `401 UNAUTHORIZED`. Токен прошёл форматную проверку, но не существует в БД; код `readSession()` выполняет SELECT до этого ответа. Такой результат подтверждает, что Preview Function получила чувствительные переменные и подключилась к Supabase с ролью `impuls_app`.
+- `bunx vercel curl /api/v1/auth/telegram --deployment https://impuls-gvwvo9ani-antons-projects-fd079868.vercel.app --yes -- --request POST --header "Content-Type: application/json" --data "{}" --include` вернула ожидаемый `503 UNAVAILABLE`, так как `APP_ORIGIN` и `TELEGRAM_BOT_TOKEN` намеренно не заданы. Реальная Telegram-авторизация не проверена.
+- `bun run check` после правки TLS-конфигурации завершилась с exit 0: Prettier, ESLint, все четыре TypeScript-проверки, 6 unit-тестов (2 PostgreSQL integration-теста пропущены без `TEST_DATABASE_URL`) и сборки app/worker. `bun x prettier --check README.md docs/adr/0001-vercel-supabase.md docs/verification/2026-09-28-vercel-supabase.md db/migrations/000001_auth.js db/migrations/000002_auth_trigger_search_path.js db/migrations/000003_runtime_role_rls.js apps/app/src/shared/server/db.ts` прошла. `git diff --check` — exit 0; Git сообщил только предупреждения о переводах LF/CRLF.
+- После RLS Advisor показывает ожидаемую `INFO rls_enabled_no_policy` только для owner-only `impuls_meta.pgmigrations`; политики там намеренно нет. Ранее выявленная функция `public.rls_auto_enable()` по-прежнему доступна `anon`/`authenticated`; она существовала до миграций «Импульса» и не менялась. Performance Advisor сообщает о двух неиспользованных индексах пустых таблиц приложения.
+
+## Финальная проверка Preview — 28.09.2026
+
+- После повторной проверки пароль роли `impuls_app` обновлён; в Vercel Preview заменён `DATABASE_URL` как `Secret`, Production не изменялся. Причина ротации: временный диагностический терминал отобразил прежнее значение в выводе; оно немедленно отозвано. Текущий пароль в репозитории и отчёте не сохраняется.
+- Последняя команда `bunx vercel deploy --target preview --yes --scope antons-projects-fd079868` создала Ready Preview `https://impuls-ihamtttcn-antons-projects-fd079868.vercel.app` (`dpl_6D2DP3NPpNAvKenLwr94S8C8dSpf`). Сборка Next.js прошла.
+- `bunx vercel inspect dpl_6D2DP3NPpNAvKenLwr94S8C8dSpf --scope antons-projects-fd079868` подтвердила `target=preview`, `status=Ready`. `bunx vercel env ls --scope antons-projects-fd079868` показала только три скрытых Preview Secret: `DATABASE_URL`, `CSRF_SECRET`, `SUPABASE_CA_CERT_B64`; Production-переменных нет.
+- `bunx vercel curl / --deployment https://impuls-ihamtttcn-antons-projects-fd079868.vercel.app -- --head` вернула `200 OK` для главной страницы.
+- Команда `bunx vercel curl /api/v1/me --deployment https://impuls-ihamtttcn-antons-projects-fd079868.vercel.app -- --request GET --header "Cookie: impuls_session=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" --include` вернула `401 UNAUTHORIZED`. 43-символьный токен соответствует формату, но отсутствует в таблице; успешный `SELECT` перед ответом подтверждает соединение свежего Preview с Supabase через `impuls_app`.
+- `POST /api/v1/auth/telegram` с `{}` на той же Preview вернул `503 UNAVAILABLE`, потому что `APP_ORIGIN` и `TELEGRAM_BOT_TOKEN` не настроены. Последующие проверки Android/iOS, конкурентного входа и транзакций не выполнялись.
+- Итоговый SQL-запрос подтвердил PostgreSQL 17.6, три миграции, ноль строк в `users`, `sessions`, `auth_rate_limits`, RLS на всех четырёх таблицах схем приложения и журнала, а также три политики приложения.
+- Последний `bun run check` после добавления безопасного структурированного лога ошибки в `/api/v1/me` завершился с exit 0: Prettier, ESLint, четыре TypeScript-проверки, 6 unit-тестов и сборки app/worker прошли; 2 PostgreSQL integration-теста пропущены без `TEST_DATABASE_URL`.

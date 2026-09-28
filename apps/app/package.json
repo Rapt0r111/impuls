@@ -1,0 +1,28 @@
+{
+  "name": "@impuls/app",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@impuls/contracts": "workspace:*",
+    "@impuls/domain": "workspace:*",
+    "@tailwindcss/postcss": "4.3.3",
+    "next": "16.3.6",
+    "postcss": "8.5.28",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

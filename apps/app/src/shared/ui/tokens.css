@@ -1,0 +1,13 @@
+@theme {
+  --color-bg: #08151c;
+  --color-panel: #11262f;
+  --color-line: #29404a;
+  --color-ink: #edf5f2;
+  --color-muted: #acc0c6;
+  --color-mint: #70e1c2;
+  --color-mint-hover: #a1efd9;
+  --color-gold: #f0ca7a;
+  --color-panel-hover: #203c47;
+  --color-data: #5ba8ff;
+  --color-error: #ffb9a9;
+}

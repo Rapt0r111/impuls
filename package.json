@@ -1,18 +1,43 @@
 {
-  "name": "impuls-prototype",
+  "name": "impuls",
   "private": true,
-  "version": "1.0.0",
-  "description": "Offline presentation and interactive product prototype",
+  "version": "0.1.0",
   "packageManager": "bun@1.4.2",
   "engines": {
-    "bun": ">=1.4.2 <2"
+    "bun": ">=1.4.2 <2",
+    "node": ">=24.21.0 <25"
   },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "bun work/build.cjs",
-    "test": "bun run build && bun work/verify.cjs && bun work/test_features.cjs && bun work/test_new_features.cjs && bun work/test_all_buttons.cjs"
+    "dev": "bun run --cwd apps/app dev",
+    "build": "bun run build:app && bun run build:worker",
+    "build:app": "bun run --cwd apps/app build",
+    "build:worker": "bun run --cwd apps/worker build",
+    "start": "bun run --cwd apps/app start",
+    "typecheck": "bun run --cwd apps/app typecheck && bun run --cwd apps/worker typecheck && bun run --cwd packages/domain typecheck && bun run --cwd packages/contracts typecheck",
+    "lint": "eslint apps packages db tests scripts",
+    "format:check": "prettier --check package.json tsconfig.base.json eslint.config.mjs apps packages db docs tests scripts .github",
+    "test:unit": "vitest run --passWithNoTests",
+    "test:integration": "vitest run tests/integration",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun run test:unit && bun run build",
+    "demo:build": "bun work/build.cjs",
+    "demo:test": "bun run demo:build && bun work/verify.cjs && bun work/test_features.cjs && bun work/test_new_features.cjs && bun work/test_all_buttons.cjs",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "devDependencies": {
+    "@types/node": "24.19.0",
+    "@types/pg": "8.23.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.6",
     "marked": "17.0.5",
-    "playwright": "1.62.1"
+    "node-pg-migrate": "9.0.0",
+    "playwright": "1.62.1",
+    "pg": "8.23.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2"
   }
 }

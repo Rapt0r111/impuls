@@ -1,0 +1,195 @@
+@import "tailwindcss";
+@import "../shared/ui/tokens.css";
+
+html {
+  min-width: 320px;
+  background: var(--color-bg);
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  color: var(--color-ink);
+  background: var(--color-bg);
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+::selection {
+  color: var(--color-bg);
+  background: var(--color-mint);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.access-screen {
+  min-height: 100dvh;
+  padding: max(20px, env(safe-area-inset-top)) 20px
+    max(24px, env(safe-area-inset-bottom));
+}
+
+.access-shell {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 460px);
+  min-height: calc(
+    100dvh - max(20px, env(safe-area-inset-top)) -
+      max(24px, env(safe-area-inset-bottom))
+  );
+  margin: 0 auto;
+}
+
+.access-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.access-logo {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--color-mint);
+  border-radius: 9px;
+  color: var(--color-mint);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.access-brand {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.access-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px 0;
+}
+
+.access-signal {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 24px;
+  margin-bottom: 28px;
+  color: var(--color-data);
+}
+
+.access-signal::after {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, currentColor, var(--color-line) 40%);
+  content: "";
+}
+
+.access-signal span {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-right: 10px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.access-signal--mint {
+  color: var(--color-mint);
+}
+
+.access-signal--gold {
+  color: var(--color-gold);
+}
+
+.access-signal--error {
+  color: var(--color-error);
+}
+
+.access-content h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(30px, 9vw, 40px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.access-description {
+  max-width: 36ch;
+  margin: 18px 0 0;
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.access-identity {
+  display: grid;
+  gap: 4px;
+  margin-top: 38px;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.access-identity span {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.access-identity strong {
+  overflow-wrap: anywhere;
+  font-size: 18px;
+}
+
+.access-actions {
+  padding-bottom: 8px;
+}
+
+.access-button {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 1px solid var(--color-mint);
+  border-radius: 9px;
+  background: var(--color-mint);
+  color: var(--color-bg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms ease-out;
+}
+
+.access-button:hover {
+  background: var(--color-mint-hover);
+}
+
+.access-button--quiet {
+  border-color: var(--color-line);
+  background: var(--color-panel);
+  color: var(--color-ink);
+}
+
+.access-button--quiet:hover {
+  background: var(--color-panel-hover);
+}
+
+.access-footnote {
+  margin: 18px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .access-button {
+    transition: none;
+  }
+}
