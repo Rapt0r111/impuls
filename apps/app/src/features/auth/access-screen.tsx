@@ -12,6 +12,7 @@ import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
 type AccessState =
   | { kind: "checking" }
   | { kind: "outside" }
+  | { kind: "session" }
   | { kind: "invalid" }
   | { kind: "expired" }
   | { kind: "denied" }
@@ -56,6 +57,12 @@ const stateText = {
     description:
       "Закройте окно и снова нажмите «Открыть приложение» в профиле бота.",
     tone: "gold",
+  },
+  session: {
+    title: "Не удалось подтвердить сессию",
+    description:
+      "Telegram подтвердил вход, но сервер не подтвердил сессионный доступ. Повторите вход или закройте и заново откройте приложение в Telegram.",
+    tone: "error",
   },
   invalid: {
     title: "Не удалось подтвердить запуск",
@@ -157,7 +164,7 @@ export function AccessScreen() {
         return;
       }
       if (response.status === 401) {
-        update({ kind: "outside" });
+        update({ kind: "session" });
         return;
       }
       if (!response.ok) {
@@ -319,13 +326,17 @@ export function AccessScreen() {
             )}
           </section>
           <div className="access-actions">
-            {(state.kind === "offline" || state.kind === "unavailable") && (
+            {(state.kind === "offline" ||
+              state.kind === "unavailable" ||
+              state.kind === "session") && (
               <button
                 type="button"
                 className="access-button"
                 onClick={() => void checkAccess(webApp.current)}
               >
-                Проверить снова
+                {state.kind === "session"
+                  ? "Повторить вход"
+                  : "Проверить снова"}
               </button>
             )}
             {state.kind === "authorized" && (

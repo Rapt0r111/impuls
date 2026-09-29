@@ -109,17 +109,32 @@ async function main() {
     );
     let sentInitData;
     await loginPage.route("**/api/v1/me/permissions", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: '{"permissions":[]}',
-      }),
+      route.fulfill(
+        route
+          .request()
+          .headers()
+          .cookie?.includes("impuls_session=synthetic-session")
+          ? {
+              status: 200,
+              contentType: "application/json",
+              body: '{"permissions":[]}',
+            }
+          : {
+              status: 401,
+              contentType: "application/json",
+              body: '{"code":"UNAUTHORIZED"}',
+            },
+      ),
     );
     await loginPage.route("**/api/v1/auth/telegram", (route) => {
       sentInitData = route.request().postDataJSON().initData;
       return route.fulfill({
         status: 200,
         contentType: "application/json",
+        headers: {
+          "Set-Cookie":
+            "impuls_session=synthetic-session; Path=/; HttpOnly; Secure; SameSite=Lax",
+        },
         body: JSON.stringify({
           user: {
             id: "11111111-1111-4111-8111-111111111111",
@@ -141,6 +156,64 @@ async function main() {
     }
     await loginPage.close();
     console.log("Launch fragment and synthetic login: authorized state");
+
+    const missingSessionPage = await browser.newPage();
+    await missingSessionPage.route(
+      "https://telegram.org/js/telegram-web-app.js",
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: 'window.Telegram={WebApp:{initData:"synthetic",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
+        }),
+    );
+    await missingSessionPage.route("**/api/v1/me", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"code":"UNAUTHORIZED"}',
+      }),
+    );
+    await missingSessionPage.route("**/api/v1/auth/telegram", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "11111111-1111-4111-8111-111111111111",
+            displayName: "Тестовый участник",
+          },
+          csrfToken: "synthetic-token",
+        }),
+      }),
+    );
+    await missingSessionPage.route("**/api/v1/me/permissions", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"code":"UNAUTHORIZED"}',
+      }),
+    );
+    await missingSessionPage.goto("http://localhost:3000", {
+      waitUntil: "domcontentloaded",
+    });
+    await missingSessionPage
+      .getByRole("heading", { name: "Не удалось подтвердить сессию" })
+      .waitFor({ timeout: 5_000 });
+    if (
+      await missingSessionPage
+        .getByRole("heading", { name: "Нет данных запуска Telegram" })
+        .count()
+    ) {
+      throw new Error(
+        "A missing session was reported as missing Telegram data",
+      );
+    }
+    await missingSessionPage
+      .getByRole("button", { name: "Повторить вход" })
+      .waitFor();
+    await missingSessionPage.close();
+    console.log("Missing session cookie after login: distinct retry state");
 
     const permissionsPage = await browser.newPage({
       viewport: { width: 320, height: 640 },
