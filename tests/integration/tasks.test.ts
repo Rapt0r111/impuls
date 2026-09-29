@@ -59,8 +59,9 @@ integration("F03 assigned task and report lifecycle", () => {
        VALUES ($1, 'task.create', $4, $1, 'Synthetic test'),
               ($1, 'task.assign', $4, $1, 'Synthetic test'),
               ($2, 'task.review', $4, $1, 'Synthetic test'),
-              ($3, 'task.review', $4, $1, 'Synthetic test')`,
-      [creator, reviewer, secondReviewer, scopeId],
+              ($3, 'task.review', $4, $1, 'Synthetic test'),
+              ($5, 'task.review', $4, $1, 'Synthetic self-review check')`,
+      [creator, reviewer, secondReviewer, scopeId, assignee],
     );
     const rules = await pool.query<{ id: string }>(
       `INSERT INTO impuls.rule_sets
