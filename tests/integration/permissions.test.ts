@@ -122,4 +122,48 @@ integration("F02 exact, time-limited permissions", () => {
     );
     expect(await listActivePermissions(pool, userId)).toEqual([]);
   });
+
+  it("allows the runtime role to read private permission tables without exposing them to API roles", async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SET LOCAL ROLE impuls_app");
+      const result = await client.query<{
+        runtime_role: string;
+        binding_count: string;
+        scope_count: string;
+        anon_schema_usage: boolean;
+        authenticated_schema_usage: boolean;
+        public_function_execute: boolean;
+        runtime_function_execute: boolean;
+      }>(`SELECT current_user AS runtime_role,
+                  (SELECT count(*) FROM impuls.role_bindings) AS binding_count,
+                  (SELECT count(*) FROM impuls.access_scopes) AS scope_count,
+                  has_schema_privilege('anon', 'impuls', 'USAGE') AS anon_schema_usage,
+                  has_schema_privilege('authenticated', 'impuls', 'USAGE') AS authenticated_schema_usage,
+                  EXISTS (
+                    SELECT 1 FROM pg_proc p,
+                      LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+                    WHERE p.oid = 'impuls.revoke_sessions_on_permission_change()'::regprocedure
+                      AND a.grantee = 0 AND a.privilege_type = 'EXECUTE'
+                  ) AS public_function_execute,
+                  has_function_privilege(
+                    current_user,
+                    'impuls.revoke_sessions_on_permission_change()',
+                    'EXECUTE'
+                  ) AS runtime_function_execute`);
+      expect(result.rows[0]).toMatchObject({
+        runtime_role: "impuls_app",
+        anon_schema_usage: false,
+        authenticated_schema_usage: false,
+        public_function_execute: false,
+        runtime_function_execute: true,
+      });
+      expect(Number(result.rows[0]!.binding_count)).toBeGreaterThan(0);
+      expect(Number(result.rows[0]!.scope_count)).toBe(2);
+    } finally {
+      await client.query("ROLLBACK");
+      client.release();
+    }
+  });
 });
