@@ -139,8 +139,14 @@ integration("F02 exact, time-limited permissions", () => {
       }>(`SELECT current_user AS runtime_role,
                   (SELECT count(*) FROM impuls.role_bindings) AS binding_count,
                   (SELECT count(*) FROM impuls.access_scopes) AS scope_count,
-                  has_schema_privilege('anon', 'impuls', 'USAGE') AS anon_schema_usage,
-                  has_schema_privilege('authenticated', 'impuls', 'USAGE') AS authenticated_schema_usage,
+                  coalesce((
+                    SELECT has_schema_privilege(r.oid, 'impuls', 'USAGE')
+                      FROM pg_roles AS r WHERE r.rolname = 'anon'
+                  ), false) AS anon_schema_usage,
+                  coalesce((
+                    SELECT has_schema_privilege(r.oid, 'impuls', 'USAGE')
+                      FROM pg_roles AS r WHERE r.rolname = 'authenticated'
+                  ), false) AS authenticated_schema_usage,
                   EXISTS (
                     SELECT 1 FROM pg_proc p,
                       LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
