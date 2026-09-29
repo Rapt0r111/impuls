@@ -25,8 +25,14 @@ export function errorResponse(
   code: string,
   message: string,
   id: string,
+  currentVersion?: number,
 ): NextResponse {
-  const body: ApiError = { code, message, requestId: id };
+  const body: ApiError = {
+    code,
+    message,
+    requestId: id,
+    ...(currentVersion === undefined ? {} : { currentVersion }),
+  };
   return jsonResponse(body, status, id);
 }
 

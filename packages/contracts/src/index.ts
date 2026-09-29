@@ -48,3 +48,86 @@ export type ApiError = z.infer<typeof apiErrorSchema>;
 export type TelegramLoginRequest = z.infer<typeof telegramLoginRequestSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
 export type PermissionsResponse = z.infer<typeof permissionsResponseSchema>;
+
+export const taskSchema = z.object({
+  id: z.uuid(),
+  scopeId: z.uuid(),
+  assignedTo: z.uuid().nullable(),
+  currentSubmissionId: z.uuid().nullable(),
+  title: z.string(),
+  criteria: z.string(),
+  category: z.string(),
+  priority: z.enum(["critical", "high", "normal"]),
+  dueAt: z.iso.datetime().nullable(),
+  baseXp: z.number().int().nonnegative(),
+  basePoints: z.number().int().nonnegative(),
+  ruleSetVersion: z.number().int().positive(),
+  status: z.enum([
+    "draft",
+    "assigned",
+    "in_progress",
+    "in_review",
+    "needs_work",
+    "accepted",
+    "cancelled",
+  ]),
+  version: z.number().int().positive(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const taskListSchema = z.object({
+  tasks: z.array(taskSchema),
+  nextCursor: z.string().nullable(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const taskDetailSchema = z.object({
+  task: taskSchema,
+  submission: z
+    .object({ id: z.uuid(), report: z.string(), createdAt: z.iso.datetime() })
+    .nullable(),
+  returnReason: z.string().nullable(),
+});
+
+export const createTaskRequestSchema = z.object({
+  scopeId: z.uuid(),
+  ruleSetId: z.uuid(),
+  title: z.string().trim().min(1).max(120),
+  criteria: z.string().trim().min(1).max(2000),
+  category: z.string().trim().min(1).max(80),
+  priority: z.enum(["critical", "high", "normal"]),
+  dueAt: z.iso.datetime().nullable(),
+  baseXp: z.number().int().nonnegative(),
+  basePoints: z.number().int().nonnegative(),
+});
+
+export const assignTaskRequestSchema = z.object({
+  assigneeId: z.uuid(),
+  expectedVersion: z.number().int().positive(),
+});
+
+export const startTaskRequestSchema = z.object({
+  expectedVersion: z.number().int().positive(),
+});
+
+export const submitTaskRequestSchema = z.object({
+  expectedVersion: z.number().int().positive(),
+  report: z.string().trim().min(1).max(4000),
+});
+
+export const returnSubmissionRequestSchema = z.object({
+  decision: z.literal("return"),
+  expectedVersion: z.number().int().positive(),
+  reason: z.string().trim().min(1).max(1000),
+});
+
+export type Task = z.infer<typeof taskSchema>;
+export type TaskList = z.infer<typeof taskListSchema>;
+export type TaskDetail = z.infer<typeof taskDetailSchema>;
+export type CreateTaskRequest = z.infer<typeof createTaskRequestSchema>;
+export type AssignTaskRequest = z.infer<typeof assignTaskRequestSchema>;
+export type StartTaskRequest = z.infer<typeof startTaskRequestSchema>;
+export type SubmitTaskRequest = z.infer<typeof submitTaskRequestSchema>;
+export type ReturnSubmissionRequest = z.infer<
+  typeof returnSubmissionRequestSchema
+>;

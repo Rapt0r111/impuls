@@ -4,6 +4,13 @@ import type { NextRequest } from "next/server";
 import { getPool } from "./db";
 
 export const SESSION_COOKIE = "impuls_session";
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  partitioned: true,
+  path: "/",
+} as const;
 
 export async function getAuthorizedSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;

@@ -1,13 +1,13 @@
 import { createHmac } from "node:crypto";
 import type { Pool } from "pg";
 
-type RateLimitScope = "login-ip" | "login-telegram";
+type RateLimitScope = "login-ip" | "login-telegram" | "mutation-user";
 type RateLimitRow = { attempts: number; retry_after: number };
 
 export type RateLimitResult =
   { allowed: true } | { allowed: false; retryAfter: number };
 
-export async function consumeLoginAttempt(
+async function consumeAttempt(
   pool: Pool,
   scope: RateLimitScope,
   identity: string,
@@ -48,4 +48,22 @@ export async function consumeLoginAttempt(
   return row.attempts <= limit
     ? { allowed: true }
     : { allowed: false, retryAfter: row.retry_after };
+}
+
+export function consumeLoginAttempt(
+  pool: Pool,
+  scope: "login-ip" | "login-telegram",
+  identity: string,
+  secret: string,
+  limit: number,
+) {
+  return consumeAttempt(pool, scope, identity, secret, limit);
+}
+
+export function consumeMutationAttempt(
+  pool: Pool,
+  userId: string,
+  secret: string,
+) {
+  return consumeAttempt(pool, "mutation-user", userId, secret, 60);
 }

@@ -1,7 +1,13 @@
 import { chromium } from "playwright";
 
+const appOrigin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
+
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    // Chromium blocks cross-origin loopback frames unless this local-only check is disabled.
+    args: ["--disable-features=LocalNetworkAccessChecks"],
+  });
   try {
     const bridgePage = await browser.newPage();
     await bridgePage.clock.install();
@@ -34,7 +40,7 @@ async function main() {
         body: '{"code":"ACCESS_DENIED"}',
       }),
     );
-    await bridgePage.goto("http://localhost:3000", {
+    await bridgePage.goto(appOrigin, {
       waitUntil: "domcontentloaded",
     });
     await bridgePage.waitForFunction(() =>
@@ -78,7 +84,7 @@ async function main() {
       await apiHeld;
       await route.abort();
     });
-    await apiPage.goto("http://localhost:3000", {
+    await apiPage.goto(appOrigin, {
       waitUntil: "domcontentloaded",
     });
     await started;
@@ -133,7 +139,7 @@ async function main() {
         contentType: "application/json",
         headers: {
           "Set-Cookie":
-            "impuls_session=synthetic-session; Path=/; HttpOnly; Secure; SameSite=Lax",
+            "impuls_session=synthetic-session; Path=/; HttpOnly; Secure; SameSite=None; Partitioned",
         },
         body: JSON.stringify({
           user: {
@@ -144,7 +150,7 @@ async function main() {
         }),
       });
     });
-    await loginPage.goto("http://localhost:3000/#tgWebAppData=synthetic", {
+    await loginPage.goto(`${appOrigin}/#tgWebAppData=synthetic`, {
       waitUntil: "domcontentloaded",
     });
     await loginPage
@@ -156,6 +162,93 @@ async function main() {
     }
     await loginPage.close();
     console.log("Launch fragment and synthetic login: authorized state");
+
+    const embeddedPage = await browser.newPage();
+    await embeddedPage.route("http://127.0.0.1:3001/**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: `<iframe title="Telegram Mini App" src="${appOrigin}"></iframe>`,
+      }),
+    );
+    await embeddedPage.route(
+      "https://telegram.org/js/telegram-web-app.js",
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: 'window.Telegram={WebApp:{initData:"synthetic",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
+        }),
+    );
+    await embeddedPage.route("**/api/v1/me", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"code":"UNAUTHORIZED"}',
+      }),
+    );
+    let embeddedLoginAttempts = 0;
+    await embeddedPage.route("**/api/v1/auth/telegram", (route) => {
+      embeddedLoginAttempts += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: {
+          "Set-Cookie":
+            embeddedLoginAttempts === 1
+              ? "impuls_session=embedded-session; Path=/; HttpOnly; Secure; SameSite=Lax"
+              : "impuls_session=embedded-session; Path=/; HttpOnly; Secure; SameSite=None; Partitioned",
+        },
+        body: JSON.stringify({
+          user: {
+            id: "11111111-1111-4111-8111-111111111111",
+            displayName: "Тестовый участник",
+          },
+          csrfToken: "synthetic-token",
+        }),
+      });
+    });
+    let embeddedCookieSeen = false;
+    await embeddedPage.route("**/api/v1/me/permissions", (route) => {
+      embeddedCookieSeen = Boolean(
+        route
+          .request()
+          .headers()
+          .cookie?.includes("impuls_session=embedded-session"),
+      );
+      return route.fulfill({
+        status: embeddedCookieSeen ? 200 : 401,
+        contentType: "application/json",
+        body: embeddedCookieSeen
+          ? '{"permissions":[]}'
+          : '{"code":"UNAUTHORIZED"}',
+      });
+    });
+    await embeddedPage.goto("http://127.0.0.1:3001", {
+      waitUntil: "domcontentloaded",
+    });
+    await embeddedPage
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "Не удалось подтвердить сессию" })
+      .waitFor({ timeout: 5_000 });
+    if (embeddedCookieSeen)
+      throw new Error("Lax cookie unexpectedly crossed the iframe boundary");
+    await embeddedPage
+      .frameLocator("iframe")
+      .getByRole("button", { name: "Повторить вход" })
+      .click();
+    await embeddedPage
+      .frameLocator("iframe")
+      .getByRole("heading", { name: "Доступ подтверждён" })
+      .waitFor({ timeout: 5_000 });
+    if (!embeddedCookieSeen)
+      throw new Error(
+        "Partitioned session cookie was not sent from the iframe",
+      );
+    await embeddedPage.close();
+    console.log(
+      "Cross-site iframe: Lax cookie blocked, partitioned cookie sent",
+    );
 
     const missingSessionPage = await browser.newPage();
     await missingSessionPage.route(
@@ -194,7 +287,7 @@ async function main() {
         body: '{"code":"UNAUTHORIZED"}',
       }),
     );
-    await missingSessionPage.goto("http://localhost:3000", {
+    await missingSessionPage.goto(appOrigin, {
       waitUntil: "domcontentloaded",
     });
     await missingSessionPage
@@ -259,7 +352,7 @@ async function main() {
         }),
       }),
     );
-    await permissionsPage.goto("http://localhost:3000", {
+    await permissionsPage.goto(appOrigin, {
       waitUntil: "domcontentloaded",
     });
     await permissionsPage.getByText("Проверка результатов").waitFor();
@@ -305,7 +398,7 @@ async function main() {
         body: '{"code":"UNAVAILABLE"}',
       }),
     );
-    await pendingMigrationPage.goto("http://localhost:3000", {
+    await pendingMigrationPage.goto(appOrigin, {
       waitUntil: "domcontentloaded",
     });
     await pendingMigrationPage
@@ -341,7 +434,7 @@ async function main() {
         body: '{"code":"AUTH_INVALID"}',
       }),
     );
-    await invalidPage.goto("http://localhost:3000", {
+    await invalidPage.goto(appOrigin, {
       waitUntil: "domcontentloaded",
     });
     await invalidPage
@@ -356,5 +449,5 @@ async function main() {
 
 main().catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });

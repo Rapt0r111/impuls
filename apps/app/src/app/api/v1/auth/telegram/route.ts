@@ -14,7 +14,7 @@ import {
   requestId,
 } from "@/shared/server/http";
 import { getPool } from "@/shared/server/db";
-import { SESSION_COOKIE } from "@/shared/server/auth";
+import { SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from "@/shared/server/auth";
 
 export const runtime = "nodejs";
 
@@ -120,10 +120,7 @@ export async function POST(request: NextRequest) {
       id,
     );
     response.cookies.set(SESSION_COOKIE, login.sessionToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
+      ...SESSION_COOKIE_OPTIONS,
       maxAge: 12 * 60 * 60,
     });
     return response;

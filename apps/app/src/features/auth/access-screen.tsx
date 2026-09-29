@@ -8,6 +8,7 @@ import {
 } from "@impuls/contracts";
 import { useEffect, useRef, useState } from "react";
 import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
+import { TaskWorkspace } from "@/features/tasks/task-workspace";
 
 type AccessState =
   | { kind: "checking" }
@@ -97,7 +98,7 @@ const stateText = {
   },
   authorized: {
     title: "Доступ подтверждён",
-    description: "Вход выполнен. Рабочие разделы пока создаются.",
+    description: "Вход выполнен. Ниже доступны назначенные задачи и отчёты.",
     tone: "mint",
   },
 } as const;
@@ -322,6 +323,10 @@ export function AccessScreen() {
                     </ul>
                   )}
                 </section>
+                <TaskWorkspace
+                  me={state.data}
+                  permissions={state.permissions}
+                />
               </>
             )}
           </section>
@@ -369,8 +374,9 @@ export function AccessScreen() {
               </button>
             )}
             <p className="access-footnote">
-              Данные задач и результаты появятся только после подтверждённого
-              входа.
+              {state.kind === "authorized"
+                ? "Результат и начисление появятся после решения проверяющего."
+                : "Данные задач и результаты появятся только после подтверждённого входа."}
             </p>
           </div>
         </div>

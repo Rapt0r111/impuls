@@ -4,6 +4,7 @@ import {
   getAuthorizedSession,
   hasValidCsrf,
   SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
 } from "@/shared/server/auth";
 import { getPool } from "@/shared/server/db";
 import {
@@ -42,10 +43,7 @@ export async function POST(request: NextRequest) {
       headers: { "Cache-Control": "private, no-store", "X-Request-Id": id },
     });
     response.cookies.set(SESSION_COOKIE, "", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
+      ...SESSION_COOKIE_OPTIONS,
       maxAge: 0,
     });
     return response;

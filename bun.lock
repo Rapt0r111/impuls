@@ -54,6 +54,7 @@
       "name": "@impuls/domain",
       "version": "0.1.0",
       "dependencies": {
+        "@impuls/contracts": "workspace:*",
         "pg": "8.23.0",
       },
     },

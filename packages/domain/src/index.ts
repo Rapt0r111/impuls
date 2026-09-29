@@ -6,7 +6,7 @@ export {
 } from "./auth/session";
 export { createLoginSession, readSession, revokeSession } from "./auth/service";
 export type { AuthUser, LoginResult, SessionResult } from "./auth/service";
-export { consumeLoginAttempt } from "./auth/rate-limit";
+export { consumeLoginAttempt, consumeMutationAttempt } from "./auth/rate-limit";
 export type { RateLimitResult } from "./auth/rate-limit";
 export {
   hasPermission,
@@ -18,3 +18,14 @@ export type {
   PermissionAction,
   PermissionScope,
 } from "./permissions/service";
+export {
+  TaskError,
+  createTask,
+  assignTask,
+  startTask,
+  submitTask,
+  returnSubmission,
+  getTask,
+  getTaskDetail,
+  listTasks,
+} from "./tasks/service";
