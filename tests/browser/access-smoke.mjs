@@ -108,6 +108,13 @@ async function main() {
       }),
     );
     let sentInitData;
+    await loginPage.route("**/api/v1/me/permissions", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: '{"permissions":[]}',
+      }),
+    );
     await loginPage.route("**/api/v1/auth/telegram", (route) => {
       sentInitData = route.request().postDataJSON().initData;
       return route.fulfill({
@@ -128,11 +135,114 @@ async function main() {
     await loginPage
       .getByRole("heading", { name: "Доступ подтверждён" })
       .waitFor({ timeout: 5_000 });
+    await loginPage.getByText("Назначенных полномочий нет.").waitFor();
     if (sentInitData !== "synthetic") {
       throw new Error("Telegram initData was not sent to the login API");
     }
     await loginPage.close();
     console.log("Launch fragment and synthetic login: authorized state");
+
+    const permissionsPage = await browser.newPage({
+      viewport: { width: 320, height: 640 },
+    });
+    await permissionsPage.route(
+      "https://telegram.org/js/telegram-web-app.js",
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: 'window.Telegram={WebApp:{initData:"",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
+        }),
+    );
+    await permissionsPage.route("**/api/v1/me", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "11111111-1111-4111-8111-111111111111",
+            displayName: "Тестовый участник",
+          },
+          csrfToken: "synthetic-token",
+        }),
+      }),
+    );
+    await permissionsPage.route("**/api/v1/me/permissions", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          permissions: [
+            {
+              action: "task.review",
+              scope: {
+                id: "22222222-2222-4222-8222-222222222222",
+                kind: "group",
+                name: "Синтетическая группа с длинным названием",
+              },
+              validUntil: null,
+            },
+          ],
+        }),
+      }),
+    );
+    await permissionsPage.goto("http://localhost:3000", {
+      waitUntil: "domcontentloaded",
+    });
+    await permissionsPage.getByText("Проверка результатов").waitFor();
+    await permissionsPage
+      .getByText("Группа · Синтетическая группа с длинным названием")
+      .waitFor();
+    const hasOverflow = await permissionsPage.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    if (hasOverflow) throw new Error("Permissions panel overflows at 320 px");
+    await permissionsPage.close();
+    console.log(
+      "Synthetic scoped permission: visible at 320 px without overflow",
+    );
+
+    const pendingMigrationPage = await browser.newPage();
+    await pendingMigrationPage.route(
+      "https://telegram.org/js/telegram-web-app.js",
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: 'window.Telegram={WebApp:{initData:"",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};',
+        }),
+    );
+    await pendingMigrationPage.route("**/api/v1/me", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "11111111-1111-4111-8111-111111111111",
+            displayName: "Тестовый участник",
+          },
+          csrfToken: "synthetic-token",
+        }),
+      }),
+    );
+    await pendingMigrationPage.route("**/api/v1/me/permissions", (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: '{"code":"UNAVAILABLE"}',
+      }),
+    );
+    await pendingMigrationPage.goto("http://localhost:3000", {
+      waitUntil: "domcontentloaded",
+    });
+    await pendingMigrationPage
+      .getByRole("heading", { name: "Доступ подтверждён" })
+      .waitFor();
+    await pendingMigrationPage
+      .getByText("Не удалось загрузить полномочия. Обновите проверку позже.")
+      .waitFor();
+    await pendingMigrationPage.close();
+    console.log("Permissions API unavailable: access remains confirmed");
 
     const invalidPage = await browser.newPage();
     await invalidPage.route(

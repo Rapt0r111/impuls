@@ -1,6 +1,11 @@
 "use client";
 
-import { meResponseSchema, type MeResponse } from "@impuls/contracts";
+import {
+  meResponseSchema,
+  permissionsResponseSchema,
+  type MeResponse,
+  type PermissionsResponse,
+} from "@impuls/contracts";
 import { useEffect, useRef, useState } from "react";
 import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
 
@@ -13,7 +18,32 @@ type AccessState =
   | { kind: "revoked" }
   | { kind: "offline" }
   | { kind: "unavailable" }
-  | { kind: "authorized"; data: MeResponse };
+  | {
+      kind: "authorized";
+      data: MeResponse;
+      permissions: PermissionsResponse["permissions"] | null;
+    };
+
+const actionNames: Record<
+  PermissionsResponse["permissions"][number]["action"],
+  string
+> = {
+  "task.create": "Создание задач",
+  "task.assign": "Назначение задач",
+  "task.review": "Проверка результатов",
+  "reward.decide": "Решение по заявкам",
+  "reward.fulfill": "Подтверждение выдачи",
+  "admin.access": "Управление доступом",
+  "admin.rules": "Управление правилами",
+  "admin.catalog": "Управление каталогом",
+  "ledger.correct": "Исправление журнала",
+};
+
+const scopeNames = {
+  rota: "Рота",
+  group: "Группа",
+  project: "Проект",
+} as const;
 
 const stateText = {
   checking: {
@@ -116,6 +146,32 @@ export function AccessScreen() {
       }
     };
 
+    const showAuthorized = async (data: MeResponse) => {
+      const response = await fetch("/api/v1/me/permissions", {
+        cache: "no-store",
+        credentials: "same-origin",
+        signal: controller.signal,
+      });
+      if (response.status === 403) {
+        update({ kind: "revoked" });
+        return;
+      }
+      if (response.status === 401) {
+        update({ kind: "outside" });
+        return;
+      }
+      if (!response.ok) {
+        update({ kind: "authorized", data, permissions: null });
+        return;
+      }
+      const parsed = permissionsResponseSchema.safeParse(await response.json());
+      update(
+        parsed.success
+          ? { kind: "authorized", data, permissions: parsed.data.permissions }
+          : { kind: "authorized", data, permissions: null },
+      );
+    };
+
     try {
       const current = await fetch("/api/v1/me", {
         cache: "no-store",
@@ -124,11 +180,8 @@ export function AccessScreen() {
       });
       if (current.ok) {
         const parsed = meResponseSchema.safeParse(await current.json());
-        update(
-          parsed.success
-            ? { kind: "authorized", data: parsed.data }
-            : { kind: "unavailable" },
-        );
+        if (parsed.success) await showAuthorized(parsed.data);
+        else update({ kind: "unavailable" });
         return;
       }
       if (current.status === 403) {
@@ -154,11 +207,8 @@ export function AccessScreen() {
       });
       if (login.ok) {
         const parsed = meResponseSchema.safeParse(await login.json());
-        update(
-          parsed.success
-            ? { kind: "authorized", data: parsed.data }
-            : { kind: "unavailable" },
-        );
+        if (parsed.success) await showAuthorized(parsed.data);
+        else update({ kind: "unavailable" });
         return;
       }
       const code = await readCode(login);
@@ -233,10 +283,39 @@ export function AccessScreen() {
               {copy.description}
             </p>
             {state.kind === "authorized" && (
-              <div className="access-identity">
-                <span>Участник</span>
-                <strong>{state.data.user.displayName}</strong>
-              </div>
+              <>
+                <div className="access-identity">
+                  <span>Участник</span>
+                  <strong>{state.data.user.displayName}</strong>
+                </div>
+                <section
+                  className="access-permissions"
+                  aria-labelledby="permissions-title"
+                >
+                  <h2 id="permissions-title">Дополнительные полномочия</h2>
+                  {state.permissions === null ? (
+                    <p>
+                      Не удалось загрузить полномочия. Обновите проверку позже.
+                    </p>
+                  ) : state.permissions.length === 0 ? (
+                    <p>Назначенных полномочий нет.</p>
+                  ) : (
+                    <ul>
+                      {state.permissions.map((permission, index) => (
+                        <li
+                          key={`${permission.action}:${permission.scope.id}:${index}`}
+                        >
+                          <strong>{actionNames[permission.action]}</strong>
+                          <span>
+                            {scopeNames[permission.scope.kind]} ·{" "}
+                            {permission.scope.name}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </>
             )}
           </section>
           <div className="access-actions">
@@ -250,13 +329,24 @@ export function AccessScreen() {
               </button>
             )}
             {state.kind === "authorized" && (
-              <button
-                type="button"
-                className="access-button access-button--quiet"
-                onClick={() => void logout()}
-              >
-                Выйти
-              </button>
+              <>
+                {state.permissions === null && (
+                  <button
+                    type="button"
+                    className="access-button"
+                    onClick={() => void checkAccess(webApp.current)}
+                  >
+                    Обновить полномочия
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="access-button access-button--quiet"
+                  onClick={() => void logout()}
+                >
+                  Выйти
+                </button>
+              </>
             )}
             {state.kind === "expired" && telegramAvailable && (
               <button

@@ -31,6 +31,7 @@ export function verifyTelegramInitData(
   if (!authDate || !/^[0-9]+$/.test(authDate) || !userJson)
     return { kind: "invalid" };
 
+  // Bot-token HMAC includes signature; only the separate Ed25519 check omits it.
   const dataCheckString = [...fields]
     .filter(([key]) => key !== "hash")
     .sort(([left], [right]) => left.localeCompare(right, "en"))

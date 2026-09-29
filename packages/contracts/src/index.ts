@@ -20,6 +20,31 @@ export const meResponseSchema = z.object({
   csrfToken: z.string().min(1),
 });
 
+export const permissionsResponseSchema = z.object({
+  permissions: z.array(
+    z.object({
+      action: z.enum([
+        "task.create",
+        "task.assign",
+        "task.review",
+        "reward.decide",
+        "reward.fulfill",
+        "admin.access",
+        "admin.rules",
+        "admin.catalog",
+        "ledger.correct",
+      ]),
+      scope: z.object({
+        id: z.uuid(),
+        kind: z.enum(["rota", "group", "project"]),
+        name: z.string().min(1),
+      }),
+      validUntil: z.iso.datetime().nullable(),
+    }),
+  ),
+});
+
 export type ApiError = z.infer<typeof apiErrorSchema>;
 export type TelegramLoginRequest = z.infer<typeof telegramLoginRequestSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
+export type PermissionsResponse = z.infer<typeof permissionsResponseSchema>;
