@@ -3,7 +3,9 @@ import { isSessionToken, readSession, verifyCsrfToken } from "@impuls/domain";
 import type { NextRequest } from "next/server";
 import { getPool } from "./db";
 
-export const SESSION_COOKIE = "impuls_session";
+import { SESSION_COOKIE } from "./session-cookie";
+
+export { SESSION_COOKIE } from "./session-cookie";
 
 export async function getAuthorizedSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;

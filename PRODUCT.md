@@ -36,3 +36,5 @@ Only conversation brief. All sample names, task records, prices and analytics ar
 ## Product Principles
 
 Clear reward criteria before work; confirmed results before accrual; auditable transactions; cooperative progress alongside competition; minimal data in Telegram.
+
+On 30 September 2026, an F01 cookie defect reported in Telegram Web was reproduced locally in a cross-site HTTPS iframe. ADR-0002 changes the session policy to HttpOnly, Secure, SameSite=None and Partitioned for both login and logout. Synthetic browser checks cover cookie transport, reload, top-level site isolation and logout; they do not establish production acceptance, PostgreSQL integration or Android/iOS compatibility. Results are recorded in docs/verification/2026-09-30-telegram-web-session.md. P-01…P-06 remain open.

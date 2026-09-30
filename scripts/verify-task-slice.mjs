@@ -16,6 +16,7 @@ const env = {
   APP_ORIGIN: origin,
   TEST_APP_ORIGIN: origin,
   CSRF_SECRET: "synthetic-task-slice-csrf-test-only",
+  TELEGRAM_BOT_TOKEN: "synthetic-task-slice-bot-test-only",
 };
 const server = spawn(
   process.execPath,
@@ -65,6 +66,7 @@ try {
   }
   if (!ready) throw new Error("Test server did not become ready");
   await run("node_modules/vitest/vitest.mjs", ["run", "tests/integration"]);
+  await run("tests/browser/embedded-access.mjs");
   await run("tests/browser/tasks-smoke.mjs");
   await run("tests/browser/task-submissions.mjs");
 } finally {

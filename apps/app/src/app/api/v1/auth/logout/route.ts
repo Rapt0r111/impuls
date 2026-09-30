@@ -12,6 +12,7 @@ import {
   requestId,
 } from "@/shared/server/http";
 import { NextResponse } from "next/server";
+import { SESSION_COOKIE_OPTIONS } from "@/shared/server/session-cookie";
 
 export const runtime = "nodejs";
 
@@ -42,10 +43,7 @@ export async function POST(request: NextRequest) {
       headers: { "Cache-Control": "private, no-store", "X-Request-Id": id },
     });
     response.cookies.set(SESSION_COOKIE, "", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
+      ...SESSION_COOKIE_OPTIONS,
       maxAge: 0,
     });
     return response;
