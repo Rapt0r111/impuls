@@ -28,4 +28,10 @@ HTTPS-браузерный стенд использует рабочий UI, л
 
 Изменение опирается на F01 и § 4/11/12 плана. Миграция схемы не требуется; production-данные, секреты и allowlist не изменялись. Реальный повторный вход после выпуска, Safari, Android/iOS и браузеры без CHIPS требуют проверки. P-01…P-06 остаются открытыми; исправление не означает приёмку F01 или пилота R1.
 
-Пользователь разрешил публикацию на Vercel и отдельно попросил обновить GitHub. Результаты выпуска будут добавлены после проверки deployment и CI.
+Пользователь разрешил публикацию на Vercel и отдельно попросил обновить GitHub. `git fetch origin` подтвердил отсутствие расхождений; `git push origin main` отправил коммит `ff2ba0a00ac8806ac0d3b97faa04616d69da6ca4` (`fix(auth): support partitioned sessions in Telegram Web`).
+
+`bunx --offline vercel@60.1.3 list impuls --scope antons-projects-fd079868 --json` связал этот GitHub SHA с Production `impuls-cdk45kxe7-antons-projects-fd079868.vercel.app`, статус `READY`. `bunx --offline vercel@60.1.3 inspect https://impuls-eta.vercel.app --scope antons-projects-fd079868` подтвердил deployment `dpl_83JCtK4rLRipLzZHG3mbFuW4QgsX`, target production, Ready, рабочий alias и длительность сборки 18 секунд.
+
+Production `GET /api/v1/me` с несуществующей синтетической cookie допустимого формата вернул `401 UNAUTHORIZED`, `Cache-Control: no-store, private`; запрос выполнил чтение БД (ошибка БД дала бы 503). `bunx --offline vercel@60.1.3 logs https://impuls-eta.vercel.app --level error --since 5m --json --scope antons-projects-fd079868` завершился кодом 0 без записей ошибок. Это узкая проверка после выпуска, а не подтверждение реального Telegram-входа.
+
+[GitHub Actions run 36684378457](https://github.com/Rapt0r111/impuls/actions/runs/36684378457) для SHA исправления завершился `success`: установка, миграции, `check`, PostgreSQL integration, browser/task slice и R0 demo checks прошли. CI использует PostgreSQL 17.6 и Linux; локальный прогон использовал PostgreSQL 18.6 и Windows. Локальные серверы приложения и тестовый PostgreSQL остановлены, рабочая копия перед записью этого отчёта была чистой.
