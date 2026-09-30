@@ -1,6 +1,7 @@
 export { verifyTelegramInitData } from "./auth/telegram";
 export {
   createCsrfToken,
+  hashSessionToken,
   isSessionToken,
   verifyCsrfToken,
 } from "./auth/session";
@@ -18,3 +19,15 @@ export type {
   PermissionAction,
   PermissionScope,
 } from "./permissions/service";
+export { getAssignedTask, listAssignedTasks } from "./tasks/read";
+export type {
+  AssignedTaskDetail,
+  AssignedTaskStatus,
+  AssignedTaskSummary,
+} from "./tasks/read";
+export { mutateAssignedTask } from "./tasks/write";
+export type {
+  TaskMutation,
+  TaskMutationResult,
+  TaskSubmission,
+} from "./tasks/write";

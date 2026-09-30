@@ -48,3 +48,26 @@ export type ApiError = z.infer<typeof apiErrorSchema>;
 export type TelegramLoginRequest = z.infer<typeof telegramLoginRequestSchema>;
 export type MeResponse = z.infer<typeof meResponseSchema>;
 export type PermissionsResponse = z.infer<typeof permissionsResponseSchema>;
+export {
+  assignedTaskDetailSchema,
+  assignedTaskStatusSchema,
+  assignedTaskSummarySchema,
+  taskSubmissionHeadersSchema,
+  taskSubmissionRequestSchema,
+  taskSubmissionResponseSchema,
+  taskStartRequestSchema,
+  taskStartResponseSchema,
+  taskDetailResponseSchema,
+  taskIdSchema,
+  taskListQuerySchema,
+  taskListResponseSchema,
+} from "./tasks";
+export type {
+  TaskDetailResponse,
+  TaskListResponse,
+  TaskSubmissionHeaders,
+  TaskSubmissionRequest,
+  TaskSubmissionResponse,
+  TaskStartRequest,
+  TaskStartResponse,
+} from "./tasks";

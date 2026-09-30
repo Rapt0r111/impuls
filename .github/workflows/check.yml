@@ -38,4 +38,5 @@ jobs:
       - run: bun run check
       - run: bun run test:integration
       - run: bunx playwright install chromium --with-deps
+      - run: bun run test:task-slice
       - run: bun run demo:test

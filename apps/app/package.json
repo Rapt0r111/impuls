@@ -15,6 +15,7 @@
     "@impuls/contracts": "workspace:*",
     "@impuls/domain": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
+    "@tanstack/react-query": "5.104.0",
     "next": "16.3.6",
     "postcss": "8.5.28",
     "react": "19.3.0",

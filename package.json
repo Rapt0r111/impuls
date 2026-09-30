@@ -22,6 +22,7 @@
     "format:check": "prettier --check package.json tsconfig.base.json eslint.config.mjs apps packages db docs tests scripts .github",
     "test:unit": "vitest run --passWithNoTests",
     "test:integration": "vitest run tests/integration",
+    "test:task-slice": "node scripts/verify-task-slice.mjs",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun run test:unit && bun run build",
     "demo:build": "bun work/build.cjs",
     "demo:test": "bun run demo:build && bun work/verify.cjs && bun work/test_features.cjs && bun work/test_new_features.cjs && bun work/test_all_buttons.cjs",

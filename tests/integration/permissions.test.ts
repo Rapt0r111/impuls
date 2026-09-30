@@ -136,9 +136,10 @@ integration("F02 exact, time-limited permissions", () => {
         authenticated_schema_usage: boolean;
         public_function_execute: boolean;
         runtime_function_execute: boolean;
-      }>(`SELECT current_user AS runtime_role,
-                  (SELECT count(*) FROM impuls.role_bindings) AS binding_count,
-                  (SELECT count(*) FROM impuls.access_scopes) AS scope_count,
+      }>(
+        `SELECT current_user AS runtime_role,
+                  (SELECT count(*) FROM impuls.role_bindings WHERE user_id = $1) AS binding_count,
+                  (SELECT count(*) FROM impuls.access_scopes WHERE id = ANY($2::uuid[])) AS scope_count,
                   coalesce((
                     SELECT has_schema_privilege(r.oid, 'impuls', 'USAGE')
                       FROM pg_roles AS r WHERE r.rolname = 'anon'
@@ -157,7 +158,9 @@ integration("F02 exact, time-limited permissions", () => {
                     current_user,
                     'impuls.revoke_sessions_on_permission_change()',
                     'EXECUTE'
-                  ) AS runtime_function_execute`);
+                  ) AS runtime_function_execute`,
+        [userId, [allowedScope, otherScope]],
+      );
       expect(result.rows[0]).toMatchObject({
         runtime_role: "impuls_app",
         anon_schema_usage: false,

@@ -6,8 +6,16 @@ import {
   type MeResponse,
   type PermissionsResponse,
 } from "@impuls/contracts";
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
+import { SessionContext } from "./session-context";
 
 type AccessState =
   | { kind: "checking" }
@@ -97,7 +105,7 @@ const stateText = {
   },
   authorized: {
     title: "Доступ подтверждён",
-    description: "Вход выполнен. Рабочие разделы пока создаются.",
+    description: "Вход выполнен. Ниже показаны ваши назначения.",
     tone: "mint",
   },
 } as const;
@@ -119,24 +127,63 @@ async function readCode(response: Response): Promise<string | null> {
   return null;
 }
 
-export function AccessScreen() {
+export function AccessScreen({ children }: { children?: ReactNode }) {
   const [state, setState] = useState<AccessState>({ kind: "checking" });
   const [telegramAvailable, setTelegramAvailable] = useState(false);
   const webApp = useRef<TelegramWebApp | null>(null);
   const pending = useRef<AbortController | null>(null);
   const bridgeResolved = useRef(false);
+  const unsaved = useRef(false);
+  const reportDirty = useCallback((dirty: boolean) => {
+    unsaved.current = dirty;
+    try {
+      if (dirty) webApp.current?.enableClosingConfirmation?.();
+      else webApp.current?.disableClosingConfirmation?.();
+    } catch {
+      // Older Telegram clients still get the in-app and browser guards.
+    }
+  }, []);
+  const confirmLeave = useCallback(
+    () =>
+      !unsaved.current ||
+      window.confirm(
+        "Отчёт ещё не отправлен. Покинуть форму и потерять введённый текст?",
+      ),
+    [],
+  );
+  const loseAccess = useCallback(
+    (status: number) => {
+      reportDirty(false);
+      setState({ kind: status === 401 ? "session" : "revoked" });
+    },
+    [reportDirty],
+  );
+  const checkInitialAccess = useEffectEvent(() => void checkAccess(null));
+
+  useEffect(() => {
+    const guard = (event: BeforeUnloadEvent) => {
+      if (unsaved.current) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       if (!bridgeResolved.current) {
         bridgeResolved.current = true;
-        void checkAccess(null);
+        checkInitialAccess();
       }
     }, 8_000);
     return () => window.clearTimeout(timeout);
   }, []);
 
   async function checkAccess(app: TelegramWebApp | null) {
+    if (!confirmLeave()) return;
+    reportDirty(false);
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
@@ -241,6 +288,8 @@ export function AccessScreen() {
 
   async function logout() {
     if (state.kind !== "authorized") return;
+    if (!confirmLeave()) return;
+    reportDirty(false);
     try {
       const response = await fetch("/api/v1/auth/logout", {
         method: "POST",
@@ -278,7 +327,10 @@ export function AccessScreen() {
             </span>
             <span className="access-brand">Импульс</span>
           </header>
-          <section className="access-content" aria-labelledby="access-title">
+          <section
+            className={`access-content${state.kind === "authorized" ? " access-content--authorized" : ""}`}
+            aria-labelledby="access-title"
+          >
             <div
               className={`access-signal access-signal--${copy.tone}`}
               aria-hidden="true"
@@ -322,6 +374,16 @@ export function AccessScreen() {
                     </ul>
                   )}
                 </section>
+                <SessionContext.Provider
+                  value={{
+                    csrfToken: state.data.csrfToken,
+                    reportDirty,
+                    confirmLeave,
+                    loseAccess,
+                  }}
+                >
+                  {children}
+                </SessionContext.Provider>
               </>
             )}
           </section>
@@ -369,8 +431,9 @@ export function AccessScreen() {
               </button>
             )}
             <p className="access-footnote">
-              Данные задач и результаты появятся только после подтверждённого
-              входа.
+              {state.kind === "authorized"
+                ? "Показываются только назначенные вам задачи."
+                : "Данные задач появятся после подтверждённого входа."}
             </p>
           </div>
         </div>

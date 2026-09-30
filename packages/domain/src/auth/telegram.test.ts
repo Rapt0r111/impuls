@@ -59,6 +59,44 @@ describe("Telegram initData validation", () => {
     });
   });
 
+  it("rejects empty, oversized, or unconfigured input before accepting a signature", () => {
+    const valid = signedData(validFields);
+    expect(verifyTelegramInitData("", token, now)).toEqual({ kind: "invalid" });
+    expect(verifyTelegramInitData("x".repeat(8193), token, now)).toEqual({
+      kind: "invalid",
+    });
+    expect(verifyTelegramInitData(valid, "", now)).toEqual({
+      kind: "invalid",
+    });
+  });
+
+  it("rejects missing required fields and malformed hash or user JSON", () => {
+    const valid = signedData(validFields);
+    const missingAuthDate = new URLSearchParams(valid);
+    missingAuthDate.delete("auth_date");
+    const missingUser = new URLSearchParams(valid);
+    missingUser.delete("user");
+    const badHash = new URLSearchParams(valid);
+    badHash.set("hash", "not-a-sha256-hex-digest");
+
+    expect(
+      verifyTelegramInitData(missingAuthDate.toString(), token, now),
+    ).toEqual({ kind: "invalid" });
+    expect(verifyTelegramInitData(missingUser.toString(), token, now)).toEqual({
+      kind: "invalid",
+    });
+    expect(verifyTelegramInitData(badHash.toString(), token, now)).toEqual({
+      kind: "invalid",
+    });
+    expect(
+      verifyTelegramInitData(
+        signedData({ ...validFields, user: "{" }),
+        token,
+        now,
+      ),
+    ).toEqual({ kind: "invalid" });
+  });
+
   it("includes the Telegram third-party signature field in the bot-token hash", () => {
     const valid = signedData(validFields);
     expect(verifyTelegramInitData(valid, token, now).kind).toBe("valid");
@@ -116,5 +154,15 @@ describe("Telegram initData validation", () => {
     expect(verifyTelegramInitData(absent, token, now)).toEqual({
       kind: "invalid",
     });
+
+    for (const id of [0, -1, 1.5, "7654321", null]) {
+      expect(
+        verifyTelegramInitData(
+          signedData({ ...validFields, user: JSON.stringify({ id }) }),
+          token,
+          now,
+        ),
+      ).toEqual({ kind: "invalid" });
+    }
   });
 });
