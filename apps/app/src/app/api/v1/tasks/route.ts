@@ -4,8 +4,13 @@ import type { NextRequest } from "next/server";
 import { getAuthorizedSession } from "@/shared/server/auth";
 import { getPool } from "@/shared/server/db";
 import { errorResponse, jsonResponse, requestId } from "@/shared/server/http";
+import { handleTaskManagementMutation } from "@/shared/server/task-management";
 
 export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  return handleTaskManagementMutation(request);
+}
 
 export async function GET(request: NextRequest) {
   const id = requestId();

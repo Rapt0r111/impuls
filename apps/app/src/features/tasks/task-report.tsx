@@ -113,6 +113,7 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
       );
       await client.cancelQueries({ queryKey: ["assigned-task", task.id] });
       client.setQueryData(["assigned-task", task.id], { task: result.task });
+      await client.invalidateQueries({ queryKey: ["task-history", task.id] });
       await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
     } catch {
       setUncertain(attempt.current !== null);
@@ -131,6 +132,28 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
   const canStart = task.status === "assigned" || task.status === "needs_work";
   return (
     <div className="task-report">
+      {task.latestReview && (
+        <section
+          aria-label={
+            task.latestReview.decision === "accept"
+              ? "Результат приёмки"
+              : "Причина возврата"
+          }
+        >
+          <h4>
+            {task.latestReview.decision === "accept"
+              ? "Результат принят"
+              : "Возвращено на доработку"}
+          </h4>
+          {task.latestReview.decision === "accept" && (
+            <p className="task-report-success">
+              Начислено {task.latestReview.fundXp} XP и{" "}
+              {task.latestReview.fundPoints} баллов · синтетический режим
+            </p>
+          )}
+          <p className="tasks-detail-criteria">{task.latestReview.reason}</p>
+        </section>
+      )}
       {task.latestSubmission && (
         <section aria-labelledby="last-report-title">
           <h4 id="last-report-title">Последний отправленный отчёт</h4>

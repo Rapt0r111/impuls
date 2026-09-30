@@ -24,6 +24,14 @@ export type AssignedTaskSummary = {
 export type AssignedTaskDetail = AssignedTaskSummary & {
   criteria: string;
   scope: { id: string; kind: "rota" | "group" | "project"; name: string };
+  latestReview: {
+    submissionId: string;
+    decision: "return" | "accept";
+    fundXp: number | null;
+    fundPoints: number | null;
+    reason: string;
+    createdAt: string;
+  } | null;
   latestSubmission: {
     id: string;
     text: string;
@@ -51,6 +59,12 @@ type TaskRow = {
   submission_text: string | null;
   submission_version: number | null;
   submission_created_at: Date | null;
+  review_submission_id: string | null;
+  review_decision: "return" | "accept" | null;
+  review_fund_xp: number | null;
+  review_fund_points: number | null;
+  review_reason: string | null;
+  review_created_at: Date | null;
 };
 
 const visibleStatuses = [
@@ -69,7 +83,10 @@ const selectAssignedTasks = `
          s.id AS scope_id, s.kind AS scope_kind, s.name AS scope_name,
          latest.id AS submission_id, latest.text AS submission_text,
          latest.version AS submission_version,
-         latest.created_at AS submission_created_at
+         latest.created_at AS submission_created_at,
+         last_review.submission_id AS review_submission_id,
+         last_review.reason AS review_reason, last_review.created_at AS review_created_at,
+         last_review.decision AS review_decision, last_review.fund_xp AS review_fund_xp, last_review.fund_points AS review_fund_points
     FROM impuls.task_assignments AS a
     JOIN impuls.tasks AS t ON t.id = a.task_id
     JOIN impuls.rule_sets AS r ON r.id = t.rule_set_id
@@ -81,6 +98,11 @@ const selectAssignedTasks = `
        WHERE sub.task_id = t.id
        ORDER BY sub.attempt_number DESC LIMIT 1
     ) AS latest ON true
+    LEFT JOIN LATERAL (
+      SELECT rev.submission_id, rev.reason, rev.created_at, rev.decision, rev.fund_xp, rev.fund_points
+        FROM impuls.reviews rev JOIN impuls.submissions sub ON sub.id = rev.submission_id
+       WHERE sub.task_id = t.id ORDER BY sub.attempt_number DESC LIMIT 1
+    ) AS last_review ON true
    WHERE a.user_id = $1
      AND t.status = ANY($2::text[])
 `;
@@ -144,6 +166,20 @@ export async function getAssignedTask(
     ...summary(row),
     criteria: row.criteria,
     scope: { id: row.scope_id, kind: row.scope_kind, name: row.scope_name },
+    latestReview:
+      row.review_submission_id &&
+      row.review_reason &&
+      row.review_created_at &&
+      row.review_decision
+        ? {
+            submissionId: row.review_submission_id,
+            decision: row.review_decision,
+            fundXp: row.review_fund_xp,
+            fundPoints: row.review_fund_points,
+            reason: row.review_reason,
+            createdAt: row.review_created_at.toISOString(),
+          }
+        : null,
     latestSubmission:
       row.submission_id &&
       row.submission_text &&

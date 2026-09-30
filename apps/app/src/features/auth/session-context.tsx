@@ -4,6 +4,8 @@ import { createContext, useContext } from "react";
 
 export const SessionContext = createContext<{
   csrfToken: string;
+  canReview?: boolean;
+  canManageTasks?: boolean;
   reportDirty(dirty: boolean): void;
   confirmLeave(): boolean;
   loseAccess(status: number): void;

@@ -133,18 +133,27 @@ integration("F03 assigned-task visibility in PostgreSQL", () => {
     expect(await getAssignedTask(pool, ownerId, ids[0]!)).toBeNull();
   });
 
-  it("grants the runtime role read access without task mutations", async () => {
+  it("grants runtime reads and creation while protecting saved task funds and content", async () => {
     const result = await pool.query<{
       read_allowed: boolean;
       insert_allowed: boolean;
+      delete_allowed: boolean;
+      fund_update_allowed: boolean;
+      title_update_allowed: boolean;
       rls_enabled: boolean;
     }>(`SELECT has_table_privilege('impuls_app', 'impuls.tasks', 'SELECT') AS read_allowed,
               has_table_privilege('impuls_app', 'impuls.tasks', 'INSERT') AS insert_allowed,
+              has_table_privilege('impuls_app', 'impuls.tasks', 'DELETE') AS delete_allowed,
+              has_column_privilege('impuls_app', 'impuls.tasks', 'fund_xp', 'UPDATE') AS fund_update_allowed,
+              has_column_privilege('impuls_app', 'impuls.tasks', 'title', 'UPDATE') AS title_update_allowed,
               relrowsecurity AS rls_enabled
          FROM pg_class WHERE oid = 'impuls.tasks'::regclass`);
     expect(result.rows[0]).toEqual({
       read_allowed: true,
-      insert_allowed: false,
+      insert_allowed: true,
+      delete_allowed: false,
+      fund_update_allowed: false,
+      title_update_allowed: false,
       rls_enabled: true,
     });
     const client = await pool.connect();

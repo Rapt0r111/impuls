@@ -37,6 +37,17 @@ export const taskListResponseSchema = z.object({
 
 export const assignedTaskDetailSchema = assignedTaskSummarySchema.extend({
   criteria: z.string().min(1).max(2000),
+  latestReview: z
+    .object({
+      submissionId: z.uuid(),
+      decision: z.enum(["return", "accept"]),
+      fundXp: z.number().int().nonnegative().nullable().default(null),
+      fundPoints: z.number().int().nonnegative().nullable().default(null),
+      reason: z.string().min(1).max(2000),
+      createdAt: z.iso.datetime(),
+    })
+    .nullable()
+    .default(null),
   latestSubmission: z
     .object({
       id: z.uuid(),

@@ -36,12 +36,7 @@ export async function GET(request: NextRequest) {
       200,
       id,
     );
-  } catch (error) {
-    const code =
-      typeof error === "object" && error !== null && "code" in error
-        ? String(error.code)
-        : "UNKNOWN";
-    console.error("GET /api/v1/me failed", { requestId: id, code });
+  } catch {
     return errorResponse(503, "UNAVAILABLE", "Сервис временно недоступен", id);
   }
 }

@@ -27,6 +27,16 @@ export function errorResponse(
   id: string,
   currentVersion?: number,
 ): NextResponse {
+  if (status >= 500) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        event: "api_error",
+        requestId: id,
+        status,
+      }),
+    );
+  }
   const body: ApiError = {
     code,
     message,

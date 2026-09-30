@@ -15,6 +15,10 @@ import {
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { TaskReport } from "./task-report";
+import { TaskHistory } from "./task-history";
+import { ReviewQueue } from "@/features/reviews/review-queue";
+import { AccountLedger } from "@/features/ledger/account-ledger";
+import { TaskManagement } from "@/features/task-management/task-management";
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -285,11 +289,80 @@ function TaskListContent() {
                 </div>
               </dl>
               <TaskReport key={selectedId} task={detail.data.task} />
+              <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
             </>
           ) : null}
         </section>
       )}
     </section>
+  );
+}
+
+function TaskWorkspace() {
+  const { canReview, canManageTasks, confirmLeave } = useAuthorizedSession();
+  const [view, setView] = useState<
+    "tasks" | "reviews" | "ledger" | "management"
+  >(canReview ? "reviews" : "tasks");
+  return (
+    <>
+      {
+        <nav className="tasks-heading" aria-label="Рабочие разделы">
+          <button
+            type="button"
+            className="tasks-action"
+            aria-pressed={view === "tasks"}
+            onClick={() => {
+              if (confirmLeave()) setView("tasks");
+            }}
+          >
+            Мои задачи
+          </button>
+          {canReview && (
+            <button
+              type="button"
+              className="tasks-action"
+              aria-pressed={view === "reviews"}
+              onClick={() => {
+                if (confirmLeave()) setView("reviews");
+              }}
+            >
+              Проверка отчётов
+            </button>
+          )}
+          <button
+            type="button"
+            className="tasks-action"
+            aria-pressed={view === "ledger"}
+            onClick={() => {
+              if (confirmLeave()) setView("ledger");
+            }}
+          >
+            Баланс и журнал
+          </button>
+          {canManageTasks && (
+            <button
+              type="button"
+              className="tasks-action"
+              aria-pressed={view === "management"}
+              onClick={() => {
+                if (confirmLeave()) setView("management");
+              }}
+            >
+              Постановка задач
+            </button>
+          )}
+        </nav>
+      }
+      {view === "management" && canManageTasks ? (
+        <TaskManagement />
+      ) : view === "ledger" ? (
+        <AccountLedger />
+      ) : view === "reviews" && canReview ? (
+        <ReviewQueue />
+      ) : (
+        <TaskListContent />
+      )}
+    </>
   );
 }
 
@@ -300,7 +373,7 @@ export function TaskList() {
   );
   return (
     <QueryClientProvider client={client}>
-      <TaskListContent />
+      <TaskWorkspace />
     </QueryClientProvider>
   );
 }

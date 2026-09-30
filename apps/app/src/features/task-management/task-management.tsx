@@ -1,0 +1,807 @@
+"use client";
+
+import {
+  apiErrorSchema,
+  taskCreateRequestSchema,
+  taskManagementListResponseSchema,
+  taskManagementOptionsResponseSchema,
+  taskManagementResponseSchema,
+  type ManagementTask,
+  type TaskCreateRequest,
+  type TaskManagementOptionsResponse,
+} from "@impuls/contracts";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useAuthorizedSession } from "@/features/auth/session-context";
+import "./task-management.css";
+
+type ScopeOption = TaskManagementOptionsResponse["scopes"][number];
+type Draft = Omit<TaskCreateRequest, "dueAt"> & { dueAt: string };
+type Attempt =
+  | { action: "create"; key: string; body: string }
+  | {
+      action: "assign";
+      key: string;
+      body: string;
+      taskId: string;
+      recipient: string;
+    };
+
+class ManagementRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code?: string,
+  ) {
+    super(`Task management request failed: ${status}`);
+  }
+}
+
+const priorityNames: Record<ManagementTask["priority"], string> = {
+  critical: "Критический",
+  high: "Высокий",
+  normal: "Штатный",
+};
+
+const statusNames: Record<ManagementTask["status"], string> = {
+  draft: "Черновик",
+  assigned: "Назначена",
+  in_progress: "В работе",
+  in_review: "На проверке",
+  needs_work: "На доработке",
+  accepted: "Принята",
+  cancelled: "Отменена",
+};
+
+function emptyDraft(): Draft {
+  return {
+    scopeId: "",
+    ruleSetId: "",
+    title: "",
+    criteria: "",
+    categoryCode: "",
+    priority: "normal",
+    dueAt: "",
+    fundXp: 0,
+    fundPoints: 0,
+  };
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatFunds(task: ManagementTask): string {
+  return `${task.fundXp} XP · ${task.fundPoints} баллов`;
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function loadManagementPage(cursor: string | null, signal: AbortSignal) {
+  const params = new URLSearchParams({ limit: "20" });
+  if (cursor) params.set("cursor", cursor);
+  const response = await fetch(`/api/v1/task-management?${params}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+    signal,
+  });
+  if (!response.ok) throw new ManagementRequestError(response.status);
+  return taskManagementListResponseSchema.parse(await response.json());
+}
+
+async function loadOptions(signal: AbortSignal) {
+  const response = await fetch("/api/v1/task-management/options", {
+    cache: "no-store",
+    credentials: "same-origin",
+    signal,
+  });
+  if (!response.ok) throw new ManagementRequestError(response.status);
+  return taskManagementOptionsResponseSchema.parse(await response.json());
+}
+
+function requestMessage(error: Error | null): string {
+  if (!navigator.onLine)
+    return "Нет соединения. Проверьте сеть и повторите запрос.";
+  if (error instanceof ManagementRequestError && error.status === 401)
+    return "Сессия завершилась. Войдите снова.";
+  if (error instanceof ManagementRequestError && error.status === 403)
+    return "Доступ изменился. Проверьте вход снова.";
+  return "Не удалось загрузить данные управления задачами.";
+}
+
+export function TaskManagement() {
+  const { csrfToken, reportDirty, confirmLeave, loseAccess } =
+    useAuthorizedSession();
+  const client = useQueryClient();
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [assignees, setAssignees] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<Attempt["action"] | null>(
+    null,
+  );
+  const [uncertain, setUncertain] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const attempt = useRef<Attempt | null>(null);
+  const running = useRef(false);
+
+  const options = useQuery({
+    queryKey: ["task-management-options"],
+    queryFn: ({ signal }) => loadOptions(signal),
+    retry: false,
+  });
+  const list = useInfiniteQuery({
+    queryKey: ["task-management"],
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam, signal }) => loadManagementPage(pageParam, signal),
+    getNextPageParam: (page) => page.nextCursor,
+    retry: false,
+  });
+  const items = list.data?.pages.flatMap((page) => page.items) ?? [];
+  const availableScopes = options.data?.scopes ?? [];
+  const createScopes = availableScopes.filter((scope) => scope.canCreate);
+  const currentScope = availableScopes.find(
+    (scope) => scope.id === draft.scopeId,
+  );
+  const hasDraft = Boolean(
+    draft.scopeId ||
+    draft.ruleSetId ||
+    draft.title ||
+    draft.criteria ||
+    draft.categoryCode ||
+    draft.dueAt ||
+    draft.fundXp ||
+    draft.fundPoints,
+  );
+
+  useEffect(() => {
+    reportDirty(hasDraft || pending || uncertain);
+    return () => reportDirty(false);
+  }, [hasDraft, pending, uncertain, reportDirty]);
+
+  useEffect(() => {
+    for (const queryError of [options.error, list.error]) {
+      if (
+        queryError instanceof ManagementRequestError &&
+        (queryError.status === 401 || queryError.status === 403)
+      ) {
+        loseAccess(queryError.status);
+        return;
+      }
+    }
+  }, [options.error, list.error, loseAccess]);
+
+  function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setError(null);
+    setSuccess(null);
+  }
+
+  function recoverableMessage(status: number, code?: string): string {
+    if (status === 404)
+      return "Задача или область больше недоступна. Введённые данные сохранены; список и варианты обновлены.";
+    if (status === 409)
+      return "Данные задачи изменились. Черновик сохранён; список обновлён. Проверьте актуальные сведения перед новым действием.";
+    if (status === 422 && (code?.includes("RULE") || code?.includes("rule")))
+      return "Версия правил недоступна или изменилась. Выберите доступную версию; поля сохранены.";
+    if (
+      status === 422 &&
+      (code?.includes("ASSIGNEE") || code?.includes("assignee"))
+    )
+      return "Исполнитель больше не активен в этой области. Выберите другого участника; критерии и поля сохранены.";
+    if (status === 400 || status === 422)
+      return "Проверьте поля задачи или доступность исполнителя. Введённые значения сохранены.";
+    return "Сервер не подтвердил результат. Повторите тот же запрос с сохранённым ключом.";
+  }
+
+  async function send(action: "create" | "assign", task?: ManagementTask) {
+    if (running.current || (!attempt.current && (uncertain || pending))) return;
+
+    let nextAttempt = attempt.current;
+    if (!nextAttempt) {
+      if (action === "create") {
+        const dueAt = draft.dueAt ? new Date(draft.dueAt) : null;
+        if (dueAt && !Number.isFinite(dueAt.getTime())) {
+          setError("Проверьте срок задачи.");
+          return;
+        }
+        const parsed = taskCreateRequestSchema.safeParse({
+          ...draft,
+          dueAt: dueAt ? dueAt.toISOString() : "",
+        });
+        if (!parsed.success) {
+          setError(
+            "Заполните область, версию правил, название, критерии, категорию и срок. Суммы должны быть целыми неотрицательными числами.",
+          );
+          return;
+        }
+        nextAttempt = {
+          action,
+          key: crypto.randomUUID(),
+          body: JSON.stringify(parsed.data),
+        };
+      } else {
+        if (!task) return;
+        const scope = availableScopes.find(
+          (candidate) => candidate.id === task.scope.id,
+        );
+        const assigneeId = assignees[task.id];
+        const recipient = scope?.assignees.find(
+          (person) => person.id === assigneeId,
+        );
+        if (!scope?.canAssign || !recipient) {
+          setError("Выберите активного исполнителя в этой области.");
+          return;
+        }
+        const accepted = window.confirm(
+          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nВерсия правил: ${task.ruleVersion} · версия задачи: ${task.version}\nФонд: ${formatFunds(task)} · синтетические значения.`,
+        );
+        if (!accepted) return;
+        nextAttempt = {
+          action,
+          key: crypto.randomUUID(),
+          taskId: task.id,
+          recipient: recipient.displayName,
+          body: JSON.stringify({
+            assigneeId: recipient.id,
+            expectedVersion: task.version,
+          }),
+        };
+      }
+      attempt.current = nextAttempt;
+    }
+    const currentAttempt = nextAttempt;
+
+    running.current = true;
+    setPending(true);
+    setPendingAction(currentAttempt.action);
+    setError(null);
+    setSuccess(null);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch(
+        currentAttempt.action === "create"
+          ? "/api/v1/tasks"
+          : `/api/v1/tasks/${currentAttempt.taskId}/assign`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+            "Idempotency-Key": currentAttempt.key,
+          },
+          body: currentAttempt.body,
+        },
+      );
+      const payload = await readJson(response);
+      if (response.status === 401 || response.status === 403) {
+        attempt.current = null;
+        loseAccess(response.status);
+        return;
+      }
+      if (!response.ok) {
+        const parsedError = apiErrorSchema.safeParse(payload);
+        const code = parsedError.success ? parsedError.data.code : undefined;
+        if ([400, 404, 409, 422].includes(response.status)) {
+          attempt.current = null;
+          setUncertain(false);
+          setError(recoverableMessage(response.status, code));
+          if ([404, 409, 422].includes(response.status)) {
+            await client.invalidateQueries({ queryKey: ["task-management"] });
+            await client.invalidateQueries({
+              queryKey: ["task-management-options"],
+            });
+          }
+          return;
+        }
+        throw new Error("Mutation result is unknown");
+      }
+
+      const result = taskManagementResponseSchema.parse(payload);
+      attempt.current = null;
+      setUncertain(false);
+      if (currentAttempt.action === "create") {
+        setDraft(emptyDraft());
+        setSuccess(
+          `Черновик «${result.task.title}» создан. Значения фондов синтетические.`,
+        );
+      } else {
+        setAssignees((current) => ({
+          ...current,
+          [currentAttempt.taskId]: "",
+        }));
+        setSuccess(`Задача назначена участнику ${currentAttempt.recipient}.`);
+      }
+      await client.invalidateQueries({ queryKey: ["task-management"] });
+      await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
+    } catch {
+      setUncertain(attempt.current !== null);
+      setError(
+        navigator.onLine
+          ? "Не удалось подтвердить результат. Данные и ключ сохранены; повторите тот же запрос."
+          : "Нет соединения. Данные и ключ сохранены; восстановите сеть и повторите тот же запрос.",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      running.current = false;
+      setPending(false);
+      setPendingAction(null);
+    }
+  }
+
+  function retryAttempt() {
+    const currentAttempt = attempt.current;
+    if (!currentAttempt) return;
+    const task =
+      currentAttempt.action === "assign"
+        ? items.find((item) => item.id === currentAttempt.taskId)
+        : undefined;
+    void send(currentAttempt.action, task);
+  }
+
+  const optionsError = options.isError && options.data === undefined;
+  const listError = list.isError && list.data === undefined;
+  const accessLost = [options.error, list.error].some(
+    (queryError) =>
+      queryError instanceof ManagementRequestError &&
+      (queryError.status === 401 || queryError.status === 403),
+  );
+
+  return (
+    <section className="task-mgmt" aria-labelledby="task-mgmt-title">
+      <header className="task-mgmt__heading">
+        <div>
+          <h2 id="task-mgmt-title">Управление задачами</h2>
+          <p>Создавайте черновики и назначайте их участникам своей области.</p>
+        </div>
+      </header>
+
+      {error && (
+        <p
+          className="task-mgmt__feedback task-mgmt__feedback--error"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+      {success && (
+        <p
+          className="task-mgmt__feedback task-mgmt__feedback--success"
+          role="status"
+        >
+          {success}
+        </p>
+      )}
+      {options.isError && options.data && (
+        <p
+          className="task-mgmt__feedback task-mgmt__feedback--error"
+          role="alert"
+        >
+          Не удалось обновить варианты. Используются последние подтверждённые
+          области и правила.
+        </p>
+      )}
+
+      {options.isPending ? (
+        <p className="task-mgmt__state" role="status">
+          Загружаем области и версии правил…
+        </p>
+      ) : accessLost ? (
+        <p className="task-mgmt__state" role="alert">
+          {requestMessage(options.error ?? list.error)}
+        </p>
+      ) : optionsError ? (
+        <div className="task-mgmt__state" role="alert">
+          <p>{requestMessage(options.error)}</p>
+          <button
+            type="button"
+            className="task-mgmt__button"
+            onClick={() => void options.refetch()}
+          >
+            Повторить загрузку
+          </button>
+        </div>
+      ) : (
+        <>
+          {availableScopes.every(
+            (scope) => !scope.canCreate && !scope.canAssign,
+          ) && (
+            <p className="task-mgmt__hint">
+              Создание и назначение сейчас недоступны. Обновите полномочия или
+              обратитесь к администратору.
+            </p>
+          )}
+          {createScopes.length > 0 && (
+            <form
+              className="task-mgmt__form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void send("create");
+              }}
+            >
+              <div className="task-mgmt__section-heading">
+                <h3>Новая задача</h3>
+                <span>Черновик</span>
+              </div>
+              <p className="task-mgmt__note">
+                XP и баллы ниже — только синтетические значения тестового
+                контура. Они не задают утверждённую экономику.
+              </p>
+              <div className="task-mgmt__fields">
+                <label>
+                  <span id="task-mgmt-scope-label">Область</span>
+                  <select
+                    aria-labelledby="task-mgmt-scope-label"
+                    value={draft.scopeId}
+                    disabled={pending || uncertain}
+                    onChange={(event) =>
+                      setField("scopeId", event.target.value)
+                    }
+                    required
+                  >
+                    <option value="">Выберите область</option>
+                    {createScopes.map((scope) => (
+                      <option key={scope.id} value={scope.id}>
+                        {scope.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span id="task-mgmt-rule-label">Версия правил</span>
+                  <select
+                    aria-labelledby="task-mgmt-rule-label"
+                    value={draft.ruleSetId}
+                    disabled={
+                      pending || uncertain || !options.data?.ruleSets.length
+                    }
+                    onChange={(event) =>
+                      setField("ruleSetId", event.target.value)
+                    }
+                    required
+                  >
+                    <option value="">Выберите версию</option>
+                    {options.data?.ruleSets.map((rule) => (
+                      <option key={rule.id} value={rule.id}>
+                        Версия {rule.version} · синтетические тестовые правила
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="task-mgmt__wide">
+                  <span id="task-mgmt-title-label">Название</span>
+                  <input
+                    aria-labelledby="task-mgmt-title-label"
+                    maxLength={120}
+                    value={draft.title}
+                    disabled={pending || uncertain}
+                    onChange={(event) => setField("title", event.target.value)}
+                    required
+                  />
+                </label>
+                <label className="task-mgmt__wide">
+                  <span id="task-mgmt-criteria-label">Критерии результата</span>
+                  <textarea
+                    aria-labelledby="task-mgmt-criteria-label"
+                    rows={4}
+                    maxLength={2000}
+                    value={draft.criteria}
+                    disabled={pending || uncertain}
+                    onChange={(event) =>
+                      setField("criteria", event.target.value)
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  <span id="task-mgmt-category-label">Код категории</span>
+                  <input
+                    aria-labelledby="task-mgmt-category-label"
+                    maxLength={40}
+                    value={draft.categoryCode}
+                    disabled={pending || uncertain}
+                    onChange={(event) =>
+                      setField("categoryCode", event.target.value)
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  <span id="task-mgmt-priority-label">Приоритет</span>
+                  <select
+                    aria-labelledby="task-mgmt-priority-label"
+                    value={draft.priority}
+                    disabled={pending || uncertain}
+                    onChange={(event) =>
+                      setField(
+                        "priority",
+                        event.target.value as Draft["priority"],
+                      )
+                    }
+                  >
+                    <option value="normal">Штатный</option>
+                    <option value="high">Высокий</option>
+                    <option value="critical">Критический</option>
+                  </select>
+                </label>
+                <label>
+                  <span id="task-mgmt-due-label">Срок</span>
+                  <input
+                    aria-labelledby="task-mgmt-due-label"
+                    type="datetime-local"
+                    value={draft.dueAt}
+                    disabled={pending || uncertain}
+                    onChange={(event) => setField("dueAt", event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  <span id="task-mgmt-xp-label">Фонд XP</span>
+                  <input
+                    aria-labelledby="task-mgmt-xp-label"
+                    type="number"
+                    min={0}
+                    max={2147483647}
+                    step={1}
+                    value={draft.fundXp}
+                    disabled={pending || uncertain}
+                    onChange={(event) =>
+                      setField("fundXp", Number(event.target.value))
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  <span id="task-mgmt-points-label">Фонд баллов</span>
+                  <input
+                    aria-labelledby="task-mgmt-points-label"
+                    type="number"
+                    min={0}
+                    max={2147483647}
+                    step={1}
+                    value={draft.fundPoints}
+                    disabled={pending || uncertain}
+                    onChange={(event) =>
+                      setField("fundPoints", Number(event.target.value))
+                    }
+                    required
+                  />
+                </label>
+              </div>
+              {currentScope && (
+                <p className="task-mgmt__hint">
+                  Создание разрешено в области «{currentScope.name}». Назначение
+                  доступно отдельно, если для области выдано соответствующее
+                  право.
+                </p>
+              )}
+              <button
+                className="task-mgmt__button task-mgmt__button--primary"
+                type="submit"
+                disabled={
+                  pending || uncertain || !options.data?.ruleSets.length
+                }
+              >
+                {pending && pendingAction === "create"
+                  ? "Создаём…"
+                  : "Создать черновик"}
+              </button>
+              {hasDraft && (
+                <button
+                  className="task-mgmt__button task-mgmt__clear"
+                  type="button"
+                  disabled={pending || uncertain}
+                  onClick={() => {
+                    if (!confirmLeave()) return;
+                    setDraft(emptyDraft());
+                    setError(null);
+                  }}
+                >
+                  Очистить поля
+                </button>
+              )}
+            </form>
+          )}
+
+          <section
+            className="task-mgmt__list-section"
+            aria-labelledby="task-mgmt-list-title"
+          >
+            <div className="task-mgmt__section-heading">
+              <h3 id="task-mgmt-list-title">Задачи в доступных областях</h3>
+              <button
+                type="button"
+                className="task-mgmt__button"
+                disabled={list.isFetching}
+                onClick={() => void list.refetch()}
+              >
+                Обновить
+              </button>
+            </div>
+            {list.isPending ? (
+              <p className="task-mgmt__state" role="status">
+                Загружаем задачи…
+              </p>
+            ) : listError ? (
+              <div className="task-mgmt__state" role="alert">
+                <p>{requestMessage(list.error)}</p>
+                <button
+                  type="button"
+                  className="task-mgmt__button"
+                  onClick={() => void list.refetch()}
+                >
+                  Повторить загрузку
+                </button>
+              </div>
+            ) : items.length === 0 ? (
+              <p className="task-mgmt__state">Доступных задач пока нет.</p>
+            ) : (
+              <>
+                <ul className="task-mgmt__items">
+                  {items.map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      scope={availableScopes.find(
+                        (scope) => scope.id === task.scope.id,
+                      )}
+                      selectedAssignee={assignees[task.id] ?? ""}
+                      onSelect={(value) =>
+                        setAssignees((current) => ({
+                          ...current,
+                          [task.id]: value,
+                        }))
+                      }
+                      disabled={pending || uncertain}
+                      onAssign={() => void send("assign", task)}
+                    />
+                  ))}
+                </ul>
+                {list.isError && (
+                  <p
+                    className="task-mgmt__feedback task-mgmt__feedback--error"
+                    role="alert"
+                  >
+                    Не удалось обновить список. Показаны последние загруженные
+                    данные.
+                  </p>
+                )}
+                {list.hasNextPage && (
+                  <button
+                    type="button"
+                    className="task-mgmt__button task-mgmt__more"
+                    disabled={list.isFetchingNextPage}
+                    onClick={() => void list.fetchNextPage()}
+                  >
+                    {list.isFetchingNextPage ? "Загружаем…" : "Показать ещё"}
+                  </button>
+                )}
+                {list.isFetchNextPageError && (
+                  <p
+                    className="task-mgmt__feedback task-mgmt__feedback--error"
+                    role="alert"
+                  >
+                    {requestMessage(list.error)}
+                  </p>
+                )}
+              </>
+            )}
+          </section>
+        </>
+      )}
+
+      {uncertain && (
+        <div className="task-mgmt__retry">
+          <p role="status">
+            Запрос ожидает подтверждения. Повтор отправит те же данные с тем же
+            ключом.
+          </p>
+          <button
+            type="button"
+            className="task-mgmt__button task-mgmt__button--primary"
+            disabled={pending}
+            onClick={retryAttempt}
+          >
+            {pending ? "Проверяем…" : "Повторить тот же запрос"}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function TaskRow({
+  task,
+  scope,
+  selectedAssignee,
+  onSelect,
+  disabled,
+  onAssign,
+}: {
+  task: ManagementTask;
+  scope: ScopeOption | undefined;
+  selectedAssignee: string;
+  onSelect(value: string): void;
+  disabled: boolean;
+  onAssign(): void;
+}) {
+  const canAssign = task.status === "draft" && Boolean(scope?.canAssign);
+  return (
+    <li className="task-mgmt__item">
+      <div className="task-mgmt__item-main">
+        <div className="task-mgmt__item-title">
+          <h4>{task.title}</h4>
+          <span className="task-mgmt__status">{statusNames[task.status]}</span>
+        </div>
+        <p className="task-mgmt__item-meta">
+          {task.scope.name} · {priorityNames[task.priority]} · до{" "}
+          {formatDate(task.dueAt)}
+        </p>
+        <p className="task-mgmt__criteria">{task.criteria}</p>
+        <p className="task-mgmt__item-meta">
+          Фонд: {formatFunds(task)} · категория {task.categoryCode} · версия
+          правил {task.ruleVersion}
+        </p>
+        {task.assignee && (
+          <p className="task-mgmt__item-meta">
+            Исполнитель: {task.assignee.displayName}
+          </p>
+        )}
+      </div>
+      {canAssign && (
+        <div className="task-mgmt__assign">
+          {scope?.assignees.length ? (
+            <>
+              <label>
+                <span id={`task-mgmt-assignee-label-${task.id}`}>
+                  Активный участник области «{scope.name}»
+                </span>
+                <select
+                  aria-labelledby={`task-mgmt-assignee-label-${task.id}`}
+                  value={selectedAssignee}
+                  disabled={disabled}
+                  onChange={(event) => onSelect(event.target.value)}
+                >
+                  <option value="">Выберите исполнителя</option>
+                  {scope.assignees.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="task-mgmt__button"
+                disabled={disabled || !selectedAssignee}
+                onClick={onAssign}
+              >
+                Назначить
+              </button>
+            </>
+          ) : (
+            <p className="task-mgmt__hint">
+              В этой области пока нет доступных активных участников.
+            </p>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}

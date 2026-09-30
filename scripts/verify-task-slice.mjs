@@ -17,6 +17,8 @@ const env = {
   TEST_APP_ORIGIN: origin,
   CSRF_SECRET: "synthetic-task-slice-csrf-test-only",
   TELEGRAM_BOT_TOKEN: "synthetic-task-slice-bot-test-only",
+  SYNTHETIC_ECONOMY_ENABLED: "true",
+  SYNTHETIC_TASK_MANAGEMENT_ENABLED: "true",
 };
 const server = spawn(
   process.execPath,
@@ -69,6 +71,10 @@ try {
   await run("tests/browser/embedded-access.mjs");
   await run("tests/browser/tasks-smoke.mjs");
   await run("tests/browser/task-submissions.mjs");
+  await run("tests/browser/task-reviews.mjs");
+  await run("tests/browser/task-acceptance.mjs");
+  await run("tests/browser/task-management.mjs");
+  await run("tests/browser/task-history.mjs");
 } finally {
   server.kill();
   await done;

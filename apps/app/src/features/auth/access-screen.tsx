@@ -147,7 +147,7 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
     () =>
       !unsaved.current ||
       window.confirm(
-        "Отчёт ещё не отправлен. Покинуть форму и потерять введённый текст?",
+        "Текст ещё не отправлен. Покинуть форму и потерять введённые данные?",
       ),
     [],
   );
@@ -377,6 +377,16 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                 <SessionContext.Provider
                   value={{
                     csrfToken: state.data.csrfToken,
+                    canReview:
+                      state.permissions?.some(
+                        (permission) => permission.action === "task.review",
+                      ) ?? false,
+                    canManageTasks:
+                      state.permissions?.some(
+                        (permission) =>
+                          permission.action === "task.create" ||
+                          permission.action === "task.assign",
+                      ) ?? false,
                     reportDirty,
                     confirmLeave,
                     loseAccess,
@@ -432,7 +442,7 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
             )}
             <p className="access-footnote">
               {state.kind === "authorized"
-                ? "Показываются только назначенные вам задачи."
+                ? "Задачи и очередь доступны в пределах ваших полномочий."
                 : "Данные задач появятся после подтверждённого входа."}
             </p>
           </div>

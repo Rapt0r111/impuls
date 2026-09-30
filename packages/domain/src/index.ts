@@ -20,6 +20,8 @@ export type {
   PermissionScope,
 } from "./permissions/service";
 export { getAssignedTask, listAssignedTasks } from "./tasks/read";
+export { readAssignedTaskHistory } from "./tasks/history";
+export type { TaskHistory } from "./tasks/history";
 export type {
   AssignedTaskDetail,
   AssignedTaskStatus,
@@ -31,3 +33,21 @@ export type {
   TaskMutationResult,
   TaskSubmission,
 } from "./tasks/write";
+export {
+  listReviewQueue,
+  returnTaskSubmission,
+  reviewTaskSubmission,
+} from "./tasks/reviews";
+export { readAccountLedger } from "./ledger/read";
+export type { TaskReturnInput, TaskReturnResult } from "./tasks/reviews";
+export {
+  createTask,
+  assignTask,
+  listManagedTasks,
+  readTaskManagementOptions,
+} from "./tasks/manage";
+export type {
+  CreateTaskInput,
+  AssignTaskInput,
+  TaskManagementResult,
+} from "./tasks/manage";

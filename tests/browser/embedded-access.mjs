@@ -164,7 +164,13 @@ try {
     options = policy;
     logins = 0;
     logoutSeen = false;
-    const context = await browser.newContext({ ignoreHTTPSErrors: true });
+    const context = await browser.newContext({
+      ignoreHTTPSErrors: true,
+      // Context-level proxy settings take precedence over a system proxy even
+      // when Chromium ignores --no-proxy-server. Only fixture hosts go direct;
+      // other destinations fail closed against an unused local port.
+      proxy: { server: "http://127.0.0.1:9", bypass: ".test" },
+    });
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
     await page.goto(parentOrigin);

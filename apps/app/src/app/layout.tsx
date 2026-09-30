@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import localFont from "next/font/local";
+import { AppSpeedInsights } from "@/shared/telemetry/speed-insights";
 import "./globals.css";
 
 const manrope = localFont({
@@ -45,6 +46,10 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
         {children}
+        {process.env.VERCEL === "1" &&
+          process.env.SPEED_INSIGHTS_ENABLED !== "false" && (
+            <AppSpeedInsights />
+          )}
       </body>
     </html>
   );
