@@ -26,7 +26,7 @@ const keys = ["recipient", "deciderA", "deciderB", "fulfiller", "self"],
   scope = randomUUID(),
   tag = randomUUID().slice(0, 8),
   rewards = Object.fromEntries(
-    ["flow", "race", "own"].map((k) => [
+    ["flow", "race", "own", "reject", "expire"].map((k) => [
       k,
       {
         rewardId: randomUUID(),
@@ -75,9 +75,16 @@ for (const key of keys)
   );
 for (const r of Object.values(rewards)) {
   await db.query(
-    `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from)
-     VALUES($1,$2,$3,1,$4,'Косметика; синтетические условия',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 second')`,
-    [r.versionId, r.rewardId, scope, r.title],
+    `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds)
+     VALUES($1,$2,$3,1,$4,'Косметика; синтетические условия',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 second',$5)`,
+    // Only the expiry reward has a due time (versions are immutable).
+    [
+      r.versionId,
+      r.rewardId,
+      scope,
+      r.title,
+      r.title.includes("expire") ? 2 : null,
+    ],
   );
   await db.query(
     "INSERT INTO impuls.quota_periods(id,reward_id,scope_id,starts_at,ends_at,capacity) VALUES($1,$2,$3,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 day',1)",
@@ -94,6 +101,12 @@ const state = async (reward, user) => ({
       [reward.quotaId],
     )
   ).rows,
+  quota: (
+    await db.query(
+      "SELECT reserved::int r, used::int u FROM impuls.quota_periods WHERE id=$1",
+      [reward.quotaId],
+    )
+  ).rows.map((q) => [q.r, q.u])[0],
   balance: (
     await db.query(
       "SELECT available_points::int a, reserved_points::int r FROM impuls.account_balances WHERE user_id=$1",
@@ -315,6 +328,51 @@ async function review(s, title, decision) {
   await finish(s, "3-own-request");
 }
 
+// 4. Rejection returns points and the quota place; nothing is spent.
+{
+  const r = rewards.reject;
+  await reserve("recipient", r);
+  const before = await state(r, "recipient");
+  assert.deepEqual(before.quota, [1, 0]);
+  const d = await open("deciderA", "Решения по заявкам");
+  await review(d, r.title, "reject");
+  await d.page
+    .getByRole("button", { name: "Отказать в заявке", exact: true })
+    .click();
+  await d.page.getByText(/В заявке отказано/).waitFor();
+  const s = await state(r, "recipient");
+  assert.equal(s.redemption[0].status, "rejected");
+  assert.equal(s.redemption[0].decision_actor_id, ids.deciderA);
+  assert.deepEqual(s.quota, [0, 0]);
+  assert.equal(s.balance[1], 0, "reserve released");
+  assert.equal(s.balance[0], before.balance[0] + 30, "points returned once");
+  await finish(d, "4-rejected");
+}
+
+// 5. A due reservation is completed by expiry, not approved; points and place return.
+{
+  const r = rewards.expire;
+  await reserve("recipient", r);
+  const before = await state(r, "recipient");
+  // Redemptions are immutable; the due time comes from the version's reservation_seconds.
+  await db.query(
+    "SELECT pg_sleep(GREATEST(0,extract(epoch FROM expires_at-clock_timestamp()))+0.1) FROM impuls.redemptions WHERE quota_period_id=$1",
+    [r.quotaId],
+  );
+  const d = await open("deciderA", "Решения по заявкам");
+  await review(d, r.title, "expire");
+  await d.page
+    .getByRole("button", { name: "Завершить резерв", exact: true })
+    .click();
+  await d.page.getByText(/Резерв завершён по истечению срока/).waitFor();
+  const s = await state(r, "recipient");
+  assert.equal(s.redemption[0].status, "expired");
+  assert.deepEqual(s.quota, [0, 0]);
+  assert.equal(s.balance[0], before.balance[0] + 30);
+  assert.equal(s.balance[1], 0);
+  await finish(d, "5-expired");
+}
+
 await browser.close();
 await db.end();
-console.log("reward-decisions-real: 3 scenarios passed");
+console.log("reward-decisions-real: 5 scenarios passed");
