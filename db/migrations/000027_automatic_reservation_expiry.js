@@ -136,10 +136,14 @@ const up = (pgm) => {
         VALUES(d.user_id,d.id,'reward.expired','synthetic',at,at);
       RETURN true;
     END $$;
+    -- ALTER OWNER needs SET on the new owner; managed Postgres (Supabase) gives the
+    -- migration role no superuser rights. The grant is temporary and revoked below.
+    GRANT impuls_expiry_executor TO CURRENT_USER WITH SET TRUE;
     -- ALTER OWNER requires temporary CREATE; no persistent schema creation authority.
     GRANT CREATE ON SCHEMA impuls TO impuls_expiry_executor;
     ALTER FUNCTION impuls.expire_one_synthetic_reservation() OWNER TO impuls_expiry_executor;
     REVOKE CREATE ON SCHEMA impuls FROM impuls_expiry_executor;
+    REVOKE impuls_expiry_executor FROM CURRENT_USER;
     REVOKE ALL ON FUNCTION impuls.expire_one_synthetic_reservation() FROM PUBLIC;
     GRANT EXECUTE ON FUNCTION impuls.expire_one_synthetic_reservation() TO impuls_expiry_worker;
   `);

@@ -15,9 +15,13 @@ const up = (pgm) => {
         max(decided_at) FILTER (WHERE status='expired' AND automatic_expiry)
       FROM impuls.redemptions WHERE mode='synthetic'
     $$;
+    -- ALTER OWNER needs SET on the new owner; managed Postgres (Supabase) gives the
+    -- migration role no superuser rights. The grant is temporary and revoked below.
+    GRANT impuls_expiry_executor TO CURRENT_USER WITH SET TRUE;
     GRANT CREATE ON SCHEMA impuls TO impuls_expiry_executor;
     ALTER FUNCTION impuls.read_synthetic_expiry_status() OWNER TO impuls_expiry_executor;
     REVOKE CREATE ON SCHEMA impuls FROM impuls_expiry_executor;
+    REVOKE impuls_expiry_executor FROM CURRENT_USER;
     REVOKE ALL ON FUNCTION impuls.read_synthetic_expiry_status() FROM PUBLIC;
     GRANT EXECUTE ON FUNCTION impuls.read_synthetic_expiry_status() TO impuls_expiry_worker;
   `);
