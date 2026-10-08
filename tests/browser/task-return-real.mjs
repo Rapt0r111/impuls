@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
+import { auditLayout } from "./layout-audit.mjs";
 
 // Negative F03/F04 paths through the real app and database (no API mocks):
 // own result is not reviewable, two reviewers race for one acceptance,
@@ -86,6 +87,7 @@ async function open(key, width = viewportWidth) {
   return { page, context, errors };
 }
 const finish = async (s, name) => {
+  await auditLayout(s.page, `${path.basename(dir)}/${name}`);
   await s.page.screenshot({
     path: path.join(dir, `${name}.png`),
     fullPage: true,

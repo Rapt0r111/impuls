@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
+import { auditLayout } from "./layout-audit.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
@@ -96,6 +97,7 @@ async function open(index, width = viewportWidth) {
   return { page, context, errors };
 }
 const done = async (s, name) => {
+  await auditLayout(s.page, `${path.basename(dir)}/${name}`);
   await s.page.screenshot({
     path: path.join(dir, `${name}.png`),
     fullPage: true,

@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
+import { auditLayout } from "./layout-audit.mjs";
 
 // F06/F07 decision and fulfilment through the real app and database (no API
 // mocks): approve then fulfil, two deciders race for one request, and a
@@ -161,6 +162,7 @@ async function open(key, tab) {
   return s;
 }
 const finish = async (s, name) => {
+  await auditLayout(s.page, `${path.basename(dir)}/${name}`);
   await s.page.screenshot({
     path: path.join(dir, `${name}.png`),
     fullPage: true,

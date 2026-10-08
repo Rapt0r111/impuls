@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
+import { auditLayout } from "./layout-audit.mjs";
 
 // F06 through the real app and database (no API mocks): two participants race
 // for the last quota place, the winner cancels, the loser then reserves, and
@@ -114,6 +115,7 @@ async function open(key, width = viewportWidth) {
   return { page, context, errors };
 }
 const finish = async (s, name) => {
+  await auditLayout(s.page, `${path.basename(dir)}/${name}`);
   await s.page.screenshot({
     path: path.join(dir, `${name}.png`),
     fullPage: true,
