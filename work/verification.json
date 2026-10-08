@@ -25,26 +25,26 @@
     {
       "width": 360,
       "scroll": 360,
-      "screen": 329,
-      "screenClient": 329
+      "screen": 318,
+      "screenClient": 318
     },
     {
       "width": 390,
       "scroll": 390,
-      "screen": 352,
-      "screenClient": 352
+      "screen": 348,
+      "screenClient": 348
     },
     {
       "width": 768,
       "scroll": 768,
-      "screen": 438,
-      "screenClient": 438
+      "screen": 388,
+      "screenClient": 388
     },
     {
       "width": 1440,
       "scroll": 1440,
-      "screen": 420,
-      "screenClient": 420
+      "screen": 388,
+      "screenClient": 388
     }
   ]
 }

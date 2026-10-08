@@ -1,0 +1,1509 @@
+{
+  "id": "report:dfc44978-205b-4002-aedf-9e9c67c0bfbc",
+  "surface": "report",
+  "title": "Импульс · от реализации к пилоту",
+  "generatedAt": "2026-10-05T07:47:05.040Z",
+  "status": "reviewed-assessment",
+  "buildStatus": "complete",
+  "filters": [],
+  "queries": {
+    "criteria": {
+      "rows": [
+        {
+          "id": "F01-1",
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "criterion": "Подпись initData",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Сервер проверяет HMAC и формат, отрицательные сценарии.",
+          "evidence": "packages/domain/src/auth/telegram.ts:12"
+        },
+        {
+          "id": "F01-2",
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "criterion": "Срок действия initData",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Возраст подписи и допустимое отклонение времени.",
+          "evidence": "packages/domain/src/auth/telegram.ts:12"
+        },
+        {
+          "id": "F01-3",
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "criterion": "Допуск через allowlist",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Активный пользователь проверяется на сервере.",
+          "evidence": "packages/domain/src/auth/service.ts:22"
+        },
+        {
+          "id": "F01-4",
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "criterion": "Серверная сессия",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Хеш сессии, срок действия и проверка пользователя.",
+          "evidence": "packages/domain/src/auth/service.ts:57"
+        },
+        {
+          "id": "F01-5",
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "criterion": "Выход и отзыв",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Отзыв сессии на сервере; отказ после деактивации.",
+          "evidence": "packages/domain/src/auth/service.ts:79"
+        },
+        {
+          "id": "F01-6",
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "criterion": "Состояния входа и защита частоты",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Рабочий экран входа, отказ и повтор; лимиты API.",
+          "evidence": "apps/app/src/app/api/v1/auth/telegram/route.ts:33"
+        },
+        {
+          "id": "F02-1",
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "criterion": "Право по действию",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Отдельные права для предметных операций.",
+          "evidence": "packages/domain/src/permissions/service.ts:42"
+        },
+        {
+          "id": "F02-2",
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "criterion": "Точное совпадение области",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Нет наследования соседней или родительской области.",
+          "evidence": "packages/domain/src/permissions/service.ts:42"
+        },
+        {
+          "id": "F02-3",
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "criterion": "Срок и отзыв полномочий",
+          "score": 1,
+          "status": "Реализован",
+          "note": "revoked_at, valid_from и valid_until проверяются.",
+          "evidence": "packages/domain/src/permissions/service.ts:42"
+        },
+        {
+          "id": "F02-4",
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "criterion": "Проверки объекта и самоодобрения",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Владение и запрет приёмки своего результата.",
+          "evidence": "packages/domain/src/tasks/reviews.ts:159"
+        },
+        {
+          "id": "F02-5",
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "criterion": "Разрешённые действия и безопасный отказ UI",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Права читаются с сервера, операции повторно авторизуются.",
+          "evidence": "packages/domain/src/permissions/service.ts:60"
+        },
+        {
+          "id": "F02-6",
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "criterion": "Управление жизненным циклом прав",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Выдача и отзыв полномочий через админ API/UI ещё отсутствуют.",
+          "evidence": "IMPLEMENTATION_PLAN.md:301"
+        },
+        {
+          "id": "F03-1",
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "criterion": "Создание и назначение",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Серверная операция с областью и участником.",
+          "evidence": "packages/domain/src/tasks/manage.ts:213"
+        },
+        {
+          "id": "F03-2",
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "criterion": "Редактирование и отмена",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Причина, версия, идемпотентность и ограничения состояния.",
+          "evidence": "packages/domain/src/tasks/manage.ts:219"
+        },
+        {
+          "id": "F03-3",
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "criterion": "Начало и сдача отчёта",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Переходы и неизменяемая сдача.",
+          "evidence": "packages/domain/src/tasks/write.ts:84"
+        },
+        {
+          "id": "F03-4",
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "criterion": "Возврат и приёмка",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Решение проверяющего и защита двойной приёмки.",
+          "evidence": "packages/domain/src/tasks/reviews.ts:159"
+        },
+        {
+          "id": "F03-5",
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "criterion": "История и хронология",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Отдельные защищённые чтения.",
+          "evidence": "packages/domain/src/tasks/timeline.ts:72"
+        },
+        {
+          "id": "F03-6",
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "criterion": "Конфликт версии и повтор запроса",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Запрос проходит права; прежний ключ не начисляет повторно.",
+          "evidence": "packages/domain/src/tasks/reviews.ts:159"
+        },
+        {
+          "id": "F04-1",
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "criterion": "Раздельные XP и расходуемые баллы",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Отдельные записи и проекции баланса.",
+          "evidence": "packages/domain/src/ledger/credit.ts:46"
+        },
+        {
+          "id": "F04-2",
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "criterion": "Атомарное начисление и баланс",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Начисление в транзакции приёмки; блокировка проекции.",
+          "evidence": "packages/domain/src/ledger/credit.ts:46"
+        },
+        {
+          "id": "F04-3",
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "criterion": "Сохранённая версия и базовый фонд",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Правила и фонд сохраняются для задачи и приёмки.",
+          "evidence": "packages/domain/src/tasks/reviews.ts:159"
+        },
+        {
+          "id": "F04-4",
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "criterion": "Личный журнал операций",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Суммы и основания доступны участнику.",
+          "evidence": "packages/domain/src/ledger/read.ts:4"
+        },
+        {
+          "id": "F04-5",
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "criterion": "Компенсирующее исправление",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Исходное начисление не переписывается; отрицательный баланс запрещён.",
+          "evidence": "packages/domain/src/ledger/corrections.ts:87"
+        },
+        {
+          "id": "F04-6",
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "criterion": "Настраиваемые бонусы при приёмке",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Выбор бонуса и его отдельное начисление ещё не реализованы.",
+          "evidence": "IMPLEMENTATION_PLAN.md:186"
+        },
+        {
+          "id": "F05-1",
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "criterion": "Рейтинг по времени приёмки и месяцу",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Сезон и часовой пояс фиксируются источником.",
+          "evidence": "packages/domain/src/ranking/read.ts:18"
+        },
+        {
+          "id": "F05-2",
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "criterion": "Равные результаты",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Равенство и стабильный порядок проверены.",
+          "evidence": "packages/domain/src/ranking/read.ts:18"
+        },
+        {
+          "id": "F05-3",
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "criterion": "Область и собственный результат",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Защищённая область и приватная собственная позиция.",
+          "evidence": "packages/domain/src/ranking/read.ts:18"
+        },
+        {
+          "id": "F05-4",
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "criterion": "Уровни по версии правил",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Пороговая шкала берётся из синтетической версии.",
+          "evidence": "packages/domain/src/profile/progression.ts:42"
+        },
+        {
+          "id": "F05-5",
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "criterion": "Первый результат один раз",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Уникальное достижение выдаётся в транзакции.",
+          "evidence": "packages/domain/src/ledger/credit.ts:46"
+        },
+        {
+          "id": "F05-6",
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "criterion": "Профиль и последствия исправлений",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Профиль читает согласованный баланс и достижения.",
+          "evidence": "packages/domain/src/profile/read.ts:5"
+        },
+        {
+          "id": "F06-1",
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "criterion": "Версии условий и каталог",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Синтетическая косметика, условия, пагинация.",
+          "evidence": "packages/domain/src/rewards/read.ts:13"
+        },
+        {
+          "id": "F06-2",
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "criterion": "Атомарный резерв и квота",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Гонки за последнюю квоту и баланс проверены.",
+          "evidence": "packages/domain/src/rewards/write.ts:72"
+        },
+        {
+          "id": "F06-3",
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "criterion": "Собственные заявки и отмена",
+          "score": 1,
+          "status": "Реализован",
+          "note": "История и однократный возврат резерва.",
+          "evidence": "packages/domain/src/rewards/read.ts:181"
+        },
+        {
+          "id": "F06-4",
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "criterion": "Согласование и отказ",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Решение в области, запрет самоодобрения.",
+          "evidence": "packages/domain/src/rewards/decisions.ts:189"
+        },
+        {
+          "id": "F06-5",
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "criterion": "Факт выдачи и владение",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Выдача и защита повторного владения.",
+          "evidence": "packages/domain/src/rewards/fulfillment.ts:45"
+        },
+        {
+          "id": "F06-6",
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "criterion": "Полный цикл завершения резерва",
+          "score": 0.5,
+          "status": "Частично",
+          "note": "Ручной expire есть; нет автоматического планировщика и утверждённой политики отмены.",
+          "evidence": "packages/domain/src/rewards/decisions.ts:189"
+        },
+        {
+          "id": "F07-1",
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "criterion": "Управление допуском",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Нет админ операций для реестра пользователей.",
+          "evidence": "IMPLEMENTATION_PLAN.md:306"
+        },
+        {
+          "id": "F07-2",
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "criterion": "Управление правами",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Нет операций выдачи/отзыва binding через API/UI.",
+          "evidence": "IMPLEMENTATION_PLAN.md:306"
+        },
+        {
+          "id": "F07-3",
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "criterion": "Управление версиями правил",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Нет создания и публикации правил администратором.",
+          "evidence": "IMPLEMENTATION_PLAN.md:306"
+        },
+        {
+          "id": "F07-4",
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "criterion": "Управление каталогом",
+          "score": 0.5,
+          "status": "Частично",
+          "note": "Чтение конфигурации и истории есть; запись и публикация отсутствуют.",
+          "evidence": "packages/domain/src/admin/catalog.ts:40"
+        },
+        {
+          "id": "F07-5",
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "criterion": "Управление квотами",
+          "score": 0.5,
+          "status": "Частично",
+          "note": "Чтение текущих, прошлых и будущих периодов есть; изменение квот отсутствует.",
+          "evidence": "packages/domain/src/admin/catalog-quotas.ts:25"
+        },
+        {
+          "id": "F07-6",
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "criterion": "Предметный аудит",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Защищённый просмотр, безопасные изменения, actor/scope.",
+          "evidence": "packages/domain/src/admin/audit.ts:208"
+        },
+        {
+          "id": "F08-1",
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "criterion": "Транзакционный outbox",
+          "score": 1,
+          "status": "Реализован",
+          "note": "Предметный результат и событие фиксируются вместе.",
+          "evidence": "packages/domain/src/rewards/write.ts:361"
+        },
+        {
+          "id": "F08-2",
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "criterion": "Получение событий и lease",
+          "score": 0.5,
+          "status": "Частично",
+          "note": "Работает отдельный симуляционный worker, без настоящего транспорта.",
+          "evidence": "packages/domain/src/notifications/simulation.ts:34"
+        },
+        {
+          "id": "F08-3",
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "criterion": "Отправка через Bot API",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Адаптера реальной отправки нет.",
+          "evidence": "apps/worker/src/index.ts:10"
+        },
+        {
+          "id": "F08-4",
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "criterion": "Повторы, backoff и восстановление",
+          "score": 0.5,
+          "status": "Частично",
+          "note": "Проверено для локального sink; реальные сетевые ответы Telegram не проверены.",
+          "evidence": "packages/domain/src/notifications/simulation.ts:81"
+        },
+        {
+          "id": "F08-5",
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "criterion": "Статус доставки в UI",
+          "score": 0.5,
+          "status": "Частично",
+          "note": "Есть сводка, страницы событий и журнал попыток симуляции; факта доставки нет.",
+          "evidence": "packages/domain/src/notifications/attempts.ts:30"
+        },
+        {
+          "id": "F08-6",
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "criterion": "Размещение и supervision worker",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Целевой hosting, перезапуск и его проверка отсутствуют.",
+          "evidence": "apps/worker/src/index.ts:10"
+        },
+        {
+          "id": "F09-1",
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "criterion": "Свободный пул",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:308"
+        },
+        {
+          "id": "F09-2",
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "criterion": "Атомарный захват",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:308"
+        },
+        {
+          "id": "F09-3",
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "criterion": "Лимит взятых задач",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:308"
+        },
+        {
+          "id": "F09-4",
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "criterion": "Подача инициативы",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:308"
+        },
+        {
+          "id": "F09-5",
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "criterion": "Решение по инициативе",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:308"
+        },
+        {
+          "id": "F09-6",
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "criterion": "Очередь и история",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:308"
+        },
+        {
+          "id": "F10-1",
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "criterion": "Жизненный цикл вех",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:309"
+        },
+        {
+          "id": "F10-2",
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "criterion": "Фонды вех",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:309"
+        },
+        {
+          "id": "F10-3",
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "criterion": "Выплата остатка",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:309"
+        },
+        {
+          "id": "F10-4",
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "criterion": "Совместные доли",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:309"
+        },
+        {
+          "id": "F10-5",
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "criterion": "Округление распределения",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:309"
+        },
+        {
+          "id": "F10-6",
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "criterion": "UI уже выплаченного",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:309"
+        },
+        {
+          "id": "F11-1",
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "criterion": "Категории XP",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:310"
+        },
+        {
+          "id": "F11-2",
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "criterion": "Матрица компетенций",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:310"
+        },
+        {
+          "id": "F11-3",
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "criterion": "Форма благодарности",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:310"
+        },
+        {
+          "id": "F11-4",
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "criterion": "Подтверждение благодарности",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:310"
+        },
+        {
+          "id": "F11-5",
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "criterion": "Ограничения признания",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:310"
+        },
+        {
+          "id": "F11-6",
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "criterion": "Достижение Наставник",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:310"
+        },
+        {
+          "id": "F12-1",
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "criterion": "Общая цель",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:311"
+        },
+        {
+          "id": "F12-2",
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "criterion": "Уникальные командные события",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:311"
+        },
+        {
+          "id": "F12-3",
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "criterion": "Закрытие сезона",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:311"
+        },
+        {
+          "id": "F12-4",
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "criterion": "Архив снимка",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:311"
+        },
+        {
+          "id": "F12-5",
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "criterion": "Поздние errata",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:311"
+        },
+        {
+          "id": "F12-6",
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "criterion": "Зал Славы",
+          "score": 0,
+          "status": "Отсутствует",
+          "note": "Серверного вертикального среза R2 нет; R0 не учитывается.",
+          "evidence": "IMPLEMENTATION_PLAN.md:311"
+        }
+      ],
+      "source": {
+        "label": "72 критерия реализации",
+        "filters": [
+          "Локальный исходный код; синтетические операции; R0 не включён",
+          "Удалённый production и физические устройства в этой оценке не проверялись"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первичный источник",
+            "detail": "Прочитаны IMPLEMENTATION_PLAN.md §§2, 5, 10–12, PRODUCT.md, DESIGN.md и серверные модули по пути/строке в каждой строке чек-листа."
+          },
+          {
+            "title": "Проверка структуры",
+            "detail": "rg --files и rg -n по packages/domain/src, apps/app/src/app/api/v1, apps/worker/src, db/migrations и docs/verification."
+          },
+          {
+            "title": "Ограничение оценки",
+            "detail": "Рубрика создана для данного отчёта: 6 критериев на функцию, равный вес F01–F12. Это оценка покрытия выбранных возможностей, а не доля трудозатрат или приёмка §12. Общие зависимости могут учитываться в нескольких функциях."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Покрытие чек-листа",
+            "definition": "Сумма баллов / число критериев × 100. Реализован = 1, частично = 0,5, отсутствует = 0. 48 критериев R1 и 24 R2. Все функции имеют одинаковый вес.",
+            "formula": "100 * SUM(score) / COUNT(criteria)",
+            "componentIds": [
+              "overview",
+              "feature-coverage",
+              "criteria",
+              "composition"
+            ]
+          },
+          {
+            "label": "Строгая оценка",
+            "definition": "Число полностью реализованных критериев / все критерии × 100; частичные не учитываются.",
+            "componentIds": [
+              "overview",
+              "methods"
+            ]
+          },
+          {
+            "label": "Количество критериев и остаток",
+            "definition": "Есть / часть / нет — количество строк со score 1 / 0,5 / 0. Доработать = часть + нет. Остаток баллов = число критериев − сумма score. Сравнение этапов всегда использует все 72 строки; остальные новые блоки — выбранный этап.",
+            "formula": "unfinished = COUNT(score < 1); remainingPoints = COUNT(*) - SUM(score)",
+            "componentIds": [
+              "criterion-numbers",
+              "feature-statuses",
+              "phase-comparison"
+            ]
+          }
+        ],
+        "files": [
+          "IMPLEMENTATION_PLAN.md §11–12",
+          "packages/domain/src",
+          "apps/app/src",
+          "apps/worker/src",
+          "docs/verification"
+        ]
+      },
+      "methods": [
+        {
+          "language": "text",
+          "code": "Прочитать файлы из evidence. Сопоставить операцию/API/UI и зафиксированные отрицательные проверки. Присвоить статус по явной рубрике. Для каждой F суммировать шесть баллов; для фазы суммировать только её строки. Не суммировать результаты пересекающихся тестовых прогонов."
+        }
+      ]
+    },
+    "features": {
+      "rows": [
+        {
+          "feature": "F01",
+          "phase": "R1",
+          "name": "Telegram-вход",
+          "label": "F01 · Telegram-вход",
+          "points": 6,
+          "total": 6,
+          "coverage": 100,
+          "done": 6,
+          "partial": 0,
+          "missing": 0
+        },
+        {
+          "feature": "F02",
+          "phase": "R1",
+          "name": "Права и области",
+          "label": "F02 · Права и области",
+          "points": 5,
+          "total": 6,
+          "coverage": 83.33333333333333,
+          "done": 5,
+          "partial": 0,
+          "missing": 1
+        },
+        {
+          "feature": "F03",
+          "phase": "R1",
+          "name": "Цикл задачи",
+          "label": "F03 · Цикл задачи",
+          "points": 6,
+          "total": 6,
+          "coverage": 100,
+          "done": 6,
+          "partial": 0,
+          "missing": 0
+        },
+        {
+          "feature": "F04",
+          "phase": "R1",
+          "name": "XP и баллы",
+          "label": "F04 · XP и баллы",
+          "points": 5,
+          "total": 6,
+          "coverage": 83.33333333333333,
+          "done": 5,
+          "partial": 0,
+          "missing": 1
+        },
+        {
+          "feature": "F05",
+          "phase": "R1",
+          "name": "Рейтинг и профиль",
+          "label": "F05 · Рейтинг и профиль",
+          "points": 6,
+          "total": 6,
+          "coverage": 100,
+          "done": 6,
+          "partial": 0,
+          "missing": 0
+        },
+        {
+          "feature": "F06",
+          "phase": "R1",
+          "name": "Каталог и заявки",
+          "label": "F06 · Каталог и заявки",
+          "points": 5.5,
+          "total": 6,
+          "coverage": 91.66666666666667,
+          "done": 5,
+          "partial": 1,
+          "missing": 0
+        },
+        {
+          "feature": "F07",
+          "phase": "R1",
+          "name": "Администрирование",
+          "label": "F07 · Администрирование",
+          "points": 2,
+          "total": 6,
+          "coverage": 33.333333333333336,
+          "done": 1,
+          "partial": 2,
+          "missing": 3
+        },
+        {
+          "feature": "F08",
+          "phase": "R1",
+          "name": "Уведомления",
+          "label": "F08 · Уведомления",
+          "points": 2.5,
+          "total": 6,
+          "coverage": 41.666666666666664,
+          "done": 1,
+          "partial": 3,
+          "missing": 2
+        },
+        {
+          "feature": "F09",
+          "phase": "R2",
+          "name": "Пул и инициативы",
+          "label": "F09 · Пул и инициативы",
+          "points": 0,
+          "total": 6,
+          "coverage": 0,
+          "done": 0,
+          "partial": 0,
+          "missing": 6
+        },
+        {
+          "feature": "F10",
+          "phase": "R2",
+          "name": "Вехи и доли",
+          "label": "F10 · Вехи и доли",
+          "points": 0,
+          "total": 6,
+          "coverage": 0,
+          "done": 0,
+          "partial": 0,
+          "missing": 6
+        },
+        {
+          "feature": "F11",
+          "phase": "R2",
+          "name": "Компетенции",
+          "label": "F11 · Компетенции",
+          "points": 0,
+          "total": 6,
+          "coverage": 0,
+          "done": 0,
+          "partial": 0,
+          "missing": 6
+        },
+        {
+          "feature": "F12",
+          "phase": "R2",
+          "name": "Итоги сезона",
+          "label": "F12 · Итоги сезона",
+          "points": 0,
+          "total": 6,
+          "coverage": 0,
+          "done": 0,
+          "partial": 0,
+          "missing": 6
+        }
+      ],
+      "source": {
+        "label": "Покрытие функций F01–F12",
+        "filters": [
+          "Локальный исходный код; синтетические операции; R0 не включён",
+          "Удалённый production и физические устройства в этой оценке не проверялись"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первичный источник",
+            "detail": "Прочитаны IMPLEMENTATION_PLAN.md §§2, 5, 10–12, PRODUCT.md, DESIGN.md и серверные модули по пути/строке в каждой строке чек-листа."
+          },
+          {
+            "title": "Проверка структуры",
+            "detail": "rg --files и rg -n по packages/domain/src, apps/app/src/app/api/v1, apps/worker/src, db/migrations и docs/verification."
+          },
+          {
+            "title": "Ограничение оценки",
+            "detail": "Рубрика создана для данного отчёта: 6 критериев на функцию, равный вес F01–F12. Это оценка покрытия выбранных возможностей, а не доля трудозатрат или приёмка §12. Общие зависимости могут учитываться в нескольких функциях."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Покрытие чек-листа",
+            "definition": "Сумма баллов / число критериев × 100. Реализован = 1, частично = 0,5, отсутствует = 0. 48 критериев R1 и 24 R2. Все функции имеют одинаковый вес.",
+            "formula": "100 * SUM(score) / COUNT(criteria)",
+            "componentIds": [
+              "overview",
+              "feature-coverage",
+              "criteria",
+              "composition"
+            ]
+          },
+          {
+            "label": "Строгая оценка",
+            "definition": "Число полностью реализованных критериев / все критерии × 100; частичные не учитываются.",
+            "componentIds": [
+              "overview",
+              "methods"
+            ]
+          },
+          {
+            "label": "Количество критериев и остаток",
+            "definition": "Есть / часть / нет — количество строк со score 1 / 0,5 / 0. Доработать = часть + нет. Остаток баллов = число критериев − сумма score. Сравнение этапов всегда использует все 72 строки; остальные новые блоки — выбранный этап.",
+            "formula": "unfinished = COUNT(score < 1); remainingPoints = COUNT(*) - SUM(score)",
+            "componentIds": [
+              "criterion-numbers",
+              "feature-statuses",
+              "phase-comparison"
+            ]
+          }
+        ],
+        "files": [
+          "IMPLEMENTATION_PLAN.md §11–12",
+          "packages/domain/src",
+          "apps/app/src",
+          "apps/worker/src",
+          "docs/verification"
+        ]
+      },
+      "methods": [
+        {
+          "language": "text",
+          "code": "Прочитать файлы из evidence. Сопоставить операцию/API/UI и зафиксированные отрицательные проверки. Присвоить статус по явной рубрике. Для каждой F суммировать шесть баллов; для фазы суммировать только её строки. Не суммировать результаты пересекающихся тестовых прогонов."
+        }
+      ]
+    },
+    "gates": {
+      "rows": [
+        {
+          "id": "P-01",
+          "group": "Владелец",
+          "title": "Допуск и полномочия",
+          "status": "Не утверждено",
+          "next": "Участники, области, сроки, вступление и выбытие.",
+          "evidence": "IMPLEMENTATION_PLAN.md:287"
+        },
+        {
+          "id": "P-02",
+          "group": "Владелец",
+          "title": "Данные и разрешённый контур",
+          "status": "Не утверждено",
+          "next": "Поля, хранение и допустимость платформ.",
+          "evidence": "IMPLEMENTATION_PLAN.md:288"
+        },
+        {
+          "id": "P-03",
+          "group": "Владелец",
+          "title": "Поощрения и отмена",
+          "status": "Не утверждено",
+          "next": "Допустимые позиции, условия, квоты и факт выдачи.",
+          "evidence": "IMPLEMENTATION_PLAN.md:289"
+        },
+        {
+          "id": "P-04",
+          "group": "Владелец",
+          "title": "Экономика и бонусы",
+          "status": "Не утверждено",
+          "next": "Версия фондов, ограничений и исправлений.",
+          "evidence": "IMPLEMENTATION_PLAN.md:290"
+        },
+        {
+          "id": "P-05",
+          "group": "Владелец",
+          "title": "Видимость и рейтинг",
+          "status": "Не утверждено",
+          "next": "Псевдонимы, области и публичность результатов.",
+          "evidence": "IMPLEMENTATION_PLAN.md:291"
+        },
+        {
+          "id": "P-06",
+          "group": "Владелец",
+          "title": "Ответственность за пилот",
+          "status": "Не утверждено",
+          "next": "Команда, бюджет, восстановление и остановка.",
+          "evidence": "IMPLEMENTATION_PLAN.md:292"
+        },
+        {
+          "id": "G-01",
+          "group": "Разработка",
+          "title": "Полный F01–F08",
+          "status": "Не закрыто",
+          "next": "Дописать администрирование, бонусы, автоматическое истечение и настоящую доставку.",
+          "evidence": "IMPLEMENTATION_PLAN.md:317"
+        },
+        {
+          "id": "G-02",
+          "group": "Эксплуатация",
+          "title": "Режим реальных данных",
+          "status": "Не проверено",
+          "next": "Адаптировать синтетические ограничения схемы и домена к утверждённым правилам.",
+          "evidence": "IMPLEMENTATION_PLAN.md:317"
+        },
+        {
+          "id": "G-03",
+          "group": "Проверки",
+          "title": "Telegram Android / iOS",
+          "status": "Не проверено",
+          "next": "Физические WebView, клавиатура, safe areas, отзыв доступа.",
+          "evidence": "IMPLEMENTATION_PLAN.md:317"
+        },
+        {
+          "id": "G-04",
+          "group": "Проверки",
+          "title": "Безопасность и восстановление",
+          "status": "Не проверено",
+          "next": "Security scan, зависимости, проверенный TLS/CA, restore и нагрузка.",
+          "evidence": "IMPLEMENTATION_PLAN.md:317"
+        },
+        {
+          "id": "G-05",
+          "group": "Выпуск",
+          "title": "Целевая CI и раскатка",
+          "status": "Не проверено",
+          "next": "PostgreSQL 17.6 CI, удалённые миграции, согласованный выпуск app/API/worker.",
+          "evidence": "IMPLEMENTATION_PLAN.md:317"
+        }
+      ],
+      "source": {
+        "label": "Условия допуска к пилоту",
+        "filters": [
+          "Локальный исходный код; синтетические операции; R0 не включён",
+          "Удалённый production и физические устройства в этой оценке не проверялись"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первичный источник",
+            "detail": "Прочитаны IMPLEMENTATION_PLAN.md §§2, 5, 10–12, PRODUCT.md, DESIGN.md и серверные модули по пути/строке в каждой строке чек-листа."
+          },
+          {
+            "title": "Проверка структуры",
+            "detail": "rg --files и rg -n по packages/domain/src, apps/app/src/app/api/v1, apps/worker/src, db/migrations и docs/verification."
+          },
+          {
+            "title": "Ограничение оценки",
+            "detail": "Рубрика создана для данного отчёта: 6 критериев на функцию, равный вес F01–F12. Это оценка покрытия выбранных возможностей, а не доля трудозатрат или приёмка §12. Общие зависимости могут учитываться в нескольких функциях."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Покрытие чек-листа",
+            "definition": "Сумма баллов / число критериев × 100. Реализован = 1, частично = 0,5, отсутствует = 0. 48 критериев R1 и 24 R2. Все функции имеют одинаковый вес.",
+            "formula": "100 * SUM(score) / COUNT(criteria)",
+            "componentIds": [
+              "overview",
+              "feature-coverage",
+              "criteria",
+              "composition"
+            ]
+          },
+          {
+            "label": "Строгая оценка",
+            "definition": "Число полностью реализованных критериев / все критерии × 100; частичные не учитываются.",
+            "componentIds": [
+              "overview",
+              "methods"
+            ]
+          }
+        ],
+        "files": [
+          "IMPLEMENTATION_PLAN.md §11–12",
+          "packages/domain/src",
+          "apps/app/src",
+          "apps/worker/src",
+          "docs/verification"
+        ]
+      },
+      "methods": [
+        {
+          "language": "text",
+          "code": "Прочитать файлы из evidence. Сопоставить операцию/API/UI и зафиксированные отрицательные проверки. Присвоить статус по явной рубрике. Для каждой F суммировать шесть баллов; для фазы суммировать только её строки. Не суммировать результаты пересекающихся тестовых прогонов."
+        }
+      ]
+    },
+    "architecture": {
+      "rows": [
+        {
+          "node": "Telegram WebView",
+          "state": "Локальный UI; физические устройства не проверены"
+        },
+        {
+          "node": "Next.js /api/v1",
+          "state": "Защищённые Node Route Handlers"
+        },
+        {
+          "node": "Доменные сервисы",
+          "state": "Права, транзакции, XP, резервы, аудит"
+        },
+        {
+          "node": "PostgreSQL",
+          "state": "Локальные миграции 000001–000023; синтетический режим"
+        },
+        {
+          "node": "Worker",
+          "state": "Симуляция, lease, retry, журнал попыток; без Bot API"
+        }
+      ],
+      "source": {
+        "label": "Схема реализованной архитектуры",
+        "filters": [
+          "Локальный исходный код; синтетические операции; R0 не включён",
+          "Удалённый production и физические устройства в этой оценке не проверялись"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первичный источник",
+            "detail": "Прочитаны IMPLEMENTATION_PLAN.md §§2, 5, 10–12, PRODUCT.md, DESIGN.md и серверные модули по пути/строке в каждой строке чек-листа."
+          },
+          {
+            "title": "Проверка структуры",
+            "detail": "rg --files и rg -n по packages/domain/src, apps/app/src/app/api/v1, apps/worker/src, db/migrations и docs/verification."
+          },
+          {
+            "title": "Ограничение оценки",
+            "detail": "Рубрика создана для данного отчёта: 6 критериев на функцию, равный вес F01–F12. Это оценка покрытия выбранных возможностей, а не доля трудозатрат или приёмка §12. Общие зависимости могут учитываться в нескольких функциях."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Покрытие чек-листа",
+            "definition": "Сумма баллов / число критериев × 100. Реализован = 1, частично = 0,5, отсутствует = 0. 48 критериев R1 и 24 R2. Все функции имеют одинаковый вес.",
+            "formula": "100 * SUM(score) / COUNT(criteria)",
+            "componentIds": [
+              "overview",
+              "feature-coverage",
+              "criteria",
+              "composition"
+            ]
+          },
+          {
+            "label": "Строгая оценка",
+            "definition": "Число полностью реализованных критериев / все критерии × 100; частичные не учитываются.",
+            "componentIds": [
+              "overview",
+              "methods"
+            ]
+          }
+        ],
+        "files": [
+          "IMPLEMENTATION_PLAN.md §11–12",
+          "packages/domain/src",
+          "apps/app/src",
+          "apps/worker/src",
+          "docs/verification"
+        ]
+      },
+      "methods": [
+        {
+          "language": "text",
+          "code": "Прочитать файлы из evidence. Сопоставить операцию/API/UI и зафиксированные отрицательные проверки. Присвоить статус по явной рубрике. Для каждой F суммировать шесть баллов; для фазы суммировать только её строки. Не суммировать результаты пересекающихся тестовых прогонов."
+        }
+      ]
+    },
+    "gallery": {
+      "rows": [
+        {
+          "feature": "F03",
+          "screen": "Задача → отчёт",
+          "file": "docs/verification/assets/f06-fulfillment/f03-report-320.png",
+          "mode": "synthetic",
+          "date": "2026-10-03"
+        },
+        {
+          "feature": "F05",
+          "screen": "Профиль",
+          "file": "docs/verification/assets/f05-profile/profile/profile-320.png",
+          "mode": "synthetic",
+          "date": "2026-10-02"
+        },
+        {
+          "feature": "F06",
+          "screen": "Выдача",
+          "file": "docs/verification/assets/f06-fulfillment/reward-fulfillment/form-320.png",
+          "mode": "synthetic",
+          "date": "2026-10-03"
+        },
+        {
+          "feature": "F07",
+          "screen": "История каталога",
+          "file": "docs/verification/assets/f07-catalog-history/admin-catalog/history-390.png",
+          "mode": "synthetic",
+          "date": "2026-10-04"
+        }
+      ],
+      "source": {
+        "label": "Сохранённые captures локального интерфейса",
+        "filters": [
+          "Локальный исходный код; синтетические операции; R0 не включён",
+          "Удалённый production и физические устройства в этой оценке не проверялись"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первичный источник",
+            "detail": "Прочитаны IMPLEMENTATION_PLAN.md §§2, 5, 10–12, PRODUCT.md, DESIGN.md и серверные модули по пути/строке в каждой строке чек-листа."
+          },
+          {
+            "title": "Проверка структуры",
+            "detail": "rg --files и rg -n по packages/domain/src, apps/app/src/app/api/v1, apps/worker/src, db/migrations и docs/verification."
+          },
+          {
+            "title": "Ограничение оценки",
+            "detail": "Рубрика создана для данного отчёта: 6 критериев на функцию, равный вес F01–F12. Это оценка покрытия выбранных возможностей, а не доля трудозатрат или приёмка §12. Общие зависимости могут учитываться в нескольких функциях."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Покрытие чек-листа",
+            "definition": "Сумма баллов / число критериев × 100. Реализован = 1, частично = 0,5, отсутствует = 0. 48 критериев R1 и 24 R2. Все функции имеют одинаковый вес.",
+            "formula": "100 * SUM(score) / COUNT(criteria)",
+            "componentIds": [
+              "overview",
+              "feature-coverage",
+              "criteria",
+              "composition"
+            ]
+          },
+          {
+            "label": "Строгая оценка",
+            "definition": "Число полностью реализованных критериев / все критерии × 100; частичные не учитываются.",
+            "componentIds": [
+              "overview",
+              "methods"
+            ]
+          },
+          {
+            "label": "Количество критериев и остаток",
+            "definition": "Есть / часть / нет — количество строк со score 1 / 0,5 / 0. Доработать = часть + нет. Остаток баллов = число критериев − сумма score. Сравнение этапов всегда использует все 72 строки; остальные новые блоки — выбранный этап.",
+            "formula": "unfinished = COUNT(score < 1); remainingPoints = COUNT(*) - SUM(score)",
+            "componentIds": [
+              "criterion-numbers",
+              "feature-statuses",
+              "phase-comparison"
+            ]
+          }
+        ],
+        "files": [
+          "IMPLEMENTATION_PLAN.md §11–12",
+          "packages/domain/src",
+          "apps/app/src",
+          "apps/worker/src",
+          "docs/verification"
+        ]
+      },
+      "methods": [
+        {
+          "language": "text",
+          "code": "Использованы исходные PNG из docs/verification/assets; рисунки не генерировались и значения интерфейса не менялись. Превью обрезано по высоте; диалог показывает весь снимок."
+        }
+      ]
+    },
+    "checks": {
+      "rows": [
+        {
+          "command": "bun run test:unit (TEST_DATABASE_URL пустой)",
+          "result": "98 passed, 296 skipped; 24 suites passed, 39 skipped",
+          "environment": "Windows, Node 24.21.0",
+          "source": "test-results/system-report-unit.log",
+          "date": "2026-10-05"
+        },
+        {
+          "command": "node scripts/verify-task-slice.mjs (TEST_SKIP_SCREENSHOTS=true)",
+          "result": "295 passed, 1 skipped; 39 suites passed; browser scenarios passed",
+          "environment": "Windows, PostgreSQL 18.6, Next production server localhost:3100",
+          "source": "test-results/system-report-regression.log",
+          "date": "2026-10-05"
+        },
+        {
+          "command": "bun run test:integration без TEST_APP_ORIGIN",
+          "result": "241 passed, 36 skipped, 1 failed: Run bun run test:task-slice",
+          "environment": "Первичный неполный запуск; заменён штатным runner",
+          "source": "Вывод команды в текущей сессии",
+          "date": "2026-10-05"
+        },
+        {
+          "command": "Runner в песочнице / до запуска PostgreSQL",
+          "result": "SWC access denied / ECONNREFUSED; повтор после запуска базы прошёл",
+          "environment": "Сбой среды, отдельно от результата штатного прогона",
+          "source": "Вывод команд в текущей сессии",
+          "date": "2026-10-05"
+        }
+      ],
+      "source": {
+        "label": "Результаты фактически выполненных проверок",
+        "filters": [
+          "Локальный исходный код; синтетические операции; R0 не включён",
+          "Удалённый production и физические устройства в этой оценке не проверялись"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первичный источник",
+            "detail": "Прочитаны IMPLEMENTATION_PLAN.md §§2, 5, 10–12, PRODUCT.md, DESIGN.md и серверные модули по пути/строке в каждой строке чек-листа."
+          },
+          {
+            "title": "Проверка структуры",
+            "detail": "rg --files и rg -n по packages/domain/src, apps/app/src/app/api/v1, apps/worker/src, db/migrations и docs/verification."
+          },
+          {
+            "title": "Ограничение оценки",
+            "detail": "Рубрика создана для данного отчёта: 6 критериев на функцию, равный вес F01–F12. Это оценка покрытия выбранных возможностей, а не доля трудозатрат или приёмка §12. Общие зависимости могут учитываться в нескольких функциях."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Покрытие чек-листа",
+            "definition": "Сумма баллов / число критериев × 100. Реализован = 1, частично = 0,5, отсутствует = 0. 48 критериев R1 и 24 R2. Все функции имеют одинаковый вес.",
+            "formula": "100 * SUM(score) / COUNT(criteria)",
+            "componentIds": [
+              "overview",
+              "feature-coverage",
+              "criteria",
+              "composition"
+            ]
+          },
+          {
+            "label": "Строгая оценка",
+            "definition": "Число полностью реализованных критериев / все критерии × 100; частичные не учитываются.",
+            "componentIds": [
+              "overview",
+              "methods"
+            ]
+          },
+          {
+            "label": "Количество критериев и остаток",
+            "definition": "Есть / часть / нет — количество строк со score 1 / 0,5 / 0. Доработать = часть + нет. Остаток баллов = число критериев − сумма score. Сравнение этапов всегда использует все 72 строки; остальные новые блоки — выбранный этап.",
+            "formula": "unfinished = COUNT(score < 1); remainingPoints = COUNT(*) - SUM(score)",
+            "componentIds": [
+              "criterion-numbers",
+              "feature-statuses",
+              "phase-comparison"
+            ]
+          }
+        ],
+        "files": [
+          "IMPLEMENTATION_PLAN.md §11–12",
+          "packages/domain/src",
+          "apps/app/src",
+          "apps/worker/src",
+          "docs/verification"
+        ]
+      },
+      "methods": [
+        {
+          "language": "text",
+          "code": "Читать итоговые строки логов. Прогоны используют пересекающиеся тесты; результаты не складывать. Skipped не считать пройденными. TEST_DATABASE_URL указывает только на изолированную loopback-базу; секреты не включены."
+        }
+      ]
+    }
+  },
+  "report": {
+    "asOf": "2026-10-05"
+  },
+  "verificationText": "## Что проверено\n\n**5 октября, текущая работа:** `bun run test:unit` — 98 прошли, 296 пропущены (интеграционные проверки без БД). Штатный `node scripts/verify-task-slice.mjs` с отдельной PostgreSQL 18.6 и локальным production server — 295 интеграционных тестов прошли, один пропущен; браузерные сценарии прошли. Два счётчика не складываются: наборы могут пересекаться.\n\nПервый прямой запуск integration дал 241 успешный тест и один сбой из-за отсутствия TEST_APP_ORIGIN. При повторе были также ошибки Windows SWC и недоступная тестовая БД. После запуска существующей изолированной базы и штатного runner получен успешный результат выше.\n\n**Предыдущие зафиксированные проверки 4 октября:** typecheck, lint и production build прошли для среза истории каталога; ссылки и точные команды — в docs/verification/2026-10-04-f07-catalog-history.md. Это не новый запуск этих команд в текущей работе.\n\n**Не проверено здесь:** удалённое развёртывание, PostgreSQL 17.6 CI, фактическая доставка Bot API, ручной Android/iOS, нагрузка и восстановление резервной копии. Сборка и браузер не заменяют проверку Telegram на устройстве."
+}

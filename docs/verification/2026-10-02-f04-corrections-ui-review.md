@@ -1,0 +1,11 @@
+# F04: независимая проверка UI, 02.10.2026
+
+Источник: fresh subagent `impeccable_finish_reviewer`, spawned без истории основного исполнителя по установленному skill. Контракт: `apps/app/.impeccable/surfaces/apps-app-src-features-ledger-ledger-corrections-tsx.md`; incumbent DESIGN.md, craft-floor и оба ledger TSX переданы reviewer. Это code-led расширение существующего Operate экрана, approved comp не требуется. Detector: `[]`, один запуск. Нет внешних изображений/референсов/новых зависимостей.
+
+Первый review лично просмотрел full-page captures 320/360/390/1280 px и код. Persistence/fidelity/craft для формы соответствовали incumbent flat journal/inset form. Disposition **fix**: форма говорит, что полный возврат невозможен, но разрешает fresh submit; refreshed candidate может показывать отрицательный projected balance. Остальные состояния без снимков оценены только по коду, физический Telegram исключён.
+
+Одна fix batch добавила одинаковый known-insufficient guard в handler/button и явную невозможность вместо отрицательных candidate сумм. Текст причины сохраняется. Уже сохранённое uncertain намерение всё ещё можно повторить без замены тела/ключа. Added browser checks проверяют первоначальный недостаток и conflict refresh в недостаточный баланс. Финальная матрица 18 UI-сценариев прошла, вместе с 129 integration/HTTP-тестами полного runner; reviewer их самостоятельно не запускал.
+
+Reviewer получил четыре финальных baseline captures плюс `f04-insufficient-320.png` и `f04-candidate-insufficient-320.png`. Все 6 признаны valid. Verdict: обе части material fix **resolved**, disposition **ship** для scored fix; четыре baseline композиции сохраняются, видимой регрессии от этой batch нет. Это не whole-surface/Telegram приёмка и не отдельная проверка backend.
+
+Fresh `impeccable_documenter` сверил исходники, контракт, PRODUCT, DESIGN, sidecar, tokens/CSS и лично просмотрел 6 снимков. Добавлен только один F04 абзац DESIGN.md. SHA256 sidecar/tokens/globals до/после одинаковы; предсуществующая разница R0/production typography оставлена. `git diff --check -- DESIGN.md` — exit 0. Исходные снимки: `test-results/task-slice/1524/ledger-corrections`; сохраняемые копии с origin metadata: `assets/f04-corrections`. Общая проверка и ограничения: `2026-10-02-f04-corrections.md`.

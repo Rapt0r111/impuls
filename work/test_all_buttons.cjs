@@ -19,6 +19,8 @@ const assert = require('assert');
   const snapshot = () => page.evaluate(() => window.demoSnapshot());
 
   console.log('1. Testing Topbar, Presentation Mode, and Guide...');
+  assert.equal(await page.locator('.theme-switch').count(), 0, 'Theme switch must be removed');
+  assert.equal(await page.locator('#sound-toggle').count(), 0, 'Sound toggle must be removed');
   // Present toggle
   const presentBtn = page.locator('#present-toggle');
   await presentBtn.click();
@@ -376,7 +378,40 @@ const assert = require('assert');
   await page.locator('.toc a[href="#chapter-3"]').click();
   assert(await page.locator('#chapter-3').evaluate(el => el.open));
 
-  console.log('12. Checking for any unhandled JS/console errors...');
+    console.log('12. Testing Combat Tasks Terminal and Reward Capsule...');
+  // Quest Terminal: verify initial quest display
+  const questTitleBefore = await page.locator('#quest-title').innerText();
+  assert(questTitleBefore.length > 0, 'Quest title should be visible');
+  // Click roll button
+  await page.locator('#quest-roll-btn').click();
+  await page.waitForTimeout(900);
+  assert.equal(await page.locator('#quest-roll-btn').isEnabled(), true, 'Roll button re-enabled');
+  // Click accept quest button
+  await page.locator('#quest-accept-btn').click();
+  assert.equal(await page.locator('#quest-accept-btn').innerText(), '✓ Принято в боевой журнал');
+  assert.equal(await page.locator('#quest-accept-btn').isDisabled(), true);
+  assert.equal(await page.locator('#quest-status-note').isVisible(), true);
+  assert.equal(await page.locator('#toast').isVisible(), true);
+
+  // Reward Capsule: initial state
+  assert.equal(await page.locator('#capsule-loot-card').isHidden(), true);
+  assert.equal(await page.locator('#capsule-open-btn').isVisible(), true);
+  // Open capsule
+  await page.locator('#capsule-open-btn').click();
+  await page.waitForTimeout(800);
+  assert.equal(await page.locator('#capsule-loot-card').isVisible(), true);
+  const lootTitle = await page.locator('#loot-title').innerText();
+  assert(lootTitle.length > 0, 'Loot title revealed');
+  assert.equal(await page.locator('#capsule-open-btn').isHidden(), true);
+  assert.equal(await page.locator('#capsule-reset-btn').isVisible(), true);
+
+  // Reset capsule
+  await page.locator('#capsule-reset-btn').click();
+  assert.equal(await page.locator('#capsule-loot-card').isHidden(), true);
+  assert.equal(await page.locator('#capsule-open-btn').isVisible(), true);
+  assert.equal(await page.locator('#capsule-reset-btn').isHidden(), true);
+
+  console.log('13. Checking for any unhandled JS/console errors...');
   console.log('Captured page errors:', pageErrors);
   assert.equal(pageErrors.length, 0, 'No console or page errors allowed!');
 

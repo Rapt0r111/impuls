@@ -387,10 +387,16 @@ function render(){
     ['profile','user','Профиль']
   ];
   $('#bottomnav').innerHTML=nav.map(([p,i,n])=>`<button data-page="${p}" class="${state.page===p||(state.page==='task'&&p===(state.role==='commander'?'reviews':state.role==='admin'?'admin':'tasks'))?'active':''}" ${state.page===p?'aria-current="page"':''}>${icon(i)}<span>${n}</span></button>`).join('');
+  if(typeof window.onAppRender==='function'){
+    try{window.onAppRender(state);}catch(err){}
+  }
 }
 
 function celebrate(xp,coins,previousLevel){
   const up=level()>previousLevel;
+  if(typeof window.triggerDemoCelebrationFx==='function'){
+    try{window.triggerDemoCelebrationFx(xp,coins,up,level());}catch(err){}
+  }
   $('#celebration-host').innerHTML=`<div class="celebration" role="dialog" aria-modal="true" aria-labelledby="reward-heading"><div class="celebrate-inner"><div class="celebrate-icon">${icon(up?'trophy':'spark')}</div><h3 id="reward-heading">${up?'Новый уровень — '+level():'Результат принят'}</h3><p>Работа подтверждена командиром.<br>Вклад стал частью общего результата.</p><div class="gains"><div><strong>+${xp}</strong><small>опыта XP</small></div><div><strong>+${coins}</strong><small>баллов</small></div></div><button class="btn primary wide" data-action="close-celebration">Продолжить</button></div></div>`;
   $('#screen').inert=true;
   $('#bottomnav').inert=true;

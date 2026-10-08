@@ -1,0 +1,87 @@
+/* Pretext Typography & Kinetic Text Styling (Powered by @chenglou/pretext@0.0.9) */
+
+/* Optical Typography & Line Balancing */
+[data-pretext-optimized] {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Kinetic Line Reveal Containers */
+.pretext-line-wrapper {
+  display: block;
+  line-height: inherit;
+  vertical-align: top;
+}
+
+.pretext-line {
+  display: inline-block;
+  line-height: inherit;
+  vertical-align: top;
+  will-change: transform, opacity;
+}
+
+/* Staggered entrance for headline lines */
+.launch h1 .headline-line {
+  display: block;
+  will-change: transform, opacity;
+}
+
+.launch h1 .headline-line > span {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.pitch h2 .headline-line {
+  display: block;
+  will-change: transform, opacity;
+}
+
+.pitch h2 .headline-line > span {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* Kinetic Scramble Numbers & Badges */
+.pretext-scramble-slot {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  min-width: var(--pretext-width, auto);
+  transition: color 0.2s ease;
+}
+
+/* Kinetic text reveal pulse glow */
+.pretext-glow {
+  text-shadow: 0 0 16px rgba(112, 225, 194, 0.45);
+}
+
+/* Dynamic height container with Pretext zero-reflow transitions */
+.tour-story-card {
+  transition: height 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
+}
+
+/* Reduced motion and Effects Off: strict cancellation */
+.no-motion .pretext-line-wrapper,
+.no-motion .pretext-line,
+.no-motion .headline-line,
+.no-motion .headline-line > span,
+.no-motion .pretext-scramble-slot,
+.no-motion [data-pretext-optimized] {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pretext-line-wrapper,
+  .pretext-line,
+  .headline-line,
+  .headline-line > span,
+  .pretext-scramble-slot,
+  [data-pretext-optimized] {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

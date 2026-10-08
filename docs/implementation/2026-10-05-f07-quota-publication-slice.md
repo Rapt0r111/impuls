@@ -1,0 +1,16 @@
+# F07: публикация нового периода синтетической квоты
+
+Основание: IMPLEMENTATION_PLAN.md §§ 4–7, 10–12, F02/F06/F07; ADR-0017. Срез добавляет только новый будущий период существующей synthetic cosmetic identity. Старые периоды, занятые места, балансы и снимки заявок сохраняются.
+
+## Контракт до реализации
+
+- POST /api/v1/admin/rewards/:id/quotas: scope UUID, startsAt/endsAt canonical UTC ISO с миллисекундами, capacity integer 0–1000000, reason 1–2000. Интервал [startsAt,endsAt); начало строго после серверного времени после ожидания блокировок. Оба точных права admin.catalog и admin.catalog.quota.publish; оба default false флага SYNTHETIC_ADMIN_CATALOG_ENABLED/SYNTHETIC_QUOTA_PUBLICATION_ENABLED. Не назначать права миграцией. Нулевая capacity допустима и не разрешает резервирование.
+- Existing Origin/content-type/body-limit/CSRF/session и общий actor mutation limiter. Строгие path/query/body/idempotency UUID, no-store. 404 при чужой области/identity/flag, 409 пересечение/изменённое тело ключа, 422 начало уже наступило. UI не вычисляет полномочия.
+- Транзакция: actor → permissions → session → idempotency → прежний advisory identity guard → quota rows ORDER BY id FOR UPDATE. Перечитать полномочия и серверное время после блокировок, перед commit. Replay проверяет текущие права/flags, но возвращает первоначальный snapshot даже после начала периода. Пересечения проверяются сервером и прежним trigger, смежные периоды разрешены. Это append, без изменения capacity прежней квоты: reserved/used не сбрасываются и не переносятся.
+- Миграция 000025: отдельное право, ограниченный INSERT grant квоты, append-only quota_publications с immutable starts/end/capacity snapshot, actor/request/reason. Insert publication и quota и idempotent response атомарны. Snapshot не читает live reserved/used. Центральный admin.audit показывает quota.publish независимо от publication flag, в exact scope. Не добавлять Bot API/outbox без контракта получателей.
+- GET admin catalog добавляет canPublishQuota (default false для старых ответов). Inline form использует существующие CSS/tokens, дата и время разделены на native поля для enlarged text, UTC явно подписан, preview и отдельное подтверждение. Dirty/Telegram Back, отказ очищает все protected catalog caches и отменяет запросы; late response игнорируется. Unknown/503/429 сохраняют тот же intent/key; конфликт требует нового чтения перед новым намерением. Успех перечитывает quota history/catalog/audit. 320/360/390/1280, keyboard, enlarged text, reduced motion.
+- Выпуск 000025 и API/UI совместный, локальные флаги выключены. Создание identity, изменение/отмена существующих периодов, реальные квоты/политики, устройства, внешний выпуск, P-01…P-06 и полная приёмка F07/R1 остаются открытыми.
+
+## Проверки
+
+Disposable PostgreSQL под impuls_app: exact права/flags/отзыв/session, overlap/adjacency/zero/past, replay/body conflict, два publishers, ожидание quota/advisory locks и expiry доступа/даты после ожидания, rollback publication failure, immutable grants/snapshot, старый pending резерв и balance сохраняются, audit scope/filter/cursor. Реальный HTTP/CSRF/Origin/413/405/no-store и browser-to-DB. Контрактные отрицательные тесты; browser success/unknown/429/409/denial/dirty/Back/late response и мобильные снимки. Restore rehearsal всех миграций после 000025.

@@ -1,0 +1,338 @@
+<section class="launch" aria-labelledby="launch-title">
+  <div class="launch-art" aria-hidden="true"></div><canvas id="hero-shader" class="hero-shader" aria-hidden="true"></canvas>
+  <div class="launch-shade" aria-hidden="true"></div>
+  <div class="wrap launch-content">
+    <div class="hero-live-badge"><span class="badge-radar-dot"></span><span>НАУЧНАЯ РОТА · ЦИФРОВАЯ СРЕДА «ИМПУЛЬС»</span></div>
+    <h1 id="launch-title"><span class="headline-line">Твой вклад.</span><span class="headline-line">Новый <em>уровень.</em></span></h1>
+    <p>Закрывай задачи. Развивай навыки.<br>Двигай команду вперёд.</p>
+    <div class="actions"><a class="btn primary" href="#demo">Попробовать прототип <span data-icon="arrow" class="forward-icon"></span></a><a class="btn quiet" href="#mechanics">Как это работает</a></div>
+    <div class="launch-note">«Импульс» — концепция игрового Telegram Mini App<br>для участников научной роты.</div>
+  </div>
+  <div class="wrap launch-bottom"><span>Личный прогресс × общий результат</span><span class="hero-telemetry-pill"><i class="hud-pulse"></i> 40 УЧАСТНИКОВ РОТЫ</span><span>Иллюстрация концепции · демоданные</span></div>
+</section>
+
+<section class="mechanics" id="mechanics" aria-labelledby="mechanics-title">
+  <div class="wrap">
+    <h2 id="mechanics-title">Хорошая работа.<br>Видимый <em>прогресс.</em></h2>
+    <p class="section-intro">Сначала — результат и проверка. Затем — опыт, баллы и новый шаг вперёд. Посмотри, как это связано, на одном учебном примере.</p>
+    <div class="mechanics-layout">
+      <div class="reward-lab" aria-label="Учебный пример начисления">
+        <div class="lab-top"><span data-icon="code"></span><span class="lab-status" id="lab-status">Учебный пример · на проверке</span></div>
+        <h3>Обновить страницу проекта</h3>
+        <p>Структура обновлена, ссылки работают, мобильная версия проверена.</p>
+        <div class="lab-fund"><span>Фонд задачи</span><strong>150 XP <span>+ 50 баллов</span></strong></div>
+        <fieldset class="bonus-options"><legend>Какой бонус покажем в примере?</legend><label><input type="radio" name="lab-bonus" value="none" checked><span>Без бонуса<small>Штатная приёмка</small></span></label><label><input type="radio" name="lab-bonus" value="quality"><span>Качество<small>+20 XP / +10 баллов</small></span></label><label><input type="radio" name="lab-bonus" value="team"><span>Помощь команде<small>+25 XP / +15 баллов</small></span></label></fieldset>
+        <div class="lab-preview"><span>Награда в примере</span><strong id="lab-award">+150 XP / +50 баллов</strong></div>
+        <button class="btn primary wide" id="lab-accept">Показать принятие результата</button>
+        <div class="lab-result" id="lab-result" role="status" aria-live="polite">Отправка отчёта сама по себе не начисляет награду.</div>
+        <div class="lab-score"><div><small>Опыт</small><strong id="lab-xp">1 840</strong><span>XP не расходуется</span></div><div><small>Баллы</small><strong id="lab-points">260</strong><span>Для каталога поощрений</span></div><div><small>Уровень</small><strong id="lab-level">4</strong><span id="lab-next">160 XP до уровня 5</span></div></div>
+        <button class="lab-reset" id="lab-reset" hidden>Повторить пример</button>
+        <small class="lab-disclaimer">Отдельная иллюстрация механики. Числа вымышлены; действия здесь не меняют прототип и не создают настоящих начислений.</small>
+      </div>
+      <div class="mechanics-notes">
+        <article><span class="mechanic-symbol">XP</span><h3>Опыт остаётся с тобой</h3><p>Принятые результаты повышают игровой уровень и развивают компетенции. Покупка оформления не уменьшает накопленный опыт.</p></article>
+        <article><span data-icon="gift" class="mechanic-symbol"></span><h3>Баллы дают выбор</h3><p>В каталоге — оформление, признание и заявки на согласуемые поощрения. По заявке баллы резервируются до решения.</p></article>
+        <article><span data-icon="check" class="mechanic-symbol"></span><h3>Решение можно понять</h3><p>Критерии видны заранее. Проверяющий принимает результат или объясняет доработку. Начисление сохраняется в истории.</p></article>
+        <p class="mechanics-boundary">Игровой статус не является воинским званием. Реальные цены, правила и доступность поощрений требуют согласования.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="team-world" aria-labelledby="team-title">
+  <div class="wrap">
+    <div class="team-heading"><h2 id="team-title">Ты растёшь.<br><em>Команда — тоже.</em></h2><p>Личный результат становится частью общей цели. В демонстрации исследовательский модуль развивается по трём направлениям.</p></div>
+    <div class="team-layout">
+      <div class="team-scene"><div class="team-art" aria-hidden="true"></div><canvas id="research-core" class="research-core" tabindex="0" role="img" aria-label="Трёхмерная модель исследовательского ядра. Стрелки влево и вправо вращают модель."></canvas><div class="core-controls"><span id="core-caption">Иллюстрация исследовательского модуля</span><div class="core-modes" role="group" aria-label="Режимы 3D-ядра"><button data-core-mode="normal" class="active" aria-pressed="true">Норма</button><button data-core-mode="resonance" aria-pressed="false">Резонанс</button><button data-core-mode="overdrive" aria-pressed="false">Овердрайв</button></div><div><button data-core-turn="-1" aria-label="Повернуть модель влево" hidden><span data-icon="arrow"></span></button><button data-core-turn="1" aria-label="Повернуть модель вправо" hidden><span data-icon="arrow"></span></button></div></div><div class="holo-radar-box" aria-label="Радар секторов роты"><canvas id="holo-radar" class="holo-radar" width="130" height="130" title="Радар секторов задач"></canvas><div class="radar-telemetry"><span>ТАКТИЧЕСКИЙ РАДАР</span><strong>8 АКТИВНЫХ ЦЕЛЕЙ</strong></div></div><div class="team-caption"><strong id="team-total">22<span> / 30</span></strong><span>подтверждённых результатов<br>в демонстрационной цели</span></div></div>
+      <div class="team-console">
+        <div class="module-controls" role="group" aria-label="Направление командного прогресса"><button data-module="dev" aria-pressed="true"><span data-icon="code"></span>Цифровизация</button><button data-module="science" aria-pressed="false"><span data-icon="spark"></span>Исследования</button><button data-module="duty" aria-pressed="false"><span data-icon="book"></span>Регламент</button></div>
+        <div class="module-detail" id="module-detail" role="status" aria-live="polite"><h3>Цифровизация</h3><p>Сайты, интерфейсы и сервисы. Каждая принятая работа приближает общий модуль к завершению.</p><div class="module-count"><strong>9 / 10</strong><span>результатов в демо</span></div><div class="module-segments" aria-hidden="true"><i class="complete"></i><i class="complete"></i><i class="complete"></i><i class="complete"></i><i class="complete"></i><i class="complete"></i><i class="complete"></i><i class="complete"></i><i class="complete"></i><i></i></div></div>
+        <p class="team-note">Попробуй принять задачу в прототипе ниже: связанная с ним карта прогресса обновится.</p>
+      </div>
+    </div>
+    <div class="achievement-story"><h3>Есть чем гордиться</h3><p>Достижения отмечают полезные действия, а не время в приложении. Открой знак, чтобы узнать его смысл в прототипе.</p><div class="achievement-choices" role="group" aria-label="Примеры достижений"><button data-achievement="first" aria-pressed="true"><span data-icon="spark"></span><span>Первый результат</span></button><button data-achievement="skill" aria-pressed="false"><span data-icon="book"></span><span>Новый навык</span></button><button data-achievement="mentor" aria-pressed="false"><span data-icon="user"></span><span>Наставник</span></button><button data-achievement="team" aria-pressed="false"><span data-icon="trophy"></span><span>Командный вклад</span></button></div><div id="achievement-explainer" class="achievement-explainer" role="status" aria-live="polite"><strong>Первый результат</strong><span>Первая принятая задача — начало видимого прогресса.</span></div></div>
+  </div>
+</section>
+
+<section class="rpg-hub" id="rpg-operative" aria-labelledby="rpg-title">
+  <div class="wrap">
+    <div class="rpg-header">
+      <div class="hud-pill"><span class="badge-radar-dot"></span> RPG СИСТЕМА ПРОКАЧКИ</div>
+      <h2 id="rpg-title">Личное дело оператора.<br><em>Дерево компетенций.</em></h2>
+      <p class="section-intro">Каждый принятый результат развивает атрибуты бойца-исследователя. Распределяй свободные очки развития (SP), разблокируй специализации и активируй командные перки.</p>
+    </div>
+    <div class="rpg-layout">
+      <div class="rpg-dossier" aria-label="Карточка оператора">
+        <div class="dossier-top">
+          <div class="dossier-avatar-wrap">
+            <div class="dossier-avatar">ДС</div>
+            <div class="avatar-ring" aria-hidden="true"></div>
+          </div>
+          <div class="dossier-meta">
+            <div class="dossier-rank">Мл. сержант · 1-я Научная рота</div>
+            <h3>Д. Соколов</h3>
+            <div class="dossier-spec" id="rpg-class-title">Главный системный архитектор</div>
+          </div>
+          <div class="dossier-level-badge">
+            <span>УРОВЕНЬ</span>
+            <strong>4</strong>
+          </div>
+        </div>
+
+        <div class="sp-counter-box">
+          <span>Свободные очки развития</span>
+          <div class="sp-pill"><strong id="rpg-sp-count">3</strong> SP</div>
+        </div>
+
+        <div class="attributes-grid" role="group" aria-label="Характеристики оператора">
+          <div class="attr-row">
+            <div class="attr-info">
+              <span class="attr-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg> Архитектура ПО</span>
+              <small>Сервисы, микросерверы, БД</small>
+            </div>
+            <div class="attr-ctrls">
+              <button class="sp-btn" data-attr="dev" data-dir="-1" aria-label="Уменьшить Архитектуру ПО">−</button>
+              <span class="attr-val" id="val-dev">8</span>
+              <button class="sp-btn" data-attr="dev" data-dir="1" aria-label="Увеличить Архитектуру ПО">+</button>
+            </div>
+          </div>
+          <div class="attr-row">
+            <div class="attr-info">
+              <span class="attr-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><path d="M10 2v7.31M14 2v7.31M8.5 2h7M14 9.3 19 18a2 2 0 0 1-1.73 3H6.73A2 2 0 0 1 5 18l5-8.7"/></svg> Алгоритмы и НИР</span>
+              <small>ИИ-модели, патенты, ВАК</small>
+            </div>
+            <div class="attr-ctrls">
+              <button class="sp-btn" data-attr="science" data-dir="-1" aria-label="Уменьшить Алгоритмы и НИР">−</button>
+              <span class="attr-val" id="val-science">7</span>
+              <button class="sp-btn" data-attr="science" data-dir="1" aria-label="Увеличить Алгоритмы и НИР">+</button>
+            </div>
+          </div>
+          <div class="attr-row">
+            <div class="attr-info">
+              <span class="attr-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Кибербезопасность</span>
+              <small>ГОСТ-шифрование, аудит</small>
+            </div>
+            <div class="attr-ctrls">
+              <button class="sp-btn" data-attr="security" data-dir="-1" aria-label="Уменьшить Кибербезопасность">−</button>
+              <span class="attr-val" id="val-security">5</span>
+              <button class="sp-btn" data-attr="security" data-dir="1" aria-label="Увеличить Кибербезопасность">+</button>
+            </div>
+          </div>
+          <div class="attr-row">
+            <div class="attr-info">
+              <span class="attr-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Наставничество</span>
+              <small>Помощь смене, ревью, kudos</small>
+            </div>
+            <div class="attr-ctrls">
+              <button class="sp-btn" data-attr="mentor" data-dir="-1" aria-label="Уменьшить Наставничество">−</button>
+              <span class="attr-val" id="val-mentor">6</span>
+              <button class="sp-btn" data-attr="mentor" data-dir="1" aria-label="Увеличить Наставничество">+</button>
+            </div>
+          </div>
+          <div class="attr-row">
+            <div class="attr-info">
+              <span class="attr-name"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg> Воинский регламент</span>
+              <small>Дежурства, устав, сроки</small>
+            </div>
+            <div class="attr-ctrls">
+              <button class="sp-btn" data-attr="duty" data-dir="-1" aria-label="Уменьшить Воинский регламент">−</button>
+              <span class="attr-val" id="val-duty">7</span>
+              <button class="sp-btn" data-attr="duty" data-dir="1" aria-label="Увеличить Воинский регламент">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="perks-shelf">
+          <h4>Активные перки специализации</h4>
+          <div class="perks-grid">
+            <div class="perk-chip active" id="perk-dev" title="Требуется Архитектура 7+">
+              <span class="perk-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+              <div>
+                <strong>Турбо-коммит</strong>
+                <small>+15% XP за разработку</small>
+              </div>
+            </div>
+            <div class="perk-chip active" id="perk-science" title="Требуется НИР 7+">
+              <span class="perk-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><path d="M12 2a4 4 0 0 0-4 4v1H7a4 4 0 0 0-4 4 4 4 0 0 0 1 2.6A4 4 0 0 0 3 16a4 4 0 0 0 4 4h1v1a4 4 0 0 0 8 0v-1h1a4 4 0 0 0 4-4 4 4 0 0 0-1-2.4 4 4 0 0 0 1-2.6 4 4 0 0 0-4-4h-1V6a4 4 0 0 0-4-4Z"/></svg></span>
+              <div>
+                <strong>Академический вес</strong>
+                <small>+10 баллов за отчёты</small>
+              </div>
+            </div>
+            <div class="perk-chip" id="perk-security" title="Требуется Кибербезопасность 7+">
+              <span class="perk-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+              <div>
+                <strong>Безупречный аудит</strong>
+                <small>Приёмка без доработок</small>
+              </div>
+            </div>
+            <div class="perk-chip active" id="perk-mentor" title="Требуется Наставничество 6+">
+              <span class="perk-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <div>
+                <strong>Дух роты</strong>
+                <small>+25% баллов за помощь</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rpg-visual">
+        <div class="radar-card">
+          <div class="radar-head">
+            <span class="radar-tag">PENTAGRAM RADAR 2.0</span>
+            <span class="radar-stat">ИНДЕКС КОМПЕТЕНЦИЙ: <strong id="rpg-radar-total">33 / 50</strong></span>
+          </div>
+          <div class="radar-canvas-container">
+            <canvas id="rpg-radar-canvas" class="rpg-radar-canvas" width="360" height="360" aria-label="Радар компетенций оператора"></canvas>
+          </div>
+          <div class="radar-footer">
+            <span>График обновляется в реальном времени при клике на [+] и [−]</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="rpg-terminal" id="rpg-terminal" aria-labelledby="terminal-title">
+  <div class="wrap">
+    <div class="terminal-heading">
+      <div class="hud-pill"><span class="badge-radar-dot"></span> ИГРОВЫЕ МЕХАНИКИ</div>
+      <h2 id="terminal-title">Терминал боевых задач.<br><em>Наградная капсула.</em></h2>
+      <p class="section-intro">Оперативные задания генерируются по направлениям службы роты с множителями сложности. А принятые вехи открывают доступ к наградным капсулам с редкими артефактами.</p>
+    </div>
+    <div class="terminal-grid">
+      <div class="terminal-card quest-terminal" aria-label="Генератор задач роты">
+        <div class="terminal-screen-header">
+          <div class="screen-indicator"><i></i><i></i><i></i></div>
+          <span class="terminal-code">SYS://QUEST_GEN.V2</span>
+        </div>
+        <div class="quest-display" id="quest-display">
+          <div class="quest-rarity-badge legendary" id="quest-rarity">ЛЕГЕНДАРНАЯ МИССИЯ</div>
+          <h3 id="quest-title">Оптимизация квантово-устойчивого алгоритма шифрования</h3>
+          <p id="quest-desc">Разработать оптимизированный модуль верификации контрольных сумм для распределённого защищённого хранилища данных роты.</p>
+          <div class="quest-meta-row">
+            <div>
+              <small>Фонд задачи</small>
+              <strong id="quest-xp">+350 XP / +120 баллов</strong>
+            </div>
+            <div>
+              <small>Модификатор</small>
+              <span class="badge amber" id="quest-tag">ВАК-публикация</span>
+            </div>
+          </div>
+        </div>
+        <div class="quest-status-note" id="quest-status-note" hidden></div>
+        <div class="quest-actions">
+          <button class="btn primary" id="quest-roll-btn"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><rect width="18" height="18" x="3" y="3" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/></svg> Сгенерировать задачу (d20)</button>
+          <button class="btn quiet" id="quest-accept-btn">Принять в боевой журнал</button>
+        </div>
+      </div>
+
+      <div class="terminal-card loot-terminal" aria-label="Капсула наград и поощрений">
+        <div class="terminal-screen-header">
+          <div class="screen-indicator"><i class="capsule-active"></i><i></i><i></i></div>
+          <span class="terminal-code" id="capsule-code">SYS://LOOT_BOX_VAULT · READY</span>
+        </div>
+        <div class="capsule-container" id="capsule-container">
+          <div class="capsule-model" id="capsule-model" role="button" tabindex="0" aria-label="Наградная капсула. Нажмите, чтобы вскрыть.">
+            <div class="capsule-core">
+              <svg class="capsule-svg" viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="44" stroke="var(--mint)" stroke-width="2" stroke-dasharray="6 4" class="capsule-ring-outer"/>
+                <circle cx="50" cy="50" r="32" fill="var(--panel)" stroke="var(--gold)" stroke-width="2"/>
+                <polygon points="50,26 68,38 62,64 38,64 32,38" fill="rgba(112,225,194,0.18)" stroke="var(--mint)" stroke-width="1.5"/>
+                <circle cx="50" cy="50" r="9" fill="var(--gold)"/>
+              </svg>
+            </div>
+            <div class="capsule-halo" aria-hidden="true"></div>
+            <div class="capsule-status-tag" id="capsule-status-tag">НАЖМИТЕ ДЛЯ ВСКРЫТИЯ</div>
+          </div>
+          <div class="capsule-loot-card" id="capsule-loot-card" hidden>
+            <div class="capsule-loot-header">
+              <div class="artifact-badge legendary" id="loot-rarity">РЕЛИКВИЯ РОТЫ</div>
+              <span class="loot-icon" id="loot-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:26px;height:26px;color:var(--gold)"><circle cx="12" cy="8" r="6"/><path d="m15.48 13.93 2.02 7.07-5.5-3-5.5 3 2.02-7.07"/></svg></span>
+            </div>
+            <h4 id="loot-title">Золотой шеврон «Альфа-Исследователь»</h4>
+            <p id="loot-desc">Особая виртуальная плашка в профиле Mini App и приоритетный допуск к слотам согласования поощрений.</p>
+            <div class="loot-perk-box">
+              <div class="loot-perk-label">Эффект артефакта:</div>
+              <strong id="loot-perk">+15% ко всем начислениям XP до завершения сезона</strong>
+            </div>
+          </div>
+        </div>
+        <div class="capsule-actions">
+          <button class="btn gold wide" id="capsule-open-btn"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="m12 8 4 4-4 4M8 12h8"/></svg> Вскрыть капсулу наград</button>
+          <button class="btn quiet wide" id="capsule-reset-btn" hidden>↺ Вскрыть ещё раз (закрыть контейнер)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="career-matrix" id="career-matrix" aria-labelledby="career-title">
+  <div class="wrap">
+    <div class="career-heading">
+      <div class="hud-pill"><span class="badge-radar-dot"></span> КАРЬЕРНАЯ ЛЕСТНИЦА</div>
+      <h2 id="career-title">От стажёра к ведущему эксперту.<br><em>Ступени военной науки.</em></h2>
+      <p class="section-intro">В научной роте статус подтверждается решёнными задачами и внедрёнными разработками. Каждый ранг расширяет полномочия и доступ к каталогу поощрений.</p>
+    </div>
+    <div class="career-ladder" role="tablist" aria-label="Ранги оператора">
+      <button class="career-step" role="tab" aria-selected="false" data-career-step="1">
+        <span class="step-num">01</span>
+        <div class="step-body">
+          <strong>Оператор-стажёр</strong>
+          <small>0 – 500 XP · Адаптация</small>
+        </div>
+      </button>
+      <button class="career-step" role="tab" aria-selected="false" data-career-step="2">
+        <span class="step-num">02</span>
+        <div class="step-body">
+          <strong>Мл. исследователь</strong>
+          <small>500 – 1 500 XP · Автономия</small>
+        </div>
+      </button>
+      <button class="career-step active" role="tab" aria-selected="true" data-career-step="3">
+        <span class="step-num">03</span>
+        <div class="step-body">
+          <strong>Старший инженер</strong>
+          <small>1 500 – 3 000 XP · Инициативы</small>
+        </div>
+      </button>
+      <button class="career-step" role="tab" aria-selected="false" data-career-step="4">
+        <span class="step-num">04</span>
+        <div class="step-body">
+          <strong>Ведущий эксперт</strong>
+          <small>3 000+ XP · Наставник роты</small>
+        </div>
+      </button>
+    </div>
+
+    <div class="career-detail-panel" id="career-detail-panel" role="tabpanel" aria-live="polite">
+      <div class="career-panel-grid">
+        <div class="career-panel-main">
+          <div class="career-badge-tag" id="cd-tier">РАНГ 3 · СТАРШИЙ ИНЖЕНЕР-РАЗРАБОТЧИК</div>
+          <h3 id="cd-title">Самостоятельное ведение проектов и право внесения инициатив</h3>
+          <p id="cd-desc">На этом этапе участник роты не просто исполняет поставленные задачи, а разрабатывает архитектуру сервисов, готовит отчёты по НИР и предлагает инициативы в общий пул задач.</p>
+          <div class="career-features-list">
+            <div class="c-feature"><span class="c-check">✓</span> <span>Право создания инициатив в пуле роты для согласования командиром</span></div>
+            <div class="c-feature"><span class="c-check">✓</span> <span>До 3 одновременных заявок на поощрения в каталоге</span></div>
+            <div class="c-feature"><span class="c-check">✓</span> <span>Возможность выступать наставником и получать повышенный опыт за ревью</span></div>
+          </div>
+        </div>
+        <div class="career-panel-side">
+          <div class="side-kpi">
+            <small>Порог перехода</small>
+            <strong id="cd-xp">1 500 XP</strong>
+            <span>Опыт не сгорает при трате баллов</span>
+          </div>
+          <div class="side-kpi">
+            <small>Каталог поощрений</small>
+            <strong id="cd-privilege">Расширенный</strong>
+            <span>Включая сертификаты на конференции и рекомендательные письма</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

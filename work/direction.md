@@ -11,3 +11,17 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 ## Explicit boundaries
 All people, dates, balances, task counts and prices synthetic. Administrative personnel motivation only. No operational mission details or sensitive technical records. Service rewards are approval requests, not automatic permissions. Technical recommendations labelled proposals. No claims of production readiness.
+
+## Participant presentation extension · 2 October 2026
+The user requests a more stylish, informative, animated and game-like presentation, explicitly permits changes to the presentation style, and selects participants as the primary audience. This supersedes the original FIRST VIEWPORT and FORM for R0 only; production screens retain their separate plan contract.
+
+THESIS: A participant sees how an accepted result becomes lasting XP, spendable points and a shared research goal, then tries the working local prototype.
+OWN-WORLD: A cooperative research game: embedded cinematic glass-and-metal research core, navy ground, mint progress, warm gold awards, Manrope and mineral-white explanations. Generated artwork is a conceptual illustration, not a real facility.
+STORY: Invitation → independently adjustable reward example → three linked team modules and explorable achievements → full role-based phone demo → task-to-reward sequence → complete printable specification.
+FIRST VIEWPORT: “Твой вклад. Новый уровень.” beside the large research core. Clear actions lead to the prototype and mechanics. Short text names the Telegram Mini App concept, target audience and illustrative status.
+FORM: Offline single-file HTML. Gentle energy-core breathing only while visible, finite headline/connection arrivals, 180 ms demo navigation, 500 ms award counts. Top effects control and existing checkbox agree; live OS reduced-motion wins, offscreen/hidden art stops. Mobile changes crop and stacks sections; at 320 px roles use two rows and navigation labels fit.
+FINISH: Inspect final desktop/mobile captures, verify independent example arithmetic and isolation, original demo regression, offline resources, reduced motion, keyboard, printing and no-script reading; record limits. No dependency is added.
+
+References actually adapted: https://motionsites.ai/?prompt=intelligence-layer (dark cinematic negative space and focal object) and https://motionsites.ai/?prompt=innovation-lab (bold type and a central sculptural visual). Only visible preview frames were available, not playable reference video. Motion is authored locally in CSS, Web Animations API, IntersectionObserver and a bounded numeric animation.
+
+The user's subsequent request explicitly calls for ongoing life after scroll/load, more depth and permits 3D, shaders and other visual techniques. The final FORM therefore adds an animated WebGL image shader, a genuinely three-dimensional faceted crystal mesh with metal torus rings and orbiting satellites, mouse/button/keyboard rotation, raised reward/team panels, visible-only charge sweeps and selected-achievement breathing. WebGL uses one scheduler targeting at most 30 rendered frames per second, DPR capped at 1 on phones / 1.25 on larger screens. Offscreen, hidden, disabled-effects and reduced-motion paths stop automatic rendering. Context unavailability/loss returns to embedded artwork. These are code constraints, not measured physical-device performance claims. No engine, model download or dependency is added.

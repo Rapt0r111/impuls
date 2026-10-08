@@ -1,0 +1,29 @@
+# Proposed synthetic rehearsal only. Resolve paths/user/env on the approved host.
+[Unit]
+Description=Impuls synthetic notification simulation
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=impuls-notifications
+WorkingDirectory=/opt/impuls
+EnvironmentFile=/etc/impuls/notifications.env
+ExecStart=/usr/bin/node /opt/impuls/apps/worker/dist/index.mjs --watch
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+KillMode=mixed
+TimeoutStopSec=25
+SendSIGKILL=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
