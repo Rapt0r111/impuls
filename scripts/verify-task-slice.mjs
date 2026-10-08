@@ -133,6 +133,7 @@ try {
     await run("tests/browser/access-real.mjs");
     await run("tests/browser/task-flow-real.mjs");
     await run("tests/browser/task-negative-real.mjs");
+    await run("tests/browser/task-return-real.mjs");
     await run("tests/browser/rewards-real.mjs");
     await run("tests/browser/reward-decisions-real.mjs");
   } else if (cancellationOnly) {
