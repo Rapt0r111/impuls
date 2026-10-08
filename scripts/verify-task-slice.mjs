@@ -130,6 +130,7 @@ try {
       "packages/contracts/src/access-management.test.ts",
     ]);
     await run("tests/browser/access-management.mjs");
+    await run("tests/browser/access-real.mjs");
   } else if (cancellationOnly) {
     await run("node_modules/vitest/vitest.mjs", [
       "run",
