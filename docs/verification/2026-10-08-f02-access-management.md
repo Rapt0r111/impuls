@@ -23,6 +23,15 @@ Windows, Node 24.21.0, Bun 1.4.2, loopback PostgreSQL 18.6 (`127.0.0.1:55434`, �
 
 Browser-сценарии работают на моках API (маршруты `page.route`), а не на реальной БД; связку UI→БД они не доказывают. Скриншоты 320/360/390 в `test-results/task-slice/<pid>/access-management/`; просмотрен только 320 px. Мне пришлось исправить один тест: сессии получателя отзываются выдачей, поэтому проверка «нет права» использует пользователя с живой сессией.
 
+## Дополнение: scoped audit
+
+| Команда                                                                                                             | Результат                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `node scripts/verify-task-slice.mjs --access-management-only`                                                       | exit 0: 11 tests (8 PostgreSQL/HTTP, 3 contract) и 8 browser-сценариев. Новый тест читает `access.grant`/`access.revoke` через реальный `readAudit` и `auditResponseSchema`, фильтр по действию, отказ без `admin.audit` |
+| `--audit-only`, `--reward-expiry-only`, `--corrections-only`, `--catalog-cancellation-only`, `--admin-catalog-only` | exit 0 (audit browser 28 сценариев; cancellation 20; admin-catalog 59 tests)                                                                                                                                             |
+
+Исправлен существующий тест `tests/browser/catalog-cancellation.mjs`: голый `getByRole("alert")` на странице совпадал с служебным элементом `__next-route-announcer__` и падал, в том числе на предыдущем коммите `5ba979b` (проверено в отдельном worktree). Селектор сужен до `.admin-catalog-section`. Почему тот же код раньше проходил, не установлено: предполагаемая гонка появления announcer.
+
 ## Не проверено
 
-Browser-to-database проход, чтение `access_changes` в scoped audit, независимая проверка доступности (клавиатура, скринридер), Telegram WebView. P-01…P-06, Linux 17.6 CI, устройства, внешний выпуск и приёмка R1 открыты.
+Показ записей `access.*` в UI журнала (`audit-log.tsx`) не проверялся в browser; типы и lint проходят. Browser-to-database проход экрана «Доступ», независимая проверка доступности, Telegram WebView. P-01…P-06, Linux 17.6 CI, устройства, внешний выпуск и приёмка R1 открыты.

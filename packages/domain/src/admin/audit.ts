@@ -21,7 +21,9 @@ type Action =
   | "catalog.create"
   | "catalog.cancel"
   | "catalog.publish"
-  | "quota.publish";
+  | "quota.publish"
+  | "access.grant"
+  | "access.revoke";
 // Publication has its own immutable object; it never borrows a task/recipient.
 const stringFields = [
   "from",
@@ -55,6 +57,12 @@ const numberFields = [
 ] as const;
 type Field = (typeof stringFields)[number] | (typeof numberFields)[number];
 type Scope = { id: string; name: string };
+type AccessEvidence = {
+  bindingId: string;
+  subject: { id: string; displayName: string };
+  permission: string;
+  validUntil: string | null;
+};
 type RewardEvidence = {
   redemptionId: string;
   rewardId: string;
@@ -144,6 +152,7 @@ export type AuditPage = {
     quota: QuotaPublicationEvidence | null;
     creation: CatalogCreationEvidence | null;
     cancellation: CatalogCancellationEvidence | null;
+    access: AccessEvidence | null;
     reviewId: string | null;
     correctionId: string | null;
     values: { field: Field; value: string | number }[];
@@ -172,6 +181,7 @@ type Row = {
   quota: QuotaPublicationEvidence | null;
   creation: CatalogCreationEvidence | null;
   cancellation: CatalogCancellationEvidence | null;
+  access: AccessEvidence | null;
   review_id: string | null;
   correction_id: string | null;
   diff: unknown;
@@ -273,7 +283,7 @@ export async function readAudit(
       SELECT * FROM permitted WHERE $4::uuid IS NULL OR id=$4 ORDER BY name,id LIMIT 1
     ), events AS NOT MATERIALIZED (
       SELECT e.id,e.request_id,e.action,e.actor_id,e.created_at,e.reason,e.review_id,e.correction_id,e.diff,
-        t.id AS resolved_task_id,t.title AS current_title,actor.display_name AS actor_name,NULL::jsonb AS reward,NULL::jsonb AS catalog,NULL::jsonb AS quota,NULL::jsonb AS creation,NULL::jsonb AS cancellation
+        t.id AS resolved_task_id,t.title AS current_title,actor.display_name AS actor_name,NULL::jsonb AS reward,NULL::jsonb AS catalog,NULL::jsonb AS quota,NULL::jsonb AS creation,NULL::jsonb AS cancellation,NULL::jsonb AS access
       FROM impuls.audit_events e
       LEFT JOIN impuls.ledger_corrections c ON c.id=e.correction_id
       LEFT JOIN impuls.reviews r ON r.id=coalesce(e.review_id,c.review_id)
@@ -292,7 +302,7 @@ export async function readAudit(
           'rewardVersion',d.reward_version,'periodStart',to_char(d.period_start AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
           'periodEnd',to_char(d.period_end AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
           'expiresAt',to_char(d.expires_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
-          'recipient',jsonb_build_object('id',recipient.id,'displayName',recipient.display_name)) AS reward,NULL::jsonb AS catalog,NULL::jsonb AS quota,NULL::jsonb AS creation,NULL::jsonb AS cancellation
+          'recipient',jsonb_build_object('id',recipient.id,'displayName',recipient.display_name)) AS reward,NULL::jsonb AS catalog,NULL::jsonb AS quota,NULL::jsonb AS creation,NULL::jsonb AS cancellation,NULL::jsonb AS access
       FROM impuls.audit_events e
       JOIN impuls.redemptions d ON d.id=e.redemption_id AND d.mode='synthetic'
       JOIN impuls.reward_versions rv ON rv.id=d.reward_version_id AND rv.mode='synthetic' AND rv.kind='cosmetic'
@@ -307,7 +317,7 @@ export async function readAudit(
         jsonb_build_object('rewardId',r.reward_id,'previousVersion',previous.version,'published',
           jsonb_build_object('id',r.id,'version',r.version,'title',r.title,'conditions',r.conditions,'price',r.price,
             'enabled',r.enabled,'effectiveFrom',to_char(r.effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
-            'reservationSeconds',r.reservation_seconds)),NULL::jsonb,NULL::jsonb,NULL::jsonb
+            'reservationSeconds',r.reservation_seconds)),NULL::jsonb,NULL::jsonb,NULL::jsonb,NULL::jsonb
       FROM impuls.catalog_publications p
       JOIN impuls.reward_versions r ON r.id=p.published_version_id AND r.mode='synthetic' AND r.kind='cosmetic'
       JOIN impuls.reward_versions previous ON previous.id=p.previous_version_id
@@ -318,7 +328,7 @@ export async function readAudit(
         NULL::uuid,NULL::text,actor.display_name,NULL::jsonb,NULL::jsonb,
         jsonb_build_object('rewardId',p.reward_id,'periodId',p.quota_period_id,
           'startsAt',to_char(p.starts_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
-          'endsAt',to_char(p.ends_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'capacity',p.capacity),NULL::jsonb,NULL::jsonb
+          'endsAt',to_char(p.ends_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'capacity',p.capacity),NULL::jsonb,NULL::jsonb,NULL::jsonb
       FROM impuls.quota_publications p JOIN selected ON selected.id=p.scope_id
       JOIN impuls.users actor ON actor.id=p.actor_id
       WHERE $5::text IS NULL OR $5='quota.publish'
@@ -328,7 +338,7 @@ export async function readAudit(
         jsonb_build_object('rewardId',r.reward_id,'initial',
           jsonb_build_object('id',r.id,'version',r.version,'title',r.title,'conditions',r.conditions,'price',r.price,
             'enabled',r.enabled,'effectiveFrom',to_char(r.effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
-            'reservationSeconds',r.reservation_seconds)),NULL::jsonb
+            'reservationSeconds',r.reservation_seconds)),NULL::jsonb,NULL::jsonb
       FROM impuls.catalog_creations p
       JOIN impuls.reward_versions r ON r.id=p.initial_version_id AND r.mode='synthetic' AND r.kind='cosmetic'
       JOIN selected ON selected.id=r.scope_id JOIN impuls.users actor ON actor.id=p.actor_id
@@ -339,10 +349,19 @@ export async function readAudit(
         jsonb_build_object('rewardId',r.reward_id,'cancelled',jsonb_build_object('id',r.id,'version',r.version,'title',r.title,
           'conditions',r.conditions,'price',r.price,'enabled',r.enabled,
           'effectiveFrom',to_char(r.effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
-          'reservationSeconds',r.reservation_seconds))
+          'reservationSeconds',r.reservation_seconds)),NULL::jsonb
       FROM impuls.catalog_cancellations c JOIN impuls.reward_versions r ON r.id=c.version_id AND r.mode='synthetic' AND r.kind='cosmetic'
       JOIN selected ON selected.id=r.scope_id JOIN impuls.users actor ON actor.id=c.actor_id
       WHERE $5::text IS NULL OR $5='catalog.cancel'
+      UNION ALL
+      SELECT a.id,a.request_id,'access.'||a.kind,a.actor_id,a.created_at,a.reason,NULL::uuid,NULL::uuid,'{}'::jsonb,
+        NULL::uuid,NULL::text,actor.display_name,NULL::jsonb,NULL::jsonb,NULL::jsonb,NULL::jsonb,NULL::jsonb,
+        jsonb_build_object('bindingId',a.binding_id,'subject',jsonb_build_object('id',subject.id,'displayName',subject.display_name),
+          'permission',a.action,'validUntil',CASE WHEN a.valid_until IS NULL THEN NULL
+            ELSE to_char(a.valid_until AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END)
+      FROM impuls.access_changes a JOIN selected ON selected.id=a.scope_id
+      JOIN impuls.users actor ON actor.id=a.actor_id JOIN impuls.users subject ON subject.id=a.subject_id
+      WHERE $5::text IS NULL OR $5='access.'||a.kind
     ), anchor AS MATERIALIZED (
       SELECT created_at,id FROM events WHERE id=$6::uuid
     )
@@ -400,6 +419,7 @@ export async function readAudit(
         quota: row.quota,
         creation: row.creation,
         cancellation: row.cancellation,
+        access: row.access,
         reviewId: row.review_id,
         correctionId: row.correction_id,
         values: savedValues(row.diff, row.action),

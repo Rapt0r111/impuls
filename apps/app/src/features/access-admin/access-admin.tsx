@@ -9,29 +9,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { actionLabels } from "./action-labels";
 import "../notifications/notification-status.css";
 import "../catalog-admin/catalog-admin.css";
 
-const actionLabels: Record<(typeof grantableActions)[number], string> = {
-  "task.view": "Просмотр задач",
-  "task.create": "Создание задач",
-  "task.assign": "Назначение задач",
-  "task.edit": "Редактирование задач",
-  "task.cancel": "Отмена задач",
-  "task.review": "Проверка отчётов",
-  "reward.decide": "Решения по заявкам",
-  "reward.fulfill": "Выдача поощрений",
-  "admin.rules": "Правила начислений",
-  "admin.catalog": "Управление каталогом",
-  "admin.catalog.create": "Создание позиций каталога",
-  "admin.catalog.publish": "Публикация условий каталога",
-  "admin.catalog.schedule": "Отложенная публикация условий",
-  "admin.catalog.schedule.cancel": "Отмена будущих условий",
-  "admin.catalog.quota.publish": "Публикация периодов квоты",
-  "admin.audit": "Просмотр журнала действий",
-  "admin.notifications": "Состояние уведомлений",
-  "ledger.correct": "Исправление журнала",
-};
 const dateTime = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "medium",
   timeStyle: "short",

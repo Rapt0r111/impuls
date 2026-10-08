@@ -285,7 +285,10 @@ try {
       await review(f);
       f.setStatus(status);
       await send(f);
-      await f.page.getByRole("alert").waitFor();
+      await f.page
+        .locator(".admin-catalog-section")
+        .getByRole("alert")
+        .waitFor();
       assert.equal(
         await f.page
           .getByRole("button", { name: "Повторить тот же запрос", exact: true })

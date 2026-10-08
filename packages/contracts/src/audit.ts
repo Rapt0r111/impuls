@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { grantableActions } from "./access-management";
 import { catalogCancellationEvidenceSchema } from "./catalog-cancellation";
 import { catalogCreationEvidenceSchema } from "./catalog-creation";
 import { catalogPublicationEvidenceSchema } from "./catalog-publication";
@@ -22,6 +23,8 @@ export const auditActionSchema = z.enum([
   "catalog.publish",
   "catalog.cancel",
   "quota.publish",
+  "access.grant",
+  "access.revoke",
 ]);
 const cursorParts = z.strictObject({
   actor: z.uuid(),
@@ -178,6 +181,15 @@ const rewardOnlyFields = new Set([
   "reservedDelta",
   "entitlementId",
 ]);
+export const accessAuditEvidenceSchema = z.strictObject({
+  bindingId: z.uuid(),
+  subject: z.strictObject({
+    id: z.uuid(),
+    displayName: z.string().min(1).max(80),
+  }),
+  permission: z.enum(grantableActions),
+  validUntil: z.iso.datetime().nullable(),
+});
 export const auditResponseSchema = z.strictObject({
   mode: z.literal("synthetic"),
   scopes: z.array(scopeSchema),
@@ -230,6 +242,7 @@ export const auditResponseSchema = z.strictObject({
           cancellation: catalogCancellationEvidenceSchema
             .nullable()
             .default(null),
+          access: accessAuditEvidenceSchema.nullable().default(null),
           values: z.array(savedValueSchema).max(20),
         })
         .superRefine((item, ctx) => {
@@ -242,6 +255,30 @@ export const auditResponseSchema = z.strictObject({
             ctx.addIssue({
               code: "custom",
               message: "Invalid automatic actor",
+            });
+          if (item.action.startsWith("access.")) {
+            if (
+              !item.access ||
+              item.creation ||
+              item.quota ||
+              item.catalog ||
+              item.cancellation ||
+              item.task ||
+              item.reward ||
+              item.reviewId ||
+              item.correctionId ||
+              item.values.length
+            )
+              ctx.addIssue({
+                code: "custom",
+                message: "Invalid access change evidence",
+              });
+            return;
+          }
+          if (item.access)
+            ctx.addIssue({
+              code: "custom",
+              message: "Unexpected access change evidence",
             });
           if (item.action === "catalog.cancel") {
             if (

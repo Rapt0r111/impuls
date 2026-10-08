@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import "./audit-log.css";
+import { actionLabels } from "@/features/access-admin/action-labels";
 import { CatalogTerms } from "../catalog-admin/catalog-terms";
 
 type Action = AuditResponse["items"][number]["action"];
@@ -34,6 +35,8 @@ const actionNames: Record<Action, string> = {
   "catalog.publish": "Публикация условий каталога",
   "catalog.cancel": "Отмена будущих условий каталога",
   "quota.publish": "Публикация периода квоты",
+  "access.grant": "Выдача права",
+  "access.revoke": "Отзыв права",
 };
 const fieldNames: Record<
   AuditResponse["items"][number]["values"][number]["field"],
@@ -302,6 +305,22 @@ export function AuditLog() {
                     value={item.catalog.published}
                     label="Опубликованные условия"
                   />
+                </div>
+              ) : null}
+              {item.access ? (
+                <div className="audit-task">
+                  <p>
+                    {item.action === "access.grant"
+                      ? "Выдано право"
+                      : "Отозвано право"}{" "}
+                    «{actionLabels[item.access.permission]}» участнику{" "}
+                    {item.access.subject.displayName}.
+                  </p>
+                  <p>
+                    {item.access.validUntil
+                      ? `Срок права: до ${date(item.access.validUntil)} МСК.`
+                      : "Срок права: без ограничения."}
+                  </p>
                 </div>
               ) : null}
               {item.cancellation ? (

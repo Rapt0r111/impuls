@@ -2,6 +2,8 @@ import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { readAudit } from "../../packages/domain/src/admin/audit";
+import { auditResponseSchema } from "../../packages/contracts/src/audit";
 import { changeAccess } from "../../packages/domain/src/admin/access";
 import {
   accessChangeResponseSchema,
@@ -43,7 +45,7 @@ const url = process.env.TEST_DATABASE_URL,
           [s],
         );
       for (const [u, actions] of [
-        [users[0], ["admin.access", "admin.access.manage"]],
+        [users[0], ["admin.access", "admin.access.manage", "admin.audit"]],
         [users[1], ["admin.access"]],
         [users[4], ["admin.access", "admin.access.manage"]],
       ] as const)
@@ -354,6 +356,47 @@ const url = process.env.TEST_DATABASE_URL,
       expect((await get("?scope=" + scope, 3)).status).toBe(404);
       expect((await get("?scope=" + scope + "&x=1")).status).toBe(400);
       expect((await get("")).status).toBe(400);
+    });
+
+    it("exposes grant and revoke evidence to the exact audit scope only", async () => {
+      const read = (actor: number, options: Record<string, unknown> = {}) =>
+        readAudit(runtime, users[actor]!, hashes[actor]!, {
+          allowSyntheticAudit: true,
+          scope,
+          limit: 50,
+          ...options,
+        });
+      const all = await read(0);
+      expect(all.kind).toBe("ok");
+      if (all.kind !== "ok") return;
+      const parsed = auditResponseSchema.parse(
+        JSON.parse(JSON.stringify(all.response)),
+      );
+      const grants = parsed.items.filter((i) => i.action === "access.grant");
+      const revokes = parsed.items.filter((i) => i.action === "access.revoke");
+      expect(grants.length).toBeGreaterThanOrEqual(2);
+      const assigned = revokes.filter(
+        (i) => i.access?.permission === "task.assign",
+      );
+      expect(assigned).toHaveLength(1);
+      expect(assigned[0]!.access).toMatchObject({
+        permission: "task.assign",
+        subject: { id: users[2] },
+      });
+      expect(assigned[0]!.actor.id).toBe(users[0]);
+      const only = await read(0, { action: "access.revoke" });
+      expect(
+        only.kind === "ok" &&
+          only.response.items.every((i) => i.action === "access.revoke"),
+      ).toBe(true);
+      expect(await read(1)).toEqual({ kind: "not_found" });
+      const foreignRead = await readAudit(runtime, users[0]!, hashes[0]!, {
+        allowSyntheticAudit: true,
+        scope: foreign,
+      });
+      expect(
+        foreignRead.kind === "ok" ? foreignRead.response.scope.id : "none",
+      ).not.toBe(foreign);
     });
   },
 );
