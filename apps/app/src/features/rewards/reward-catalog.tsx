@@ -424,9 +424,12 @@ export function RewardCatalog() {
           {selection.action === "reserve" ? (
             <p>
               Квота: {date(selection.item.quota.startsAt)} –{" "}
-              {date(selection.item.quota.endsAt)}. Свободно:{" "}
-              {selection.item.quota.available}. Условия версии{" "}
-              {selection.item.version}. Резерв не означает выдачу.
+              {date(selection.item.quota.endsAt)}.{" "}
+              {outcome === "conflict"
+                ? "Данные устарели, обновите условия."
+                : `Свободно: ${selection.item.quota.available}.`}{" "}
+              Условия версии {selection.item.version}. Резерв не означает
+              выдачу.
             </p>
           ) : (
             <>

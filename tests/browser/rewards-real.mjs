@@ -165,6 +165,9 @@ let winner, loser;
   assert.deepEqual(s.statuses, ["pending"]);
   assert.deepEqual(s.balances[winner], [90, 30]);
   assert.deepEqual(s.balances[loser], [120, 0]);
+  const stale = sessions[loser].page;
+  await stale.getByText("Данные устарели, обновите условия.").waitFor();
+  assert.equal(await stale.getByText(/Свободно: 1/).count(), 0);
   await finish(sessions[winner], "1-race-winner");
   await finish(sessions[loser], "1-race-loser");
 }
