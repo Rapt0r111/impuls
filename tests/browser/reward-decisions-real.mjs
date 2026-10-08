@@ -253,7 +253,9 @@ async function review(s, title, decision) {
           .waitFor()
           .then(() => "won"),
         s.page
-          .getByText(/Решение не принято: состояние/)
+          .getByText(
+            /Решение не принято: заявку уже решил другой уполномоченный/,
+          )
           .waitFor()
           .then(() => "lost"),
       ]),
