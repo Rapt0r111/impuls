@@ -11,6 +11,7 @@
 .task-mgmt__section-heading,
 .task-mgmt__item-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
@@ -53,6 +54,11 @@
 .task-mgmt__section-heading h3 {
   font-size: 17px;
   line-height: 1.3;
+}
+
+.task-mgmt__section-heading > button {
+  flex-shrink: 0;
+  overflow-wrap: normal;
 }
 
 .task-mgmt__section-heading > span,
@@ -264,6 +270,20 @@
 
 .task-mgmt__more {
   margin-top: 14px;
+}
+
+.task-mgmt__change-fields {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 0;
+  margin: 0 0 12px;
+  border: 0;
+}
+.task-mgmt__change-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 @media (max-width: 480px) {

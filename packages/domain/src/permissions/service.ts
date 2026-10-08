@@ -1,14 +1,24 @@
 import type { Pool } from "pg";
 
 export const permissionActions = [
+  "task.view",
   "task.create",
   "task.assign",
+  "task.edit",
+  "task.cancel",
   "task.review",
   "reward.decide",
   "reward.fulfill",
   "admin.access",
   "admin.rules",
   "admin.catalog",
+  "admin.catalog.create",
+  "admin.catalog.publish",
+  "admin.catalog.schedule",
+  "admin.catalog.schedule.cancel",
+  "admin.catalog.quota.publish",
+  "admin.audit",
+  "admin.notifications",
   "ledger.correct",
 ] as const;
 

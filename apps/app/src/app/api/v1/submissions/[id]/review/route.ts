@@ -9,6 +9,7 @@ import { hashSessionToken, reviewTaskSubmission } from "@impuls/domain";
 import type { NextRequest } from "next/server";
 import { getAuthorizedSession, hasValidCsrf } from "@/shared/server/auth";
 import { getPool } from "@/shared/server/db";
+import { checkTaskMutationLimit } from "@/shared/server/task-rate-limit";
 import {
   errorResponse,
   isAllowedOrigin,
@@ -40,6 +41,8 @@ export async function POST(
       return errorResponse(403, "ACCESS_REVOKED", "Доступ отозван", id);
     if (!hasValidCsrf(request, session.token))
       return errorResponse(403, "CSRF_DENIED", "Запрос не принят", id);
+    const limited = await checkTaskMutationLimit(session.user.id, id);
+    if (limited) return limited;
     const { id: submissionId } = await context.params;
     if (!taskIdSchema.safeParse(submissionId).success)
       return errorResponse(404, "NOT_FOUND", "Отчёт не найден", id);

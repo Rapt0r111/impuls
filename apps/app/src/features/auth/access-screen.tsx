@@ -15,6 +15,7 @@ import {
   type ReactNode,
 } from "react";
 import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
+import { TelegramBackProvider } from "@/shared/telegram/back-navigation";
 import { SessionContext } from "./session-context";
 
 type AccessState =
@@ -37,14 +38,24 @@ const actionNames: Record<
   PermissionsResponse["permissions"][number]["action"],
   string
 > = {
+  "task.view": "Просмотр задач и истории",
   "task.create": "Создание задач",
   "task.assign": "Назначение задач",
+  "task.edit": "Редактирование черновиков",
+  "task.cancel": "Отмена задач",
   "task.review": "Проверка результатов",
   "reward.decide": "Решение по заявкам",
   "reward.fulfill": "Подтверждение выдачи",
   "admin.access": "Управление доступом",
   "admin.rules": "Управление правилами",
   "admin.catalog": "Управление каталогом",
+  "admin.catalog.create": "Создание позиции каталога",
+  "admin.catalog.publish": "Публикация условий каталога",
+  "admin.catalog.schedule": "Отложенная публикация условий каталога",
+  "admin.catalog.schedule.cancel": "Отмена будущих условий каталога",
+  "admin.catalog.quota.publish": "Публикация периодов квоты",
+  "admin.audit": "Просмотр журнала действий",
+  "admin.notifications": "Просмотр симуляции уведомлений",
   "ledger.correct": "Исправление журнала",
 };
 
@@ -129,7 +140,8 @@ async function readCode(response: Response): Promise<string | null> {
 
 export function AccessScreen({ children }: { children?: ReactNode }) {
   const [state, setState] = useState<AccessState>({ kind: "checking" });
-  const [telegramAvailable, setTelegramAvailable] = useState(false);
+  const [telegramApp, setTelegramApp] = useState<TelegramWebApp | null>(null);
+  const telegramAvailable = Boolean(telegramApp);
   const webApp = useRef<TelegramWebApp | null>(null);
   const pending = useRef<AbortController | null>(null);
   const bridgeResolved = useRef(false);
@@ -310,7 +322,11 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
         onReady={(app) => {
           bridgeResolved.current = true;
           webApp.current = app;
-          setTelegramAvailable(Boolean(app));
+          setTelegramApp(app);
+          if (state.kind === "authorized") {
+            reportDirty(unsaved.current);
+            return;
+          }
           void checkAccess(app);
         }}
         onError={() => {
@@ -319,39 +335,50 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
           void checkAccess(null);
         }}
       />
-      <main className="access-screen">
+      <main
+        className={`access-screen${state.kind === "authorized" ? " access-screen--authorized" : ""}`}
+      >
         <div className="access-shell">
           <header className="access-header">
             <span className="access-logo" aria-hidden="true">
               И
             </span>
             <span className="access-brand">Импульс</span>
+            {state.kind === "authorized" ? (
+              <button
+                type="button"
+                className="access-logout"
+                onClick={() => void logout()}
+              >
+                Выйти
+              </button>
+            ) : null}
           </header>
           <section
             className={`access-content${state.kind === "authorized" ? " access-content--authorized" : ""}`}
             aria-labelledby="access-title"
           >
-            <div
-              className={`access-signal access-signal--${copy.tone}`}
-              aria-hidden="true"
-            >
-              <span />
-            </div>
+            {state.kind !== "authorized" ? (
+              <div
+                className={`access-signal access-signal--${copy.tone}`}
+                aria-hidden="true"
+              >
+                <span />
+              </div>
+            ) : null}
             <h1 id="access-title">{copy.title}</h1>
-            <p className="access-description" aria-live="polite">
-              {copy.description}
-            </p>
+            {state.kind !== "authorized" ? (
+              <p className="access-description" aria-live="polite">
+                {copy.description}
+              </p>
+            ) : null}
             {state.kind === "authorized" && (
               <>
                 <div className="access-identity">
-                  <span>Участник</span>
                   <strong>{state.data.user.displayName}</strong>
                 </div>
-                <section
-                  className="access-permissions"
-                  aria-labelledby="permissions-title"
-                >
-                  <h2 id="permissions-title">Дополнительные полномочия</h2>
+                <details className="access-permissions">
+                  <summary>Полномочия</summary>
                   {state.permissions === null ? (
                     <p>
                       Не удалось загрузить полномочия. Обновите проверку позже.
@@ -373,10 +400,35 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                       ))}
                     </ul>
                   )}
-                </section>
+                </details>
                 <SessionContext.Provider
                   value={{
                     csrfToken: state.data.csrfToken,
+                    canDecideRewards:
+                      state.permissions?.some(
+                        (permission) => permission.action === "reward.decide",
+                      ) ?? false,
+                    canFulfillRewards:
+                      state.permissions?.some(
+                        (permission) => permission.action === "reward.fulfill",
+                      ) ?? false,
+                    canInspectCatalog:
+                      state.permissions?.some(
+                        (permission) => permission.action === "admin.catalog",
+                      ) ?? false,
+                    canReadAudit:
+                      state.permissions?.some(
+                        (permission) => permission.action === "admin.audit",
+                      ) ?? false,
+                    canReadNotificationStatus:
+                      state.permissions?.some(
+                        (permission) =>
+                          permission.action === "admin.notifications",
+                      ) ?? false,
+                    canCorrectLedger:
+                      state.permissions?.some(
+                        (permission) => permission.action === "ledger.correct",
+                      ) ?? false,
                     canReview:
                       state.permissions?.some(
                         (permission) => permission.action === "task.review",
@@ -385,67 +437,81 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                       state.permissions?.some(
                         (permission) =>
                           permission.action === "task.create" ||
-                          permission.action === "task.assign",
+                          permission.action === "task.assign" ||
+                          permission.action === "task.edit" ||
+                          permission.action === "task.cancel" ||
+                          permission.action === "task.view",
+                      ) ?? false,
+                    historyScopeIds:
+                      state.permissions
+                        ?.filter(
+                          (permission) => permission.action === "task.view",
+                        )
+                        .map((permission) => permission.scope.id) ?? [],
+                    canSetTasks:
+                      state.permissions?.some(
+                        (permission) =>
+                          permission.action === "task.create" ||
+                          permission.action === "task.assign" ||
+                          permission.action === "task.edit" ||
+                          permission.action === "task.cancel",
                       ) ?? false,
                     reportDirty,
                     confirmLeave,
                     loseAccess,
                   }}
                 >
-                  {children}
+                  <TelegramBackProvider app={telegramApp}>
+                    {children}
+                  </TelegramBackProvider>
                 </SessionContext.Provider>
               </>
             )}
           </section>
-          <div className="access-actions">
-            {(state.kind === "offline" ||
-              state.kind === "unavailable" ||
-              state.kind === "session") && (
-              <button
-                type="button"
-                className="access-button"
-                onClick={() => void checkAccess(webApp.current)}
-              >
-                {state.kind === "session"
-                  ? "Повторить вход"
-                  : "Проверить снова"}
-              </button>
-            )}
-            {state.kind === "authorized" && (
-              <>
-                {state.permissions === null && (
-                  <button
-                    type="button"
-                    className="access-button"
-                    onClick={() => void checkAccess(webApp.current)}
-                  >
-                    Обновить полномочия
-                  </button>
-                )}
+          {state.kind !== "authorized" || state.permissions === null ? (
+            <div className="access-actions">
+              {(state.kind === "offline" ||
+                state.kind === "unavailable" ||
+                state.kind === "session") && (
                 <button
                   type="button"
-                  className="access-button access-button--quiet"
-                  onClick={() => void logout()}
+                  className="access-button"
+                  onClick={() => void checkAccess(webApp.current)}
                 >
-                  Выйти
+                  {state.kind === "session"
+                    ? "Повторить вход"
+                    : "Проверить снова"}
                 </button>
-              </>
-            )}
-            {state.kind === "expired" && telegramAvailable && (
-              <button
-                type="button"
-                className="access-button"
-                onClick={() => webApp.current?.close()}
-              >
-                Закрыть приложение
-              </button>
-            )}
-            <p className="access-footnote">
-              {state.kind === "authorized"
-                ? "Задачи и очередь доступны в пределах ваших полномочий."
-                : "Данные задач появятся после подтверждённого входа."}
-            </p>
-          </div>
+              )}
+              {state.kind === "authorized" && (
+                <>
+                  {state.permissions === null && (
+                    <button
+                      type="button"
+                      className="access-button"
+                      onClick={() => void checkAccess(webApp.current)}
+                    >
+                      Обновить полномочия
+                    </button>
+                  )}
+                </>
+              )}
+              {state.kind === "expired" && telegramAvailable && (
+                <button
+                  type="button"
+                  className="access-button"
+                  onClick={() => webApp.current?.close()}
+                >
+                  Закрыть приложение
+                </button>
+              )}
+              {state.kind !== "authorized" ? (
+                <p className="access-footnote">
+                  Данные задач появятся после подтверждённого входа.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </main>
     </>

@@ -1,0 +1,110 @@
+.ranking-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+.ranking-filters .tasks-filter {
+  min-width: 0;
+  align-items: stretch;
+}
+.ranking-filters select,
+.ranking-filters input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  color: var(--color-ink);
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  color-scheme: dark;
+}
+.ranking-self {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  padding: 18px 0;
+  border-block: 1px solid var(--color-line);
+}
+.ranking-self strong {
+  color: var(--color-gold);
+  font-variant-numeric: tabular-nums;
+}
+.ranking-self span {
+  flex-basis: 100%;
+  color: var(--color-muted);
+}
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 24px 0 16px;
+}
+.ranking-table caption {
+  caption-side: bottom;
+  text-align: left;
+  padding-top: 16px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+.ranking-table th,
+.ranking-table td {
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}
+.ranking-table thead th {
+  color: var(--color-muted);
+  font-weight: 400;
+  font-size: 13px;
+  text-align: left;
+}
+.ranking-table th:first-child,
+.ranking-table td:first-child {
+  width: 60px;
+  padding-left: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ranking-table tbody th {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.ranking-table th:last-child,
+.ranking-table td:last-child {
+  width: 80px;
+  text-align: right;
+  padding-right: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.ranking-table tbody td:last-child {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+.ranking-own-row {
+  background: var(--color-panel);
+}
+.ranking-you {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-mint);
+  font-weight: 400;
+  font-size: 13px;
+}
+@media (max-width: 480px) {
+  .ranking-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ranking-table th:first-child,
+  .ranking-table td:first-child {
+    width: 48px;
+  }
+  .ranking-table th:last-child,
+  .ranking-table td:last-child {
+    width: 64px;
+  }
+}

@@ -1,0 +1,94 @@
+.admin-catalog-items {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.admin-catalog-items > li {
+  padding: 20px 0;
+  border-top: 1px solid var(--color-line);
+  overflow-wrap: anywhere;
+}
+.admin-catalog-terms h3,
+.admin-catalog-terms h4 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.admin-catalog-versions,
+.admin-catalog-periods {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.admin-catalog-versions > li,
+.admin-catalog-periods > li {
+  padding: 20px 0;
+  border-top: 1px solid var(--color-line);
+}
+.admin-catalog-terms p {
+  margin: 12px 0;
+}
+.admin-catalog-price {
+  color: var(--color-gold);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.admin-catalog-conditions {
+  white-space: pre-wrap;
+}
+.admin-catalog-quota {
+  margin-top: 24px;
+}
+.admin-catalog-quota h4 {
+  margin: 0;
+  font-size: 16px;
+}
+.admin-catalog-quota .notification-counts {
+  margin-top: 12px;
+}
+.catalog-publication.tasks-filter {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 640px;
+  overflow-wrap: anywhere;
+}
+.catalog-publication h4 {
+  margin: 0;
+  font-size: 18px;
+}
+.catalog-publication label,
+.catalog-publication-field {
+  display: grid;
+  gap: 8px;
+}
+.catalog-publication input,
+.catalog-publication textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 12px;
+  color: var(--color-ink);
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+}
+.catalog-publication textarea {
+  resize: vertical;
+}
+.catalog-publication .catalog-publication-enabled {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.catalog-publication-enabled input {
+  width: 24px;
+  min-height: 24px;
+  flex: none;
+  accent-color: var(--color-mint);
+}

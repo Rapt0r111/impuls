@@ -1,5 +1,7 @@
 "use client";
 
+import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+
 import {
   apiErrorSchema,
   reviewListResponseSchema,
@@ -10,6 +12,9 @@ import {
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { useTelegramBack } from "@/shared/telegram/back-navigation";
+import { TaskTimeline } from "@/features/tasks/task-timeline";
+import { TaskHistory } from "@/features/tasks/task-history";
 
 class ReviewError extends Error {
   constructor(
@@ -44,7 +49,8 @@ function ReturnForm({
   item: ReviewQueueItem;
   onClose(): void;
 }) {
-  const { csrfToken, reportDirty, loseAccess } = useAuthorizedSession();
+  const { csrfToken, reportDirty, loseAccess, historyScopeIds } =
+    useAuthorizedSession();
   const client = useQueryClient();
   const [reason, setReason] = useState("");
   const [action, setAction] = useState<"return" | "accept">("return");
@@ -110,6 +116,11 @@ function ReturnForm({
         },
       );
       if (!response.ok) {
+        if (response.status === 429) {
+          setUncertain(true);
+          setError(mutationLimitMessage(response));
+          return;
+        }
         const parsed = apiErrorSchema.safeParse(await response.json());
         const code = parsed.success ? parsed.data.code : undefined;
         if (response.status === 401 || code === "ACCESS_REVOKED") {
@@ -156,6 +167,12 @@ function ReturnForm({
       );
       await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
       await client.invalidateQueries({ queryKey: ["account-ledger"] });
+      await client.invalidateQueries({
+        queryKey: ["task-history", item.task.id],
+      });
+      await client.invalidateQueries({
+        queryKey: ["task-timeline", item.task.id],
+      });
       await client.invalidateQueries({
         queryKey: ["assigned-task", item.task.id],
       });
@@ -207,6 +224,12 @@ function ReturnForm({
         <h4>Отчёт · попытка {item.attemptNumber}</h4>
         <p className="tasks-detail-criteria">{item.text}</p>
       </div>
+      {historyScopeIds?.includes(item.task.scope.id) && (
+        <>
+          <TaskTimeline taskId={item.task.id} />
+          <TaskHistory taskId={item.task.id} />
+        </>
+      )}
       <form
         className="task-report"
         onSubmit={(event) => {
@@ -336,6 +359,13 @@ function QueueContent() {
     getNextPageParam: (page) => page.nextCursor,
     retry: false,
   });
+  const closeSelected = () => {
+    if (confirmLeave()) {
+      setSelected(null);
+      void queue.refetch();
+    }
+  };
+  useTelegramBack(selected !== null, closeSelected, 30);
   useEffect(() => {
     if (
       queue.error instanceof ReviewError &&
@@ -421,12 +451,7 @@ function QueueContent() {
         <ReturnForm
           key={selected.submissionId}
           item={selected}
-          onClose={() => {
-            if (confirmLeave()) {
-              setSelected(null);
-              void queue.refetch();
-            }
-          }}
+          onClose={closeSelected}
         />
       )}
     </section>

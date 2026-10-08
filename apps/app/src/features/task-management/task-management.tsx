@@ -1,13 +1,20 @@
 "use client";
 
+import { useTelegramBack } from "@/shared/telegram/back-navigation";
+
+import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+
 import {
   apiErrorSchema,
   taskCreateRequestSchema,
+  taskEditRequestSchema,
+  taskCancelRequestSchema,
   taskManagementListResponseSchema,
   taskManagementOptionsResponseSchema,
   taskManagementResponseSchema,
   type ManagementTask,
   type TaskCreateRequest,
+  type TaskEditRequest,
   type TaskManagementOptionsResponse,
 } from "@impuls/contracts";
 import {
@@ -15,8 +22,10 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { TaskTimeline } from "@/features/tasks/task-timeline";
+import { TaskHistory } from "@/features/tasks/task-history";
 import "./task-management.css";
 
 type ScopeOption = TaskManagementOptionsResponse["scopes"][number];
@@ -30,6 +39,17 @@ type Attempt =
       taskId: string;
       recipient: string;
     };
+type ChangeDraft = {
+  action: "edit" | "cancel";
+  task: ManagementTask;
+  fields: TaskEditRequest;
+};
+type ChangeAttempt = {
+  action: "edit" | "cancel";
+  key: string;
+  body: string;
+  taskId: string;
+};
 
 class ManagementRequestError extends Error {
   constructor(
@@ -128,13 +148,21 @@ export function TaskManagement() {
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [assignees, setAssignees] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
-  const [pendingAction, setPendingAction] = useState<Attempt["action"] | null>(
-    null,
-  );
+  const [pendingAction, setPendingAction] = useState<
+    Attempt["action"] | ChangeAttempt["action"] | null
+  >(null);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const attempt = useRef<Attempt | null>(null);
+  const attempt = useRef<Attempt | ChangeAttempt | null>(null);
+  const [change, setChange] = useState<ChangeDraft | null>(null);
+  useTelegramBack(
+    change !== null,
+    () => {
+      if (confirmLeave()) setChange(null);
+    },
+    30,
+  );
   const running = useRef(false);
 
   const options = useQuery({
@@ -167,9 +195,9 @@ export function TaskManagement() {
   );
 
   useEffect(() => {
-    reportDirty(hasDraft || pending || uncertain);
+    reportDirty(hasDraft || change !== null || pending || uncertain);
     return () => reportDirty(false);
-  }, [hasDraft, pending, uncertain, reportDirty]);
+  }, [hasDraft, change, pending, uncertain, reportDirty]);
 
   useEffect(() => {
     for (const queryError of [options.error, list.error]) {
@@ -206,7 +234,10 @@ export function TaskManagement() {
     return "Сервер не подтвердил результат. Повторите тот же запрос с сохранённым ключом.";
   }
 
-  async function send(action: "create" | "assign", task?: ManagementTask) {
+  async function send(
+    action: "create" | "assign" | "edit" | "cancel",
+    task?: ManagementTask,
+  ) {
     if (running.current || (!attempt.current && (uncertain || pending))) return;
 
     let nextAttempt = attempt.current;
@@ -232,7 +263,7 @@ export function TaskManagement() {
           key: crypto.randomUUID(),
           body: JSON.stringify(parsed.data),
         };
-      } else {
+      } else if (action === "assign") {
         if (!task) return;
         const scope = availableScopes.find(
           (candidate) => candidate.id === task.scope.id,
@@ -259,6 +290,36 @@ export function TaskManagement() {
             expectedVersion: task.version,
           }),
         };
+      } else {
+        if (!change || change.action !== action) return;
+        const raw =
+          action === "edit"
+            ? change.fields
+            : {
+                expectedVersion: change.fields.expectedVersion,
+                reason: change.fields.reason,
+              };
+        const parsed = (
+          action === "edit" ? taskEditRequestSchema : taskCancelRequestSchema
+        ).safeParse(raw);
+        if (!parsed.success) {
+          setError(
+            "Проверьте поля, срок в UTC и обязательную причину (до 2000 символов).",
+          );
+          return;
+        }
+        if (
+          !window.confirm(
+            `${action === "edit" ? "Сохранить черновик" : "Отменить задачу"} «${change.task.title}»?\nИсполнитель: ${change.task.assignee?.displayName ?? "не назначен"}\nВерсия задачи: ${change.fields.expectedVersion}, правила: ${change.task.ruleVersion}\nФонд: ${action === "edit" ? `${change.fields.fundXp} XP · ${change.fields.fundPoints} баллов` : formatFunds(change.task)} · синтетические значения\nПричина: ${parsed.data.reason}`,
+          )
+        )
+          return;
+        nextAttempt = {
+          action,
+          taskId: change.task.id,
+          key: crypto.randomUUID(),
+          body: JSON.stringify(parsed.data),
+        };
       }
       attempt.current = nextAttempt;
     }
@@ -275,7 +336,7 @@ export function TaskManagement() {
       const response = await fetch(
         currentAttempt.action === "create"
           ? "/api/v1/tasks"
-          : `/api/v1/tasks/${currentAttempt.taskId}/assign`,
+          : `/api/v1/tasks/${currentAttempt.taskId}/${currentAttempt.action}`,
         {
           method: "POST",
           credentials: "same-origin",
@@ -296,6 +357,11 @@ export function TaskManagement() {
         return;
       }
       if (!response.ok) {
+        if (response.status === 429) {
+          setUncertain(true);
+          setError(mutationLimitMessage(response));
+          return;
+        }
         const parsedError = apiErrorSchema.safeParse(payload);
         const code = parsedError.success ? parsedError.data.code : undefined;
         if ([400, 404, 409, 422].includes(response.status)) {
@@ -321,15 +387,25 @@ export function TaskManagement() {
         setSuccess(
           `Черновик «${result.task.title}» создан. Значения фондов синтетические.`,
         );
-      } else {
+      } else if (currentAttempt.action === "assign") {
         setAssignees((current) => ({
           ...current,
           [currentAttempt.taskId]: "",
         }));
         setSuccess(`Задача назначена участнику ${currentAttempt.recipient}.`);
+      } else {
+        setChange(null);
+        setSuccess(
+          currentAttempt.action === "edit"
+            ? "Изменения черновика сохранены."
+            : "Задача отменена. Отчёты и история сохранены; начислений нет.",
+        );
       }
       await client.invalidateQueries({ queryKey: ["task-management"] });
+      await client.invalidateQueries({ queryKey: ["task-timeline"] });
       await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
+      await client.invalidateQueries({ queryKey: ["assigned-task"] });
+      await client.invalidateQueries({ queryKey: ["review-queue"] });
     } catch {
       setUncertain(attempt.current !== null);
       setError(
@@ -368,7 +444,10 @@ export function TaskManagement() {
       <header className="task-mgmt__heading">
         <div>
           <h2 id="task-mgmt-title">Управление задачами</h2>
-          <p>Создавайте черновики и назначайте их участникам своей области.</p>
+          <p>
+            Задачи ваших областей. Действия и история доступны по назначенным
+            полномочиям.
+          </p>
         </div>
       </header>
 
@@ -420,10 +499,14 @@ export function TaskManagement() {
       ) : (
         <>
           {availableScopes.every(
-            (scope) => !scope.canCreate && !scope.canAssign,
+            (scope) =>
+              !scope.canCreate &&
+              !scope.canAssign &&
+              !scope.canEdit &&
+              !scope.canCancel,
           ) && (
             <p className="task-mgmt__hint">
-              Создание и назначение сейчас недоступны. Обновите полномочия или
+              Изменение задач сейчас недоступно. Обновите полномочия или
               обратитесь к администратору.
             </p>
           )}
@@ -670,6 +753,53 @@ export function TaskManagement() {
                       }
                       disabled={pending || uncertain}
                       onAssign={() => void send("assign", task)}
+                      onChange={(action) => {
+                        if (change && !confirmLeave()) return;
+                        setError(null);
+                        setSuccess(null);
+                        setChange({
+                          action,
+                          task,
+                          fields: {
+                            title: task.title,
+                            criteria: task.criteria,
+                            categoryCode: task.categoryCode,
+                            priority: task.priority,
+                            dueAt: task.dueAt,
+                            fundXp: task.fundXp,
+                            fundPoints: task.fundPoints,
+                            expectedVersion: task.version,
+                            reason: "",
+                          },
+                        });
+                      }}
+                      changeForm={
+                        change?.task.id === task.id ? (
+                          <TaskChangeForm
+                            change={change}
+                            currentTask={task}
+                            disabled={pending || uncertain}
+                            pending={pending}
+                            onFields={(fields) =>
+                              setChange({ ...change, fields })
+                            }
+                            onRefreshVersion={() =>
+                              setChange({
+                                ...change,
+                                task,
+                                fields: {
+                                  ...change.fields,
+                                  expectedVersion: task.version,
+                                },
+                              })
+                            }
+                            onClose={() => {
+                              if (confirmLeave()) setChange(null);
+                            }}
+                            onSubmit={() => void send(change.action)}
+                          />
+                        ) : null
+                      }
                     />
                   ))}
                 </ul>
@@ -733,6 +863,8 @@ function TaskRow({
   onSelect,
   disabled,
   onAssign,
+  onChange,
+  changeForm,
 }: {
   task: ManagementTask;
   scope: ScopeOption | undefined;
@@ -740,8 +872,11 @@ function TaskRow({
   onSelect(value: string): void;
   disabled: boolean;
   onAssign(): void;
+  onChange(action: "edit" | "cancel"): void;
+  changeForm: React.ReactNode;
 }) {
   const canAssign = task.status === "draft" && Boolean(scope?.canAssign);
+  const { historyScopeIds } = useAuthorizedSession();
   return (
     <li className="task-mgmt__item">
       <div className="task-mgmt__item-main">
@@ -764,6 +899,12 @@ function TaskRow({
           </p>
         )}
       </div>
+      {historyScopeIds?.includes(task.scope.id) && (
+        <>
+          <TaskTimeline taskId={task.id} />
+          <TaskHistory taskId={task.id} />
+        </>
+      )}
       {canAssign && (
         <div className="task-mgmt__assign">
           {scope?.assignees.length ? (
@@ -802,6 +943,254 @@ function TaskRow({
           )}
         </div>
       )}
+      {!changeForm && (
+        <div className="task-mgmt__change-actions">
+          {scope?.canEdit && task.status === "draft" && (
+            <button
+              type="button"
+              className="task-mgmt__button"
+              disabled={disabled}
+              onClick={() => onChange("edit")}
+            >
+              Редактировать черновик
+            </button>
+          )}
+          {scope?.canCancel &&
+            !["accepted", "cancelled"].includes(task.status) && (
+              <button
+                type="button"
+                className="task-mgmt__button"
+                disabled={disabled}
+                onClick={() => onChange("cancel")}
+              >
+                Отменить задачу
+              </button>
+            )}
+        </div>
+      )}
+      {changeForm}
     </li>
+  );
+}
+
+function TaskChangeForm({
+  change,
+  currentTask,
+  disabled,
+  pending,
+  onFields,
+  onRefreshVersion,
+  onClose,
+  onSubmit,
+}: {
+  change: ChangeDraft;
+  currentTask: ManagementTask;
+  disabled: boolean;
+  pending: boolean;
+  onFields(fields: TaskEditRequest): void;
+  onRefreshVersion(): void;
+  onClose(): void;
+  onSubmit(): void;
+}) {
+  const f = change.fields;
+  const labelId = useId();
+  const stale = currentTask.version !== f.expectedVersion;
+  const closed =
+    change.action === "edit"
+      ? currentTask.status !== "draft"
+      : ["accepted", "cancelled"].includes(currentTask.status);
+  function field<K extends keyof TaskEditRequest>(
+    name: K,
+    value: TaskEditRequest[K],
+  ) {
+    onFields({ ...f, [name]: value });
+  }
+  return (
+    <form
+      className="task-mgmt__form"
+      aria-busy={pending}
+      aria-label={
+        change.action === "edit" ? "Редактирование черновика" : "Отмена задачи"
+      }
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+    >
+      <h3>
+        {change.action === "edit"
+          ? "Редактирование черновика"
+          : "Отмена задачи"}
+      </h3>
+      <p className="task-mgmt__note">
+        {change.action === "edit"
+          ? "После назначения условия заморожены. Область и версия правил сохраняются."
+          : "Отчёты и история сохранятся. Задача выйдет из очереди проверки. Начислений при отмене нет."}{" "}
+        Версия {f.expectedVersion} ·{" "}
+        {change.task.assignee?.displayName ?? "Исполнитель не назначен"} ·{" "}
+        {formatFunds(change.task)} (синтетические значения).
+      </p>
+      {closed ? (
+        <p role="alert">
+          Состояние задачи больше не допускает это действие. Закройте форму и
+          проверьте список.
+        </p>
+      ) : (
+        stale && (
+          <div role="alert">
+            <p>
+              Задача изменилась. Поля сохранены. Сверьте актуальные данные в
+              строке выше.
+            </p>
+            <button
+              type="button"
+              className="task-mgmt__button"
+              disabled={disabled}
+              onClick={onRefreshVersion}
+            >
+              Использовать версию {currentTask.version}
+            </button>
+          </div>
+        )
+      )}
+      <fieldset
+        disabled={disabled || closed}
+        className="task-mgmt__change-fields"
+      >
+        {change.action === "edit" && (
+          <div className="task-mgmt__fields">
+            <label>
+              <span id={`${labelId}-title`}>Название</span>
+              <input
+                aria-labelledby={`${labelId}-title`}
+                value={f.title}
+                maxLength={120}
+                required
+                onChange={(e) => field("title", e.target.value)}
+              />
+            </label>
+            <label className="task-mgmt__wide">
+              <span id={`${labelId}-criteria`}>Критерии результата</span>
+              <textarea
+                aria-labelledby={`${labelId}-criteria`}
+                rows={4}
+                value={f.criteria}
+                maxLength={2000}
+                required
+                onChange={(e) => field("criteria", e.target.value)}
+              />
+            </label>
+            <label>
+              <span id={`${labelId}-category`}>Код категории</span>
+              <input
+                aria-labelledby={`${labelId}-category`}
+                value={f.categoryCode}
+                maxLength={40}
+                required
+                onChange={(e) => field("categoryCode", e.target.value)}
+              />
+            </label>
+            <label>
+              <span id={`${labelId}-priority`}>Приоритет</span>
+              <select
+                aria-labelledby={`${labelId}-priority`}
+                value={f.priority}
+                onChange={(e) =>
+                  field(
+                    "priority",
+                    e.target.value as TaskEditRequest["priority"],
+                  )
+                }
+              >
+                <option value="normal">Штатный</option>
+                <option value="high">Высокий</option>
+                <option value="critical">Критический</option>
+              </select>
+            </label>
+            <label>
+              <span id={`${labelId}-due`}>Срок (UTC)</span>
+              <input
+                aria-labelledby={`${labelId}-due`}
+                type="datetime-local"
+                value={f.dueAt.slice(0, 16)}
+                required
+                onChange={(e) =>
+                  field(
+                    "dueAt",
+                    e.target.value
+                      ? new Date(`${e.target.value}Z`).toISOString()
+                      : "",
+                  )
+                }
+              />
+            </label>
+            <label>
+              <span id={`${labelId}-xp`}>Фонд XP</span>
+              <input
+                aria-labelledby={`${labelId}-xp`}
+                type="number"
+                min={0}
+                max={2147483647}
+                step={1}
+                value={f.fundXp}
+                required
+                onChange={(e) => field("fundXp", Number(e.target.value))}
+              />
+            </label>
+            <label>
+              <span id={`${labelId}-points`}>Фонд баллов</span>
+              <input
+                aria-labelledby={`${labelId}-points`}
+                type="number"
+                min={0}
+                max={2147483647}
+                step={1}
+                value={f.fundPoints}
+                required
+                onChange={(e) => field("fundPoints", Number(e.target.value))}
+              />
+            </label>
+          </div>
+        )}
+        <div className="task-mgmt__fields">
+          <label className="task-mgmt__wide">
+            <span id={`${labelId}-reason`}>
+              {change.action === "edit"
+                ? "Причина изменения"
+                : "Причина отмены"}
+            </span>
+            <textarea
+              aria-labelledby={`${labelId}-reason`}
+              rows={3}
+              value={f.reason}
+              maxLength={2000}
+              required
+              onChange={(e) => field("reason", e.target.value)}
+            />
+          </label>
+        </div>
+        <button
+          type="submit"
+          className="task-mgmt__button task-mgmt__button--primary"
+          disabled={stale}
+        >
+          {pending
+            ? change.action === "edit"
+              ? "Сохраняем…"
+              : "Отменяем…"
+            : change.action === "edit"
+              ? "Сохранить изменения"
+              : "Подтвердить отмену"}
+        </button>
+      </fieldset>
+      <button
+        type="button"
+        className="task-mgmt__button"
+        disabled={disabled}
+        onClick={onClose}
+      >
+        Закрыть форму
+      </button>
+    </form>
   );
 }

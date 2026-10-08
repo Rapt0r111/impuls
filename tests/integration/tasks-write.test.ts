@@ -299,7 +299,7 @@ integration("F03 start and submission transactions in PostgreSQL", () => {
     ).toBe(0);
   });
 
-  it("keeps immutable reports and funds outside the runtime write grants", async () => {
+  it("keeps reports immutable and freezes assigned funds despite draft field grants", async () => {
     const result = await admin.query(`SELECT
       has_table_privilege('impuls_app', 'impuls.submissions', 'SELECT') AS read_report,
       has_table_privilege('impuls_app', 'impuls.submissions', 'INSERT') AS insert_report,
@@ -313,10 +313,21 @@ integration("F03 start and submission transactions in PostgreSQL", () => {
       insert_report: true,
       update_report: false,
       delete_report: false,
-      update_fund: false,
+      update_fund: true,
       rls: true,
       public_access: false,
     });
+    const id = await task();
+    await expect(
+      runtime.query("UPDATE impuls.tasks SET fund_xp=fund_xp+1 WHERE id=$1", [
+        id,
+      ]),
+    ).rejects.toMatchObject({ code: "23514" });
+    await expect(
+      runtime.query("UPDATE impuls.tasks SET title='Rewrite' WHERE id=$1", [
+        id,
+      ]),
+    ).rejects.toMatchObject({ code: "23514" });
   });
 
   it("checks session and allowlist before returning a saved response", async () => {

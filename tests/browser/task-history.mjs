@@ -29,7 +29,9 @@ const timestamp = "2026-09-30T09:00:00.000Z";
 const uuid = (number) =>
   `44444444-4444-4444-8444-${String(number).padStart(12, "0")}`;
 const browser = await chromium.launch({ headless: true });
-await mkdir("docs/verification/assets", { recursive: true });
+const captureDir =
+  process.env.TEST_SCREENSHOT_DIR ?? "docs/verification/assets";
+await mkdir(captureDir, { recursive: true });
 let scenarios = 0;
 
 async function fixture(width, mode = "ready") {
@@ -177,7 +179,7 @@ async function fixture(width, mode = "ready") {
   await page
     .getByRole("button", { name: /Синтетическая задача для сравнения/ })
     .click();
-  const toggle = page.locator(".task-history-toggle");
+  const toggle = page.locator(".task-history .task-history-toggle");
   await toggle.waitFor();
   assert.equal(calls.length, 0, "Collapsed history must not fetch");
   return { page, errors, calls, state, toggle };
@@ -213,7 +215,7 @@ try {
       element.scrollIntoView({ block: "start" }),
     );
     await f.page.screenshot({
-      path: `docs/verification/assets/f03-history-${width}.png`,
+      path: `${captureDir}/f03-history-${width}.png`,
     });
     const more = f.page.getByRole("button", {
       name: "Показать более ранние отчёты",
@@ -398,7 +400,7 @@ try {
     element.scrollIntoView({ block: "start" }),
   );
   await long.page.screenshot({
-    path: "docs/verification/assets/f03-history-long-320.png",
+    path: `${captureDir}/f03-history-long-320.png`,
   });
   await close(long);
   console.log(

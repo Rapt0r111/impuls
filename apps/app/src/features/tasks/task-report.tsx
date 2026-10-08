@@ -8,6 +8,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 
 type Attempt = { action: "start" | "submit"; key: string; body: string };
 
@@ -70,6 +71,11 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
         return;
       }
       if (!response.ok) {
+        if (response.status === 429) {
+          setUncertain(true);
+          setError(mutationLimitMessage(response));
+          return;
+        }
         if (response.status === 409) {
           attempt.current = null;
           setUncertain(false);
@@ -114,6 +120,7 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
       await client.cancelQueries({ queryKey: ["assigned-task", task.id] });
       client.setQueryData(["assigned-task", task.id], { task: result.task });
       await client.invalidateQueries({ queryKey: ["task-history", task.id] });
+      await client.invalidateQueries({ queryKey: ["task-timeline", task.id] });
       await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
     } catch {
       setUncertain(attempt.current !== null);

@@ -128,12 +128,22 @@ async function fixture(width, mode = "success") {
         expectedVersion: 3,
         reason,
       });
+      if (
+        (mode === "rate-limited" && calls.length === 1) ||
+        (mode === "lost-rate-limited" && calls.length === 2)
+      )
+        return route.fulfill({
+          status: 429,
+          contentType: "application/json",
+          headers: { "Retry-After": "12" },
+          body: JSON.stringify({ code: "RATE_LIMITED" }),
+        });
       if (mode === "conflict") return apiError(route, 409, "TASK_CONFLICT");
       if (mode === "self-denied")
         return apiError(route, 403, "SELF_REVIEW_DENIED");
       if (mode === "revoked") return apiError(route, 403, "ACCESS_REVOKED");
       if (mode === "expired") return apiError(route, 401, "UNAUTHORIZED");
-      if (mode === "offline" && calls.length === 1)
+      if (["offline", "lost-rate-limited"].includes(mode) && calls.length === 1)
         return route.abort("internetdisconnected");
       if (mode === "unavailable" && calls.length === 1)
         return apiError(route, 503, "UNAVAILABLE");
@@ -226,18 +236,39 @@ try {
     await page.close();
     scenarios++;
   }
-  for (const mode of ["offline", "unavailable"]) {
+  for (const mode of [
+    "offline",
+    "unavailable",
+    "rate-limited",
+    "lost-rate-limited",
+  ]) {
     const { page, errors, calls } = await fixture(360, mode);
     await page.getByLabel("Причина возврата", { exact: true }).fill(reason);
     await page
       .getByRole("button", { name: "Вернуть на доработку", exact: true })
       .click();
+    if (mode === "lost-rate-limited")
+      await page
+        .getByRole("button", { name: "Повторить тот же запрос", exact: true })
+        .click();
+    if (mode.includes("rate-limited")) {
+      await page
+        .getByText(
+          "Слишком много действий. Подождите 12 с, затем повторите тот же запрос. Данные сохранены.",
+          { exact: true },
+        )
+        .waitFor();
+      assert.equal(
+        await page.getByLabel("Причина возврата", { exact: true }).inputValue(),
+        reason,
+      );
+    }
     await page
       .getByRole("button", { name: "Повторить тот же запрос", exact: true })
       .click();
     await page.getByText("Возврат сохранён.", { exact: false }).waitFor();
-    assert.equal(calls.length, 2);
-    assert.deepEqual(calls[0], calls[1]);
+    assert.equal(calls.length, mode === "lost-rate-limited" ? 3 : 2);
+    for (const call of calls) assert.deepEqual(calls[0], call);
     assert.deepEqual(errors, []);
     await page.close();
     scenarios++;

@@ -14,11 +14,19 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import { TaskReport } from "./task-report";
 import { TaskHistory } from "./task-history";
+import { TaskTimeline } from "./task-timeline";
 import { ReviewQueue } from "@/features/reviews/review-queue";
 import { AccountLedger } from "@/features/ledger/account-ledger";
 import { TaskManagement } from "@/features/task-management/task-management";
+import { Leaderboard } from "@/features/ranking/leaderboard";
+import { ParticipantProfile } from "@/features/profile/participant-profile";
+import { AuditLog } from "@/features/audit/audit-log";
+import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
+import { NotificationStatus } from "@/features/notifications/notification-status";
+import { RewardCatalog } from "@/features/rewards/reward-catalog";
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -98,6 +106,13 @@ function TaskListContent() {
   const { confirmLeave, loseAccess } = useAuthorizedSession();
   const [status, setStatus] = useState<StatusFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  useTelegramBack(
+    selectedId !== null,
+    () => {
+      if (confirmLeave()) setSelectedId(null);
+    },
+    30,
+  );
   const tasks = useInfiniteQuery({
     queryKey: ["assigned-tasks", status],
     initialPageParam: null as string | null,
@@ -289,6 +304,10 @@ function TaskListContent() {
                 </div>
               </dl>
               <TaskReport key={selectedId} task={detail.data.task} />
+              <TaskTimeline
+                key={`timeline-${selectedId}`}
+                taskId={selectedId}
+              />
               <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
             </>
           ) : null}
@@ -299,62 +318,118 @@ function TaskListContent() {
 }
 
 function TaskWorkspace() {
-  const { canReview, canManageTasks, confirmLeave } = useAuthorizedSession();
+  const {
+    canReview,
+    canReadAudit,
+    canInspectCatalog,
+    canReadNotificationStatus,
+    canManageTasks,
+    canSetTasks,
+    confirmLeave,
+  } = useAuthorizedSession();
   const [view, setView] = useState<
-    "tasks" | "reviews" | "ledger" | "management"
+    | "tasks"
+    | "reviews"
+    | "ledger"
+    | "management"
+    | "ranking"
+    | "profile"
+    | "audit"
+    | "catalog-admin"
+    | "notifications"
+    | "rewards"
   >(canReview ? "reviews" : "tasks");
+  const rootView = canReview ? "reviews" : "tasks";
+  useTelegramBack(
+    view !== rootView,
+    () => {
+      if (confirmLeave()) setView(rootView);
+    },
+    10,
+  );
+  type Destination = {
+    id: typeof view;
+    label: string;
+    accessibleLabel: string;
+  };
+  const personal: Destination[] = [
+    { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
+    { id: "ledger", label: "Баланс", accessibleLabel: "Баланс и журнал" },
+    { id: "rewards", label: "Каталог", accessibleLabel: "Поощрения" },
+    { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
+    { id: "profile", label: "Профиль", accessibleLabel: "Мой профиль" },
+  ];
+  const operations: Destination[] = [];
+  if (canReview)
+    operations.push({
+      id: "reviews",
+      label: "Проверка",
+      accessibleLabel: "Проверка отчётов",
+    });
+  if (canManageTasks)
+    operations.push({
+      id: "management",
+      label: canSetTasks ? "Постановка" : "История",
+      accessibleLabel: canSetTasks ? "Постановка задач" : "Задачи и история",
+    });
+  if (canInspectCatalog)
+    operations.push({
+      id: "catalog-admin",
+      label: "Конфигурация",
+      accessibleLabel: "Управление каталогом",
+    });
+  if (canReadAudit)
+    operations.push({
+      id: "audit",
+      label: "Журнал",
+      accessibleLabel: "Журнал действий",
+    });
+  if (canReadNotificationStatus)
+    operations.push({
+      id: "notifications",
+      label: "Уведомления",
+      accessibleLabel: "Состояние уведомлений",
+    });
+  const destination = (item: Destination) => (
+    <button
+      key={item.id}
+      type="button"
+      className="workspace-tab"
+      aria-label={item.accessibleLabel}
+      aria-pressed={view === item.id}
+      onClick={() => {
+        if (confirmLeave()) setView(item.id);
+      }}
+    >
+      {item.label}
+    </button>
+  );
   return (
     <>
-      {
-        <nav className="tasks-heading" aria-label="Рабочие разделы">
-          <button
-            type="button"
-            className="tasks-action"
-            aria-pressed={view === "tasks"}
-            onClick={() => {
-              if (confirmLeave()) setView("tasks");
-            }}
-          >
-            Мои задачи
-          </button>
-          {canReview && (
-            <button
-              type="button"
-              className="tasks-action"
-              aria-pressed={view === "reviews"}
-              onClick={() => {
-                if (confirmLeave()) setView("reviews");
-              }}
-            >
-              Проверка отчётов
-            </button>
-          )}
-          <button
-            type="button"
-            className="tasks-action"
-            aria-pressed={view === "ledger"}
-            onClick={() => {
-              if (confirmLeave()) setView("ledger");
-            }}
-          >
-            Баланс и журнал
-          </button>
-          {canManageTasks && (
-            <button
-              type="button"
-              className="tasks-action"
-              aria-pressed={view === "management"}
-              onClick={() => {
-                if (confirmLeave()) setView("management");
-              }}
-            >
-              Постановка задач
-            </button>
-          )}
-        </nav>
-      }
-      {view === "management" && canManageTasks ? (
+      <nav className="workspace-nav" aria-label="Рабочие разделы">
+        <div className="workspace-nav-personal">
+          {personal.map(destination)}
+        </div>
+        {operations.length ? (
+          <div className="workspace-nav-operations">
+            {operations.map(destination)}
+          </div>
+        ) : null}
+      </nav>
+      {view === "rewards" ? (
+        <RewardCatalog />
+      ) : view === "catalog-admin" && canInspectCatalog ? (
+        <CatalogAdmin />
+      ) : view === "notifications" && canReadNotificationStatus ? (
+        <NotificationStatus />
+      ) : view === "audit" && canReadAudit ? (
+        <AuditLog />
+      ) : view === "management" && canManageTasks ? (
         <TaskManagement />
+      ) : view === "profile" ? (
+        <ParticipantProfile />
+      ) : view === "ranking" ? (
+        <Leaderboard />
       ) : view === "ledger" ? (
         <AccountLedger />
       ) : view === "reviews" && canReview ? (

@@ -1,0 +1,40 @@
+.participant-profile p,
+.participant-profile label {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.profile-block {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-line);
+}
+.profile-block h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.profile-block p {
+  color: var(--color-muted);
+}
+.profile-block strong,
+.profile-block .profile-result-status {
+  color: var(--color-ink);
+}
+.profile-block label {
+  display: block;
+  margin-bottom: 10px;
+}
+.profile-block progress {
+  display: block;
+  width: 100%;
+  height: 10px;
+  accent-color: var(--color-mint);
+}
+.profile-block progress::-webkit-progress-bar {
+  background: var(--color-panel);
+}
+.profile-block progress::-webkit-progress-value {
+  background: var(--color-mint);
+}
+.profile-block progress::-moz-progress-bar {
+  background: var(--color-mint);
+}

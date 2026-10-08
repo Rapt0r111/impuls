@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { taskHistoryVisibility } from "./history-access";
 
 type HistoryReview = {
   id: string;
@@ -64,9 +65,7 @@ export async function readAssignedTaskHistory(
           AND revoked_at IS NULL AND expires_at > clock_timestamp()) AS session_valid,
         EXISTS (SELECT 1 FROM impuls.sessions WHERE user_id = $1 AND session_hash = $2
           AND revoked_at IS NOT NULL) AS session_revoked,
-        EXISTS (SELECT 1 FROM impuls.task_assignments a JOIN impuls.tasks t ON t.id = a.task_id
-          WHERE a.user_id = $1 AND t.id = $3
-            AND t.status IN ('assigned','in_progress','in_review','needs_work','accepted','cancelled')) AS task_visible,
+        ${taskHistoryVisibility} AS task_visible,
         clock_timestamp() AS as_of
     )
     SELECT access.*, sub.id, sub.attempt_number, sub.text, sub.created_at AS submitted_at,

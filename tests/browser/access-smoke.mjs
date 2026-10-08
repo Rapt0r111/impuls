@@ -1,5 +1,17 @@
 import { chromium } from "playwright";
 
+async function mockEmptyWorkspace(page) {
+  await page.route(
+    (url) => ["/api/v1/tasks", "/api/v1/reviews"].includes(url.pathname),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: '{"items":[],"nextCursor":null}',
+      }),
+  );
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -91,6 +103,7 @@ async function main() {
     console.log("API timeout: unavailable state after 10 seconds");
 
     const loginPage = await browser.newPage();
+    await mockEmptyWorkspace(loginPage);
     await loginPage.route(
       "https://telegram.org/js/telegram-web-app.js",
       (route) =>
@@ -150,6 +163,7 @@ async function main() {
     await loginPage
       .getByRole("heading", { name: "Доступ подтверждён" })
       .waitFor({ timeout: 5_000 });
+    await loginPage.getByText("Полномочия", { exact: true }).click();
     await loginPage.getByText("Назначенных полномочий нет.").waitFor();
     if (sentInitData !== "synthetic") {
       throw new Error("Telegram initData was not sent to the login API");
@@ -259,9 +273,11 @@ async function main() {
         }),
       }),
     );
+    await mockEmptyWorkspace(permissionsPage);
     await permissionsPage.goto("http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
+    await permissionsPage.getByText("Полномочия", { exact: true }).click();
     await permissionsPage.getByText("Проверка результатов").waitFor();
     await permissionsPage
       .getByText("Группа · Синтетическая группа с длинным названием")
@@ -276,6 +292,7 @@ async function main() {
     );
 
     const pendingMigrationPage = await browser.newPage();
+    await mockEmptyWorkspace(pendingMigrationPage);
     await pendingMigrationPage.route(
       "https://telegram.org/js/telegram-web-app.js",
       (route) =>
@@ -311,6 +328,7 @@ async function main() {
     await pendingMigrationPage
       .getByRole("heading", { name: "Доступ подтверждён" })
       .waitFor();
+    await pendingMigrationPage.getByText("Полномочия", { exact: true }).click();
     await pendingMigrationPage
       .getByText("Не удалось загрузить полномочия. Обновите проверку позже.")
       .waitFor();

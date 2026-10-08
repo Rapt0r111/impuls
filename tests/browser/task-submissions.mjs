@@ -28,7 +28,9 @@ const initial = {
 };
 
 const browser = await chromium.launch({ headless: true });
-await mkdir("docs/verification/assets", { recursive: true });
+const captureDir =
+  process.env.TEST_SCREENSHOT_DIR ?? "docs/verification/assets";
+await mkdir(captureDir, { recursive: true });
 let scenarios = 0;
 
 async function fixture(width, mode = "success") {
@@ -99,6 +101,16 @@ async function fixture(width, mode = "success") {
       });
       assert.equal(headers["x-csrf-token"], "synthetic-csrf");
       assert.equal(calls.at(-1).body.text, report);
+      if (
+        (mode === "rate-limited" && calls.length === 1) ||
+        (mode === "lost-rate-limited" && calls.length === 2)
+      )
+        return route.fulfill({
+          status: 429,
+          contentType: "application/json",
+          headers: { "Retry-After": "12" },
+          body: JSON.stringify({ code: "RATE_LIMITED" }),
+        });
       if (mode === "revoked" || mode === "expired")
         return json(
           route,
@@ -130,7 +142,10 @@ async function fixture(width, mode = "success") {
         };
         saved = { task, submission };
       }
-      if (calls.length === 1 && mode === "lost-response")
+      if (
+        calls.length === 1 &&
+        ["lost-response", "lost-rate-limited"].includes(mode)
+      )
         return route.abort("failed");
       if (calls.length === 1 && mode === "unavailable")
         return json(route, { code: "UNAVAILABLE" }, 503);
@@ -167,7 +182,7 @@ try {
       false,
     );
     await page.screenshot({
-      path: `docs/verification/assets/f03-report-${width}.png`,
+      path: `${captureDir}/f03-report-${width}.png`,
       fullPage: true,
     });
     await page
@@ -185,12 +200,40 @@ try {
     await page.close();
     scenarios++;
   }
-  for (const mode of ["lost-response", "unavailable"]) {
+  for (const mode of [
+    "lost-response",
+    "unavailable",
+    "rate-limited",
+    "lost-rate-limited",
+  ]) {
     const { page, errors, calls } = await fixture(360, mode);
     await page.getByLabel("Отчёт о выполнении", { exact: true }).fill(report);
     await page
       .getByRole("button", { name: "Отправить на проверку", exact: true })
       .click();
+    if (mode === "lost-rate-limited") {
+      await page
+        .getByRole("button", { name: "Повторить тот же запрос", exact: true })
+        .click();
+    }
+    if (mode.includes("rate-limited")) {
+      await page
+        .getByText(
+          "Слишком много действий. Подождите 12 с, затем повторите тот же запрос. Данные сохранены.",
+          { exact: true },
+        )
+        .waitFor();
+      await page
+        .locator(".task-report")
+        .getByText(report, { exact: true })
+        .waitFor();
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+        false,
+      );
+    }
     await page
       .getByRole("button", { name: "Повторить тот же запрос", exact: true })
       .click();
@@ -199,8 +242,8 @@ try {
         exact: true,
       })
       .waitFor();
-    assert.equal(calls.length, 2);
-    assert.deepEqual(calls[0], calls[1]);
+    assert.equal(calls.length, mode === "lost-rate-limited" ? 3 : 2);
+    for (const call of calls) assert.deepEqual(calls[0], call);
     assert.deepEqual(errors, []);
     await page.close();
     scenarios++;

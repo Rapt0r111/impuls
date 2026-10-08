@@ -4,6 +4,7 @@ import { accountLedgerResponseSchema } from "@impuls/contracts";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { LedgerCorrections } from "./ledger-corrections";
 
 class LedgerError extends Error {
   constructor(readonly status: number) {
@@ -29,7 +30,7 @@ const date = (value: string) =>
 const number = (value: number) => new Intl.NumberFormat("ru-RU").format(value);
 
 export function AccountLedger() {
-  const { loseAccess } = useAuthorizedSession();
+  const { loseAccess, canCorrectLedger } = useAuthorizedSession();
   const query = useInfiniteQuery({
     queryKey: ["account-ledger"],
     initialPageParam: null as string | null,
@@ -103,21 +104,46 @@ export function AccountLedger() {
                     <li key={entry.id}>
                       <div className="ledger-entry">
                         <div className="ledger-entry-heading">
-                          <strong>{entry.task.title}</strong>
+                          <strong>
+                            {entry.task?.title ?? entry.reward?.title}
+                          </strong>
                           <span
                             className={
                               entry.currency === "xp" ? "ledger-xp" : undefined
                             }
                           >
-                            +{number(entry.amount)}{" "}
+                            {entry.amount >= 0 ? "+" : ""}
+                            {number(entry.amount)}{" "}
                             {entry.currency === "xp" ? "XP" : "баллов"}
                           </span>
                         </div>
                         <p>
-                          {date(entry.createdAt)} · правила {entry.ruleVersion}{" "}
+                          {date(entry.createdAt)} ·{" "}
+                          {entry.reward
+                            ? `условия ${entry.reward.version}`
+                            : `правила ${entry.ruleVersion}`}{" "}
                           · сезон {entry.seasonKey} ({entry.timeZone})
                         </p>
                         <p className="tasks-detail-criteria">{entry.reason}</p>
+                        {entry.reward && (
+                          <p>
+                            {entry.kind === "reward_reservation"
+                              ? "Переведено в резерв"
+                              : entry.kind === "reward_approval"
+                                ? "Резерв списан при одобрении"
+                                : "Возвращено из резерва"}
+                            : {number(Math.abs(entry.reservedDelta))} баллов. XP
+                            не меняется.
+                          </p>
+                        )}
+                        {entry.correction && (
+                          <p>
+                            Возврат начисления ·{" "}
+                            {entry.correction.actor.displayName}
+                            <br />
+                            Исходная запись: {entry.correction.originalEntryId}
+                          </p>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -137,6 +163,7 @@ export function AccountLedger() {
           )}
         </>
       )}
+      {canCorrectLedger && <LedgerCorrections />}
     </section>
   );
 }

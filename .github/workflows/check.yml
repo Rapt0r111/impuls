@@ -36,7 +36,22 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run db:migrate
       - run: bun run check
-      - run: bun run test:integration
+        env:
+          TEST_DATABASE_URL: ""
+      - name: Install PostgreSQL 17 restore tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install --no-install-recommends -y postgresql-client-17
+      - run: bun run test:restore
+        env:
+          PG_BIN: /usr/lib/postgresql/17/bin
       - run: bunx playwright install chromium --with-deps
+      - name: Worker observation and POSIX stop rehearsal
+        run: bun run test:worker-ops
+      - run: bun run test:telegram
+      - name: Workspace text resize and reflow
+        run: node scripts/verify-workspace-reflow.mjs
       - run: bun run test:task-slice
       - run: bun run demo:test

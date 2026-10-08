@@ -91,6 +91,15 @@ export async function creditAcceptedTask(
       [input.userId, input.xp, input.points, input.at],
     )
   ).rows[0]!;
+  // The balance row serializes different acceptances for the same recipient.
+  // Issuance is cosmetic and belongs to this same business transaction.
+  await client.query(
+    `INSERT INTO impuls.user_achievements(user_id,code,condition_version,source_entry_id,granted_at,provenance)
+     SELECT user_id,'first_result',1,id,created_at,'acceptance' FROM impuls.ledger_entries
+     WHERE review_id=$1 AND user_id=$2 AND currency='xp' AND kind='task_acceptance'
+     ON CONFLICT(user_id,code) DO NOTHING`,
+    [input.reviewId, input.userId],
+  );
   return {
     mode: "synthetic",
     xp: input.xp,

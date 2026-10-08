@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   managementTaskSchema,
   taskAssignRequestSchema,
+  taskEditRequestSchema,
+  taskCancelRequestSchema,
   taskCreateRequestSchema,
   taskManagementListQuerySchema,
   taskManagementListResponseSchema,
@@ -46,6 +48,35 @@ const createBody = {
 };
 
 describe("task management contracts", () => {
+  it("requires a reason/version for changes and rejects scope/rule/assignee changes", () => {
+    const { scopeId: _scope, ruleSetId: _rule, ...fields } = createBody;
+    expect([_scope, _rule]).toEqual([ids.scope, ids.rules]);
+    const edit = { ...fields, expectedVersion: 1, reason: " Correction " };
+    expect(taskEditRequestSchema.parse(edit).reason).toBe("Correction");
+    for (const patch of [
+      { reason: " " },
+      { reason: "x".repeat(2001) },
+      { expectedVersion: 0 },
+      { scopeId: ids.scope },
+      { ruleSetId: ids.rules },
+      { assigneeId: ids.assignee },
+    ])
+      expect(
+        taskEditRequestSchema.safeParse({ ...edit, ...patch }).success,
+      ).toBe(false);
+    expect(
+      taskCancelRequestSchema.safeParse({
+        expectedVersion: 1,
+        reason: "Cancel",
+      }).success,
+    ).toBe(true);
+    for (const body of [
+      { expectedVersion: 1 },
+      { expectedVersion: 1, reason: " " },
+      { expectedVersion: 1, reason: "Cancel", fundXp: 0 },
+    ])
+      expect(taskCancelRequestSchema.safeParse(body).success).toBe(false);
+  });
   it("trims create fields and strictly rejects unknown fields or blank text", () => {
     expect(taskCreateRequestSchema.parse(createBody)).toMatchObject({
       title: "Task title",

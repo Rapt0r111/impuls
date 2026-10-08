@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { AssignedTaskStatus } from "./read";
+import { appendTaskEvent } from "./events";
 
 type Scope = { id: string; kind: "rota" | "group" | "project"; name: string };
 type Assignee = { id: string; displayName: string };
@@ -44,6 +45,17 @@ export type AssignTaskInput = MutationBase & {
   taskId: string;
   data: { assigneeId: string; expectedVersion: number };
 };
+export type EditTaskInput = MutationBase & {
+  taskId: string;
+  data: Omit<CreateTaskData, "scopeId" | "ruleSetId"> & {
+    expectedVersion: number;
+    reason: string;
+  };
+};
+export type CancelTaskInput = MutationBase & {
+  taskId: string;
+  data: { expectedVersion: number; reason: string };
+};
 export type TaskManagementResult =
   | { kind: "ok"; status: 200 | 201; response: { task: ManagedTask } }
   | {
@@ -61,7 +73,7 @@ export type TaskManagementResult =
 const activeBinding = `b.user_id = $1 AND b.revoked_at IS NULL
   AND b.valid_from <= clock_timestamp()
   AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp())`;
-const manageBinding = `${activeBinding} AND b.action IN ('task.create', 'task.assign')`;
+const manageBinding = `${activeBinding} AND b.action IN ('task.view', 'task.create', 'task.assign', 'task.edit', 'task.cancel')`;
 const selectTask = `SELECT t.id, t.title, t.criteria, t.category_code, t.priority,
   t.status, t.due_at, t.fund_xp, t.fund_points, t.rule_set_id, r.version_number,
   t.version, t.updated_at, s.id AS scope_id, s.kind, s.name,
@@ -142,8 +154,11 @@ export async function readTaskManagementOptions(
     name: string;
     can_create: boolean;
     can_assign: boolean;
+    can_edit: boolean;
+    can_cancel: boolean;
   }>(
-    `SELECT s.id, s.kind, s.name, bool_or(b.action = 'task.create') AS can_create, bool_or(b.action = 'task.assign') AS can_assign
+    `SELECT s.id, s.kind, s.name, bool_or(b.action = 'task.create') AS can_create, bool_or(b.action = 'task.assign') AS can_assign,
+       bool_or(b.action = 'task.edit') AS can_edit, bool_or(b.action = 'task.cancel') AS can_cancel
      FROM impuls.access_scopes s JOIN impuls.role_bindings b ON b.scope_id = s.id
      JOIN impuls.users actor ON actor.id = b.user_id AND actor.active
      WHERE ${manageBinding} GROUP BY s.id ORDER BY s.id`,
@@ -185,6 +200,8 @@ export async function readTaskManagementOptions(
       name: s.name,
       canCreate: options.enabled && s.can_create,
       canAssign: options.enabled && s.can_assign,
+      canEdit: options.enabled && s.can_edit,
+      canCancel: options.enabled && s.can_cancel,
       assignees: members.rows
         .filter((m) => m.scope_id === s.id)
         .map((m) => ({ id: m.id, displayName: m.display_name })),
@@ -199,11 +216,19 @@ export function createTask(pool: Pool, input: CreateTaskInput) {
 export function assignTask(pool: Pool, input: AssignTaskInput) {
   return manageTask(pool, { ...input, action: "assign" });
 }
+export function editTask(pool: Pool, input: EditTaskInput) {
+  return manageTask(pool, { ...input, action: "edit" });
+}
+export function cancelTask(pool: Pool, input: CancelTaskInput) {
+  return manageTask(pool, { ...input, action: "cancel" });
+}
 async function manageTask(
   pool: Pool,
   input:
     | (CreateTaskInput & { action: "create" })
-    | (AssignTaskInput & { action: "assign" }),
+    | (AssignTaskInput & { action: "assign" })
+    | (EditTaskInput & { action: "edit" })
+    | (CancelTaskInput & { action: "cancel" }),
 ): Promise<TaskManagementResult> {
   const client = await pool.connect();
   try {
@@ -226,7 +251,7 @@ async function manageTask(
           version: number;
         }
       | undefined;
-    if (input.action === "assign") {
+    if (input.action !== "create") {
       // Restrict visibility before locking; no currentVersion leaks across scope.
       current = (
         await client.query<{
@@ -236,9 +261,9 @@ async function manageTask(
           version: number;
         }>(
           `SELECT t.scope_id, t.rule_set_id, t.status, t.version FROM impuls.tasks t
-         WHERE t.id = $2 AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${activeBinding} AND b.action = 'task.assign' AND b.scope_id = t.scope_id)
+         WHERE t.id = $2 AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${activeBinding} AND b.action = $3 AND b.scope_id = t.scope_id)
          FOR UPDATE OF t`,
-          [input.actorId, input.taskId],
+          [input.actorId, input.taskId, `task.${input.action}`],
         )
       ).rows[0];
       if (!current) return await reject({ kind: "not_found" });
@@ -266,7 +291,7 @@ async function manageTask(
       .update(
         JSON.stringify({
           action: input.action,
-          ...(input.action === "assign" ? { taskId: input.taskId } : {}),
+          ...(input.action !== "create" ? { taskId: input.taskId } : {}),
           data: input.data,
         }),
       )
@@ -333,7 +358,7 @@ async function manageTask(
           ],
         )
       ).rows[0]!.id;
-    } else {
+    } else if (input.action === "assign") {
       taskId = input.taskId;
       if (
         current!.version !== input.data.expectedVersion ||
@@ -369,7 +394,62 @@ async function manageTask(
         VALUES ($1,$2,'task.assigned','synthetic',clock_timestamp(),clock_timestamp())`,
         [input.data.assigneeId, taskId],
       );
+    } else {
+      taskId = input.taskId;
+      if (
+        current!.version !== input.data.expectedVersion ||
+        (input.action === "edit"
+          ? current!.status !== "draft"
+          : ![
+              "draft",
+              "assigned",
+              "in_progress",
+              "in_review",
+              "needs_work",
+            ].includes(current!.status))
+      )
+        return await reject({
+          kind: "conflict",
+          currentVersion: current!.version,
+        });
+      if (input.action === "edit") {
+        const d = input.data;
+        await client.query(
+          `UPDATE impuls.tasks SET title=$2,criteria=$3,category_code=$4,priority=$5,due_at=$6,
+          fund_xp=$7,fund_points=$8,version=version+1,updated_at=clock_timestamp() WHERE id=$1`,
+          [
+            taskId,
+            d.title,
+            d.criteria,
+            d.categoryCode,
+            d.priority,
+            d.dueAt,
+            d.fundXp,
+            d.fundPoints,
+          ],
+        );
+      } else {
+        await client.query(
+          "UPDATE impuls.tasks SET status='cancelled',version=version+1,updated_at=clock_timestamp() WHERE id=$1",
+          [taskId],
+        );
+      }
     }
+    await appendTaskEvent(client, {
+      taskId,
+      actorId: input.actorId,
+      kind:
+        input.action === "create"
+          ? "created"
+          : input.action === "assign"
+            ? "assigned"
+            : input.action === "edit"
+              ? "edited"
+              : "cancelled",
+      ...(input.action === "edit" || input.action === "cancel"
+        ? { reason: input.data.reason }
+        : {}),
+    });
     const task = mapTask(
       (await client.query<TaskRow>(`${selectTask} WHERE t.id=$1`, [taskId]))
         .rows[0]!,
@@ -384,8 +464,21 @@ async function manageTask(
         input.requestId,
         input.action === "create"
           ? "Создание синтетической задачи"
-          : "Назначение синтетической задачи",
+          : input.action === "assign"
+            ? "Назначение синтетической задачи"
+            : input.data.reason,
         JSON.stringify({
+          ...(input.action === "edit"
+            ? {
+                title: task.title,
+                criteria: task.criteria,
+                categoryCode: task.categoryCode,
+                priority: task.priority,
+                dueAt: task.dueAt,
+                fundXp: task.fundXp,
+                fundPoints: task.fundPoints,
+              }
+            : {}),
           status: task.status,
           version: task.version,
           scopeId,

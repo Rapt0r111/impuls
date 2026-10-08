@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Pool } from "pg";
+import { appendTaskEvent } from "./events";
 import type { AssignedTaskSummary, AssignedTaskDetail } from "./read";
 import { syntheticEconomyZone } from "../ledger/economy";
 import { creditAcceptedTask, type AcceptanceAward } from "../ledger/credit";
@@ -354,6 +355,13 @@ export async function reviewTaskSubmission(
             timeZone: timeZone!,
           })
         : undefined;
+    await appendTaskEvent(client, {
+      taskId: current.id,
+      actorId: input.actorId,
+      kind: input.action === "accept" ? "accepted" : "returned",
+      submissionId: input.submissionId,
+      reviewId: row.id,
+    });
     await client.query(
       `INSERT INTO impuls.audit_events (actor_id, review_id, action, request_id, reason, diff, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $7)`,

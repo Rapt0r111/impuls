@@ -1,0 +1,98 @@
+.notification-section > .tasks-heading {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 0;
+}
+.notification-section > .tasks-heading h2 {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.notification-intro,
+.notification-asof,
+.notification-note {
+  color: var(--color-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.notification-intro {
+  margin: 8px 0 20px;
+}
+.notification-asof,
+.notification-errors .notification-note {
+  margin: 12px 0;
+}
+.notification-scope {
+  align-items: stretch;
+  max-width: 100%;
+}
+.notification-scope select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  color: var(--color-ink);
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  color-scheme: dark;
+}
+.notification-counts {
+  margin: 24px 0 16px;
+}
+.notification-counts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-line);
+}
+.notification-counts dt {
+  overflow-wrap: anywhere;
+}
+.notification-counts dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.notification-errors {
+  margin-top: 24px;
+}
+.notification-errors summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--color-mint);
+  overflow-wrap: anywhere;
+}
+.notification-events {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.notification-events li {
+  border-top: 1px solid var(--color-line);
+  padding: 16px 0;
+  overflow-wrap: anywhere;
+}
+.notification-events p {
+  margin: 8px 0 0;
+}
+.notification-history .notification-note {
+  font-size: 14px;
+}
+.notification-attempt-history .notification-note {
+  font-size: 14px;
+}
+.notification-identity summary {
+  font-weight: 400;
+}
+.notification-identity code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}

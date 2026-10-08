@@ -72,7 +72,9 @@ const defaultOptions = {
 };
 
 const browser = await chromium.launch({ headless: true });
-await mkdir("docs/verification/assets", { recursive: true });
+const captureDir =
+  process.env.TEST_SCREENSHOT_DIR ?? "docs/verification/assets";
+await mkdir(captureDir, { recursive: true });
 let scenarios = 0;
 
 function json(route, data, status = 200, headers = {}) {
@@ -109,7 +111,7 @@ async function pageFixture(width, mode = "success") {
     const text = message.text();
     consoleErrors.push(text);
     if (
-      !/Failed to load resource: the server responded with a status of (401|403|409|422|503)/.test(
+      !/Failed to load resource: the server responded with a status of (401|403|409|422|429|503)/.test(
         text,
       ) &&
       !text.includes("net::ERR_INTERNET_DISCONNECTED")
@@ -253,6 +255,15 @@ async function pageFixture(width, mode = "success") {
       assert.equal(request.headers()["x-csrf-token"], "test-csrf");
       assert.equal(request.headers().origin, origin);
       assert.match(call.key, /^[0-9a-f-]{36}$/i);
+      if (
+        (mode === "create-rate-limited" && calls.length === 1) ||
+        (mode === "create-lost-rate-limited" && calls.length === 2)
+      )
+        return json(route, { code: "RATE_LIMITED" }, 429, {
+          "Retry-After": "12",
+        });
+      if (mode === "create-lost-rate-limited" && calls.length === 1)
+        return route.abort("internetdisconnected");
       if (mode === "create-conflict")
         return apiError(route, 409, "TASK_CONFLICT");
       if (mode === "create-rules")
@@ -293,6 +304,15 @@ async function pageFixture(width, mode = "success") {
       assert.match(call.key, /^[0-9a-f-]{36}$/i);
       assert.equal(requestBody.assigneeId, memberId);
       assert.equal(requestBody.expectedVersion, 1);
+      if (
+        (mode === "assign-rate-limited" && calls.length === 1) ||
+        (mode === "assign-lost-rate-limited" && calls.length === 2)
+      )
+        return json(route, { code: "RATE_LIMITED" }, 429, {
+          "Retry-After": "12",
+        });
+      if (mode === "assign-lost-rate-limited" && calls.length === 1)
+        return route.abort("internetdisconnected");
       if (mode === "assign-stale") return apiError(route, 409, "TASK_CONFLICT");
       if (mode === "assign-inactive")
         return apiError(route, 422, "TASK_ASSIGNEE_INVALID");
@@ -728,7 +748,7 @@ try {
     await fillCreateForm(page);
     assert.equal(await page.evaluate(() => window.closingCalls.at(-1)), true);
     await page.screenshot({
-      path: `docs/verification/assets/f03-management-${width}.png`,
+      path: `${captureDir}/f03-management-${width}.png`,
       fullPage: true,
     });
     await assertNoOverflow(page);
@@ -757,6 +777,7 @@ try {
       assert.equal(await page.evaluate(() => window.closingCalls.at(-1)), true);
     }
     await createAndAssign(page, calls, dialogs, width === 390);
+    await page.waitForFunction(() => window.closingCalls.at(-1) === false);
     assert.equal(await page.evaluate(() => window.closingCalls.at(-1)), false);
     assert.equal(calls.length, 2);
     assert.equal(
@@ -789,9 +810,13 @@ try {
     "create-network",
     "create-unavailable",
     "assign-unavailable",
+    "create-rate-limited",
+    "create-lost-rate-limited",
+    "assign-rate-limited",
+    "assign-lost-rate-limited",
   ]) {
     const { page, calls, errors } = await pageFixture(360, mode);
-    if (mode === "assign-unavailable") {
+    if (mode.startsWith("assign")) {
       await page.getByLabel(/Активный участник области/).selectOption(memberId);
       await page
         .getByRole("button", { name: "Назначить", exact: true })
@@ -807,8 +832,18 @@ try {
       exact: true,
     });
     await retry.waitFor();
+    if (mode.includes("lost-rate-limited")) await retry.click();
+    if (mode.includes("rate-limited")) {
+      await page
+        .getByText(
+          "Слишком много действий. Подождите 12 с, затем повторите тот же запрос. Данные сохранены.",
+          { exact: true },
+        )
+        .waitFor();
+      await assertNoOverflow(page);
+    }
     const frozen = calls.at(-1);
-    if (mode === "assign-unavailable")
+    if (mode.startsWith("assign"))
       assert.equal(
         await page.getByLabel(/Активный участник области/).isDisabled(),
         true,
@@ -819,14 +854,15 @@ try {
         true,
       );
     await retry.click();
-    if (mode === "assign-unavailable")
+    if (mode.startsWith("assign"))
       await page
         .getByText("Задача назначена участнику Синтетический исполнитель.", {
           exact: true,
         })
         .waitFor();
     else await page.getByRole("status").filter({ hasText: "создан" }).waitFor();
-    assert.deepEqual(calls[0], calls[1]);
+    assert.equal(calls.length, mode.includes("lost-rate-limited") ? 3 : 2);
+    for (const call of calls) assert.deepEqual(calls[0], call);
     assert.deepEqual(calls[0], frozen);
     assert.deepEqual(errors, []);
     await page.close();
@@ -1023,7 +1059,7 @@ try {
       .getByRole("button", { name: "Создать черновик", exact: true })
       .focus();
     await page.screenshot({
-      path: "docs/verification/assets/f03-management-large-text-320.png",
+      path: `${captureDir}/f03-management-large-text-320.png`,
       fullPage: true,
     });
     assert.deepEqual(errors, []);

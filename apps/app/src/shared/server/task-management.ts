@@ -1,15 +1,24 @@
 import "server-only";
 import {
   taskAssignRequestSchema,
+  taskEditRequestSchema,
+  taskCancelRequestSchema,
   taskCreateRequestSchema,
   taskIdSchema,
   taskManagementResponseSchema,
   taskSubmissionHeadersSchema,
 } from "@impuls/contracts";
-import { assignTask, createTask, hashSessionToken } from "@impuls/domain";
+import {
+  assignTask,
+  createTask,
+  editTask,
+  cancelTask,
+  hashSessionToken,
+} from "@impuls/domain";
 import type { NextRequest } from "next/server";
 import { getAuthorizedSession, hasValidCsrf } from "./auth";
 import { getPool } from "./db";
+import { checkTaskMutationLimit } from "./task-rate-limit";
 import {
   errorResponse,
   isAllowedOrigin,
@@ -21,6 +30,7 @@ import {
 export async function handleTaskManagementMutation(
   request: NextRequest,
   taskId?: string,
+  action: "assign" | "edit" | "cancel" = "assign",
 ) {
   const id = requestId();
   if (!process.env.APP_ORIGIN || !process.env.CSRF_SECRET)
@@ -40,6 +50,8 @@ export async function handleTaskManagementMutation(
       return errorResponse(403, "ACCESS_REVOKED", "Доступ отозван", id);
     if (!hasValidCsrf(request, session.token))
       return errorResponse(403, "CSRF_DENIED", "Запрос не принят", id);
+    const limited = await checkTaskMutationLimit(session.user.id, id);
+    if (limited) return limited;
     if (taskId !== undefined && !taskIdSchema.safeParse(taskId).success)
       return errorResponse(404, "NOT_FOUND", "Задача не найдена", id);
     const headers = taskSubmissionHeadersSchema.safeParse({
@@ -66,6 +78,30 @@ export async function handleTaskManagementMutation(
       if (!body.success)
         return errorResponse(400, "BAD_REQUEST", "Неверные данные задачи", id);
       result = await createTask(getPool(), { ...base, data: body.data });
+    } else if (action === "edit") {
+      const body = taskEditRequestSchema.safeParse(raw);
+      if (!body.success)
+        return errorResponse(
+          400,
+          "BAD_REQUEST",
+          "Неверные данные редактирования",
+          id,
+        );
+      result = await editTask(getPool(), { ...base, taskId, data: body.data });
+    } else if (action === "cancel") {
+      const body = taskCancelRequestSchema.safeParse(raw);
+      if (!body.success)
+        return errorResponse(
+          400,
+          "BAD_REQUEST",
+          "Укажите версию и причину отмены",
+          id,
+        );
+      result = await cancelTask(getPool(), {
+        ...base,
+        taskId,
+        data: body.data,
+      });
     } else {
       const body = taskAssignRequestSchema.safeParse(raw);
       if (!body.success)
@@ -118,7 +154,7 @@ export async function handleTaskManagementMutation(
         return errorResponse(
           422,
           "TASK_MANAGEMENT_DISABLED",
-          "Создание и назначение в тестовом режиме выключены",
+          "Управление задачами в тестовом режиме выключено",
           id,
         );
       case "rules_invalid":

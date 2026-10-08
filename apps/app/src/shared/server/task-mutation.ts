@@ -11,6 +11,7 @@ import { hashSessionToken, mutateAssignedTask } from "@impuls/domain";
 import type { NextRequest } from "next/server";
 import { getAuthorizedSession, hasValidCsrf } from "./auth";
 import { getPool } from "./db";
+import { checkTaskMutationLimit } from "./task-rate-limit";
 import {
   errorResponse,
   isAllowedOrigin,
@@ -52,6 +53,8 @@ export async function handleTaskMutation(
     if (!hasValidCsrf(request, session.token)) {
       return errorResponse(403, "CSRF_DENIED", "Запрос не принят", id);
     }
+    const limited = await checkTaskMutationLimit(session.user.id, id);
+    if (limited) return limited;
     if (!taskIdSchema.safeParse(taskId).success) {
       return errorResponse(404, "NOT_FOUND", "Задача не найдена", id);
     }

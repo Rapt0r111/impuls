@@ -21,7 +21,15 @@ export function getPool(): Pool {
       // pg-connection-string's sslmode options override the explicit `ssl` object.
       // Keep TLS verification controlled by this CA instead of DATABASE_URL.
       const parsedUrl = new URL(connectionString);
-      for (const option of ["sslmode", "sslrootcert", "sslcert", "sslkey"]) {
+      for (const option of [
+        "ssl",
+        "sslmode",
+        "sslrootcert",
+        "sslcert",
+        "sslkey",
+        "sslnegotiation",
+        "uselibpqcompat",
+      ]) {
         parsedUrl.searchParams.delete(option);
       }
       runtimeConnectionString = parsedUrl.toString();

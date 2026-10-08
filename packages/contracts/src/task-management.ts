@@ -56,6 +56,17 @@ export const taskAssignRequestSchema = z.strictObject({
   expectedVersion: z.number().int().positive(),
 });
 
+export const taskEditRequestSchema = taskCreateRequestSchema
+  .omit({ scopeId: true, ruleSetId: true })
+  .extend({
+    expectedVersion: z.number().int().positive(),
+    reason: z.string().trim().min(1).max(2000),
+  });
+export const taskCancelRequestSchema = z.strictObject({
+  expectedVersion: z.number().int().positive(),
+  reason: z.string().trim().min(1).max(2000),
+});
+
 export const taskManagementListQuerySchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.uuid().optional(),
@@ -78,6 +89,8 @@ export const taskManagementOptionsResponseSchema = z.object({
       name: z.string().min(1).max(80),
       canCreate: z.boolean(),
       canAssign: z.boolean(),
+      canEdit: z.boolean().default(false),
+      canCancel: z.boolean().default(false),
       assignees: z.array(taskAssigneeSchema),
     }),
   ),
@@ -88,6 +101,8 @@ export const taskManagementOptionsResponseSchema = z.object({
 
 export type TaskCreateRequest = z.infer<typeof taskCreateRequestSchema>;
 export type TaskAssignRequest = z.infer<typeof taskAssignRequestSchema>;
+export type TaskEditRequest = z.infer<typeof taskEditRequestSchema>;
+export type TaskCancelRequest = z.infer<typeof taskCancelRequestSchema>;
 export type ManagementTask = z.infer<typeof managementTaskSchema>;
 export type TaskManagementOptionsResponse = z.infer<
   typeof taskManagementOptionsResponseSchema

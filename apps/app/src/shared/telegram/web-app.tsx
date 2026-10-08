@@ -1,6 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { connectTelegramEnvironment } from "./environment";
+
+export type TelegramEvent =
+  | "themeChanged"
+  | "viewportChanged"
+  | "safeAreaChanged"
+  | "contentSafeAreaChanged";
+export type TelegramEventHandler = (data?: { isStateStable?: boolean }) => void;
+export type TelegramInsets = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
 
 export type TelegramWebApp = {
   initData: string;
@@ -9,6 +23,20 @@ export type TelegramWebApp = {
   close(): void;
   setHeaderColor(color: string): void;
   setBackgroundColor(color: string): void;
+  setBottomBarColor?(color: string): void;
+  colorScheme?: "light" | "dark";
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  safeAreaInset?: TelegramInsets;
+  contentSafeAreaInset?: TelegramInsets;
+  onEvent?(event: TelegramEvent, handler: TelegramEventHandler): void;
+  offEvent?(event: TelegramEvent, handler: TelegramEventHandler): void;
+  BackButton?: {
+    show(): void;
+    hide(): void;
+    onClick(handler: () => void): void;
+    offClick(handler: () => void): void;
+  };
   enableClosingConfirmation?(): void;
   disableClosingConfirmation?(): void;
 };
@@ -36,17 +64,14 @@ export function TelegramBridge({
     const errorAfterAttempts = 80;
     const stopAfterAttempts = 600;
     let interval: number | undefined;
+    let disconnect: (() => void) | undefined;
     const connect = () => {
       const webApp = window.Telegram?.WebApp ?? null;
       if (!webApp) return false;
       if (interval !== undefined) window.clearInterval(interval);
+      disconnect = connectTelegramEnvironment(webApp);
       callbacks.current.onReady(webApp);
-      for (const configure of [
-        () => webApp.setHeaderColor("#08151c"),
-        () => webApp.setBackgroundColor("#08151c"),
-        () => webApp.ready(),
-        () => webApp.expand(),
-      ]) {
+      for (const configure of [() => webApp.ready(), () => webApp.expand()]) {
         try {
           configure();
         } catch {
@@ -66,6 +91,7 @@ export function TelegramBridge({
     if (!connect()) interval = window.setInterval(poll, 100);
     return () => {
       if (interval !== undefined) window.clearInterval(interval);
+      disconnect?.();
     };
   }, []);
 

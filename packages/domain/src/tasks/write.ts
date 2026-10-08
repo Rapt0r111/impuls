@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { getAssignedTask, type AssignedTaskDetail } from "./read";
+import { appendTaskEvent } from "./events";
 
 export type TaskMutation =
   | {
@@ -146,6 +147,13 @@ export async function mutateAssignedTask(
     if (!current) {
       return await rollbackResult(client, { kind: "not_found" });
     }
+    const signedInAfterLock = await client.query(
+      `SELECT 1 FROM impuls.sessions WHERE user_id=$1 AND session_hash=$2
+       AND revoked_at IS NULL AND expires_at > clock_timestamp()`,
+      [input.actorId, input.sessionHash],
+    );
+    if (!signedInAfterLock.rowCount)
+      return await rollbackResult(client, { kind: "unauthorized" });
     if (inserted.rowCount === 0) {
       if (!saved.response_status || !saved.response_body) {
         throw new Error("Incomplete idempotency record");
@@ -212,6 +220,12 @@ export async function mutateAssignedTask(
       [input.taskId, input.action === "start" ? "in_progress" : "in_review"],
     );
     if (updated.rowCount !== 1) throw new Error("Task update was not applied");
+    await appendTaskEvent(client, {
+      taskId: input.taskId,
+      actorId: input.actorId,
+      kind: input.action === "start" ? "started" : "submitted",
+      ...(submission ? { submissionId: submission.id } : {}),
+    });
     const detail = await getAssignedTask(client, input.actorId, input.taskId);
     if (!detail) throw new Error("Updated task is not readable");
     const response = submission
@@ -230,6 +244,14 @@ export async function mutateAssignedTask(
         JSON.stringify(response),
       ],
     );
+    // Event insertion can wait past wall-clock session expiry.
+    const stillSignedIn = await client.query(
+      `SELECT 1 FROM impuls.sessions WHERE user_id=$1 AND session_hash=$2
+       AND revoked_at IS NULL AND expires_at > clock_timestamp()`,
+      [input.actorId, input.sessionHash],
+    );
+    if (!stillSignedIn.rowCount)
+      return await rollbackResult(client, { kind: "unauthorized" });
     await client.query("COMMIT");
     transactionOpen = false;
     return { kind: "ok", status, response };

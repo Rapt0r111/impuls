@@ -133,7 +133,7 @@ integration("F03 assigned-task visibility in PostgreSQL", () => {
     expect(await getAssignedTask(pool, ownerId, ids[0]!)).toBeNull();
   });
 
-  it("grants runtime reads and creation while protecting saved task funds and content", async () => {
+  it("grants runtime reads, creation and draft field edits without table deletion", async () => {
     const result = await pool.query<{
       read_allowed: boolean;
       insert_allowed: boolean;
@@ -152,8 +152,8 @@ integration("F03 assigned-task visibility in PostgreSQL", () => {
       read_allowed: true,
       insert_allowed: true,
       delete_allowed: false,
-      fund_update_allowed: false,
-      title_update_allowed: false,
+      fund_update_allowed: true,
+      title_update_allowed: true,
       rls_enabled: true,
     });
     const client = await pool.connect();

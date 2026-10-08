@@ -24,14 +24,24 @@ export const permissionsResponseSchema = z.object({
   permissions: z.array(
     z.object({
       action: z.enum([
+        "task.view",
         "task.create",
         "task.assign",
+        "task.edit",
+        "task.cancel",
         "task.review",
         "reward.decide",
         "reward.fulfill",
         "admin.access",
         "admin.rules",
         "admin.catalog",
+        "admin.catalog.publish",
+        "admin.catalog.schedule",
+        "admin.catalog.schedule.cancel",
+        "admin.catalog.create",
+        "admin.catalog.quota.publish",
+        "admin.audit",
+        "admin.notifications",
         "ledger.correct",
       ]),
       scope: z.object({
@@ -82,6 +92,16 @@ export {
 } from "./reviews";
 export { accountLedgerResponseSchema, ledgerListQuerySchema } from "./ledger";
 export type { AccountLedgerResponse } from "./ledger";
+export {
+  ledgerCorrectionRequestSchema,
+  ledgerCorrectionQuerySchema,
+  ledgerCorrectionResponseSchema,
+  ledgerCorrectionsResponseSchema,
+} from "./ledger-corrections";
+export type {
+  LedgerCorrectionItem,
+  LedgerCorrectionRequest,
+} from "./ledger-corrections";
 export type {
   ReviewListResponse,
   ReviewQueueItem,
@@ -91,6 +111,8 @@ export type {
 export {
   managementTaskSchema,
   taskAssignRequestSchema,
+  taskEditRequestSchema,
+  taskCancelRequestSchema,
   taskCreateRequestSchema,
   taskManagementListQuerySchema,
   taskManagementListResponseSchema,
@@ -100,6 +122,8 @@ export {
 export type {
   ManagementTask,
   TaskAssignRequest,
+  TaskEditRequest,
+  TaskCancelRequest,
   TaskCreateRequest,
   TaskManagementListResponse,
   TaskManagementOptionsResponse,
@@ -109,3 +133,118 @@ export {
   taskHistoryResponseSchema,
 } from "./task-history";
 export type { TaskHistoryResponse } from "./task-history";
+export {
+  taskTimelineQuerySchema,
+  taskTimelineResponseSchema,
+} from "./task-timeline";
+export type { TaskTimelineResponse } from "./task-timeline";
+export {
+  leaderboardQuerySchema,
+  leaderboardResponseSchema,
+} from "./leaderboard";
+export type { LeaderboardResponse } from "./leaderboard";
+export { participantProfileResponseSchema } from "./profile";
+export type { ParticipantProfileResponse } from "./profile";
+export {
+  auditActionSchema,
+  auditCursorSchema,
+  auditFieldSchema,
+  auditQuerySchema,
+  auditResponseSchema,
+} from "./audit";
+export type { AuditQuery, AuditResponse } from "./audit";
+export {
+  notificationStatusQuerySchema,
+  notificationStatusResponseSchema,
+  notificationEventsCursorSchema,
+  notificationEventsQuerySchema,
+  notificationEventsResponseSchema,
+} from "./notification-status";
+export type {
+  NotificationStatusResponse,
+  NotificationEventsResponse,
+} from "./notification-status";
+export {
+  rewardListQuerySchema,
+  rewardCursorSchema,
+  redemptionCursorSchema,
+  redemptionListQuerySchema,
+  reserveRewardRequestSchema,
+  cancelRedemptionRequestSchema,
+  decideRedemptionRequestSchema,
+  redemptionReviewQuerySchema,
+  fulfillRedemptionRequestSchema,
+  redemptionDecisionResponseSchema,
+  redemptionReviewResponseSchema,
+  redemptionSchema,
+  rewardCatalogResponseSchema,
+  redemptionListResponseSchema,
+  redemptionMutationResponseSchema,
+} from "./rewards";
+export type {
+  RewardCatalogResponse,
+  RedemptionListResponse,
+  RedemptionMutationResponse,
+  Redemption,
+  RedemptionReviewResponse,
+} from "./rewards";
+export {
+  adminCatalogCursorSchema,
+  adminCatalogQuerySchema,
+  adminCatalogResponseSchema,
+  adminCatalogHistoryCursorSchema,
+  adminCatalogHistoryParamsSchema,
+  adminCatalogHistoryQuerySchema,
+  adminCatalogHistoryResponseSchema,
+  adminCatalogQuotasCursorSchema,
+  adminCatalogQuotasQuerySchema,
+  adminCatalogQuotasResponseSchema,
+} from "./admin-catalog";
+export {
+  catalogPublicationRequestSchema,
+  catalogSchedulingRequestSchema,
+  catalogPublicationEvidenceSchema,
+  catalogPublicationResponseSchema,
+} from "./catalog-publication";
+export type {
+  CatalogPublicationRequest,
+  CatalogSchedulingRequest,
+  CatalogPublicationResponse,
+} from "./catalog-publication";
+export type {
+  AdminCatalogResponse,
+  AdminCatalogHistoryResponse,
+  AdminCatalogQuotasResponse,
+} from "./admin-catalog";
+export {
+  notificationAttemptSchema,
+  notificationAttemptsCursorSchema,
+  notificationAttemptsQuerySchema,
+  notificationAttemptsResponseSchema,
+} from "./notification-attempts";
+export type { NotificationAttemptsResponse } from "./notification-attempts";
+export {
+  quotaPublicationRequestSchema,
+  quotaPublicationEvidenceSchema,
+  quotaPublicationResponseSchema,
+} from "./quota-publication";
+export type {
+  QuotaPublicationRequest,
+  QuotaPublicationResponse,
+} from "./quota-publication";
+
+export {
+  catalogCreationRequestSchema,
+  catalogCreationEvidenceSchema,
+  catalogCreationResponseSchema,
+} from "./catalog-creation";
+export type {
+  CatalogCreationRequest,
+  CatalogCreationResponse,
+} from "./catalog-creation";
+
+export {
+  catalogCancellationRequestSchema,
+  catalogCancellationResponseSchema,
+} from "./catalog-cancellation";
+export type { CatalogCancellationRequest } from "./catalog-cancellation";

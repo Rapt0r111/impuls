@@ -170,13 +170,23 @@ async function fixture(width, mode = "success") {
         expectedVersion: 3,
         reason,
       });
+      if (
+        (mode === "rate-limited" && calls.length === 1) ||
+        (mode === "lost-rate-limited" && calls.length === 2)
+      )
+        return route.fulfill({
+          status: 429,
+          contentType: "application/json",
+          headers: { "Retry-After": "12" },
+          body: JSON.stringify({ code: "RATE_LIMITED" }),
+        });
       if (mode === "conflict") return fail(route, 409, "TASK_CONFLICT");
       if (mode === "disabled") return fail(route, 503, "ECONOMY_DISABLED");
       if (mode === "rules") return fail(route, 422, "ECONOMY_RULES_INVALID");
       if (mode === "recipient") return fail(route, 422, "RECIPIENT_REVOKED");
       if (mode === "revoked") return fail(route, 403, "ACCESS_REVOKED");
       if (mode === "expired") return fail(route, 401, "UNAUTHORIZED");
-      if (mode === "offline" && calls.length === 1)
+      if (["offline", "lost-rate-limited"].includes(mode) && calls.length === 1)
         return route.abort("internetdisconnected");
       if (mode === "unavailable" && calls.length === 1)
         return fail(route, 503, "UNAVAILABLE");
@@ -259,7 +269,12 @@ try {
     await page.close();
     count++;
   }
-  for (const mode of ["offline", "unavailable"]) {
+  for (const mode of [
+    "offline",
+    "unavailable",
+    "rate-limited",
+    "lost-rate-limited",
+  ]) {
     const { page, calls } = await fixture(390, mode);
     await open(page);
     await confirm(page);
@@ -267,6 +282,24 @@ try {
     await page
       .getByRole("button", { name: "Повторить тот же запрос", exact: true })
       .waitFor();
+    if (mode === "lost-rate-limited")
+      await page
+        .getByRole("button", { name: "Повторить тот же запрос", exact: true })
+        .click();
+    if (mode.includes("rate-limited")) {
+      await page
+        .getByText(
+          "Слишком много действий. Подождите 12 с, затем повторите тот же запрос. Данные сохранены.",
+          { exact: true },
+        )
+        .waitFor();
+      assert.equal(
+        await page
+          .getByLabel("Основание приёмки", { exact: true })
+          .inputValue(),
+        reason,
+      );
+    }
     assert.equal(
       await page
         .getByRole("radio", { name: "Вернуть на доработку", exact: true })
@@ -277,7 +310,8 @@ try {
       .getByRole("button", { name: "Повторить тот же запрос", exact: true })
       .click();
     await page.getByText("Результат принят.", { exact: false }).waitFor();
-    assert.deepEqual(calls[0], calls[1]);
+    assert.equal(calls.length, mode === "lost-rate-limited" ? 3 : 2);
+    for (const call of calls) assert.deepEqual(calls[0], call);
     await page.close();
     count++;
   }
@@ -286,7 +320,7 @@ try {
     await open(page);
     await confirm(page);
     await send(page).click();
-    await page.getByRole("alert").waitFor();
+    await page.locator(".task-report").getByRole("alert").waitFor();
     assert.equal(
       await page.getByLabel("Основание приёмки", { exact: true }).inputValue(),
       reason,
@@ -344,7 +378,10 @@ try {
         .getByRole("heading", { name: "Доступ отозван", exact: true })
         .waitFor();
     else {
-      await page.getByRole("alert").waitFor();
+      await page
+        .getByRole("region", { name: "Баланс и журнал", exact: true })
+        .getByRole("alert")
+        .waitFor();
       assert.equal(await page.getByText("0 XP", { exact: true }).count(), 0);
     }
     await page.close();
