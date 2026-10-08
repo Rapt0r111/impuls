@@ -47,6 +47,7 @@ const actionNames: Record<
   "reward.decide": "Решение по заявкам",
   "reward.fulfill": "Подтверждение выдачи",
   "admin.access": "Управление доступом",
+  "admin.access.manage": "Выдача и отзыв прав",
   "admin.rules": "Управление правилами",
   "admin.catalog": "Управление каталогом",
   "admin.catalog.create": "Создание позиции каталога",

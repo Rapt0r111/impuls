@@ -10,6 +10,7 @@ export const permissionActions = [
   "reward.decide",
   "reward.fulfill",
   "admin.access",
+  "admin.access.manage",
   "admin.rules",
   "admin.catalog",
   "admin.catalog.create",

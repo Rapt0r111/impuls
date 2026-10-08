@@ -33,6 +33,7 @@ export const permissionsResponseSchema = z.object({
         "reward.decide",
         "reward.fulfill",
         "admin.access",
+        "admin.access.manage",
         "admin.rules",
         "admin.catalog",
         "admin.catalog.publish",
@@ -248,3 +249,14 @@ export {
   catalogCancellationResponseSchema,
 } from "./catalog-cancellation";
 export type { CatalogCancellationRequest } from "./catalog-cancellation";
+
+export {
+  accessChangeResponseSchema,
+  accessGrantRequestSchema,
+  accessRevocationRequestSchema,
+  grantableActions,
+} from "./access-management";
+export type {
+  AccessGrantRequest,
+  AccessRevocationRequest,
+} from "./access-management";

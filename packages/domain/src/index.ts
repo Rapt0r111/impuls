@@ -79,3 +79,6 @@ export { publishQuotaPeriod } from "./admin/publish-quota";
 export { createCatalogIdentity } from "./admin/create-catalog";
 
 export { cancelScheduledCatalogTerms } from "./admin/cancel-schedule";
+
+export { changeAccess } from "./admin/access";
+export type { AccessChangeInput } from "./admin/access";
