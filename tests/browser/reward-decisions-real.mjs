@@ -16,6 +16,10 @@ const url = process.env.TEST_DATABASE_URL,
     "reward-decisions-real",
   );
 if (!url) throw new Error("TEST_DATABASE_URL is required");
+// Optional §12 checks: TEST_VIEWPORT_WIDTH (320/360/390) and TEST_TEXT_SCALE
+// (e.g. 1.5, approximated by the root font size, not OS text scaling).
+const viewportWidth = Number(process.env.TEST_VIEWPORT_WIDTH ?? 390),
+  textScale = Number(process.env.TEST_TEXT_SCALE ?? 1);
 await mkdir(dir, { recursive: true });
 const keys = ["recipient", "deciderA", "deciderB", "fulfiller", "self"],
   db = new pg.Pool({ connectionString: url }),
@@ -118,7 +122,7 @@ const state = async (reward, user) => ({
 const browser = await chromium.launch();
 async function open(key, tab) {
   const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
+      viewport: { width: viewportWidth, height: 844 },
       reducedMotion: "reduce",
       timezoneId: "Europe/Moscow",
     }),
@@ -136,6 +140,10 @@ async function open(key, tab) {
     }),
   );
   await page.goto(origin, { waitUntil: "domcontentloaded" });
+  if (textScale !== 1)
+    await page.addStyleTag({
+      content: `html{font-size:${textScale * 100}%}`,
+    });
   await page
     .getByRole("heading", { name: "Доступ подтверждён", exact: true })
     .waitFor();
