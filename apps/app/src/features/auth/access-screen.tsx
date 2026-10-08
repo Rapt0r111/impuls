@@ -426,6 +426,15 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                         (permission) =>
                           permission.action === "admin.notifications",
                       ) ?? false,
+                    accessScopes:
+                      state.permissions
+                        ?.filter(
+                          (permission) => permission.action === "admin.access",
+                        )
+                        .map((permission) => ({
+                          id: permission.scope.id,
+                          name: permission.scope.name,
+                        })) ?? [],
                     canCorrectLedger:
                       state.permissions?.some(
                         (permission) => permission.action === "ledger.correct",

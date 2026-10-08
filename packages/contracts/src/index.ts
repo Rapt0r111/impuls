@@ -252,11 +252,14 @@ export type { CatalogCancellationRequest } from "./catalog-cancellation";
 
 export {
   accessChangeResponseSchema,
+  accessListResponseSchema,
+  accessQuerySchema,
   accessGrantRequestSchema,
   accessRevocationRequestSchema,
   grantableActions,
 } from "./access-management";
 export type {
   AccessGrantRequest,
+  AccessListResponse,
   AccessRevocationRequest,
 } from "./access-management";

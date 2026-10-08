@@ -11,6 +11,7 @@ export const SessionContext = createContext<{
   canDecideRewards?: boolean;
   canFulfillRewards?: boolean;
   canCorrectLedger?: boolean;
+  accessScopes?: { id: string; name: string }[];
   canManageTasks?: boolean;
   canSetTasks?: boolean;
   historyScopeIds?: string[];

@@ -1,11 +1,16 @@
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { Pool } from "pg";
+import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { changeAccess } from "../../packages/domain/src/admin/access";
-import { accessChangeResponseSchema } from "../../packages/contracts/src/access-management";
+import {
+  accessChangeResponseSchema,
+  accessListResponseSchema,
+} from "../../packages/contracts/src/access-management";
 
 type Input = Parameters<typeof changeAccess>[1];
-const url = process.env.TEST_DATABASE_URL;
+const url = process.env.TEST_DATABASE_URL,
+  origin = process.env.TEST_APP_ORIGIN;
 (url ? describe : describe.skip)(
   "F02/F07 access management under runtime role",
   () => {
@@ -240,6 +245,115 @@ const url = process.env.TEST_DATABASE_URL;
           [b.id, users[0], users[2], scope, randomUUID()],
         ),
       ).rejects.toThrow(/Invalid access change/);
+    });
+
+    it.skipIf(!origin)(
+      "serves guarded no-store HTTP for grant and revocation",
+      async () => {
+        const csrf = (i: number) =>
+          createCsrfToken(tokens[i]!, process.env.CSRF_SECRET!);
+        const call = (
+          kind: "grants" | "revocations",
+          payload: unknown,
+          over: Record<string, string | undefined> = {},
+          actor = 0,
+        ) => {
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            Origin: origin!,
+            Cookie: "impuls_session=" + tokens[actor],
+            "X-CSRF-Token": csrf(actor),
+            "Idempotency-Key": randomUUID(),
+          };
+          for (const [k, v] of Object.entries(over))
+            if (v === undefined) delete headers[k];
+            else headers[k] = v;
+          return fetch(origin + "/api/v1/admin/access/" + kind, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+          });
+        };
+        const payload = {
+          scope,
+          subjectId: users[2],
+          action: "task.cancel",
+          validUntil: null,
+          reason: "Synthetic HTTP delegation",
+        };
+        const before = await evidence();
+        expect(
+          (await call("grants", payload, { Origin: "https://foreign.invalid" }))
+            .status,
+        ).toBe(403);
+        expect(
+          (await call("grants", payload, { "X-CSRF-Token": "invalid" })).status,
+        ).toBe(403);
+        expect(
+          (await call("grants", payload, { "Idempotency-Key": undefined }))
+            .status,
+        ).toBe(400);
+        expect(
+          (await call("grants", { ...payload, action: "admin.access" })).status,
+        ).toBe(400);
+        expect((await call("grants", { ...payload, extra: 1 })).status).toBe(
+          400,
+        );
+        expect(
+          (await call("grants", payload, { Cookie: undefined })).status,
+        ).toBe(401);
+        expect((await call("grants", payload, {}, 1)).status).toBe(404);
+        expect(
+          (await call("grants", { ...payload, subjectId: users[0] })).status,
+        ).toBe(422);
+        expect(await evidence()).toBe(before);
+        const key = randomUUID();
+        const ok = await call("grants", payload, { "Idempotency-Key": key });
+        expect(ok.status).toBe(201);
+        expect(ok.headers.get("cache-control")).toContain("no-store");
+        const saved = accessChangeResponseSchema.parse(await ok.json());
+        const replay = await call("grants", payload, {
+          "Idempotency-Key": key,
+        });
+        expect(accessChangeResponseSchema.parse(await replay.json())).toEqual(
+          saved,
+        );
+        expect((await call("grants", payload)).status).toBe(409);
+        const revoked = await call("revocations", {
+          scope,
+          bindingId: saved.binding.id,
+          expectedVersion: saved.binding.version,
+          reason: "Synthetic HTTP revocation",
+        });
+        expect(revoked.status).toBe(201);
+        expect(
+          accessChangeResponseSchema.parse(await revoked.json()).kind,
+        ).toBe("revoke");
+      },
+    );
+
+    it.skipIf(!origin)("serves the guarded no-store member list", async () => {
+      const get = (query: string, actor: number | null = 0) =>
+        fetch(origin + "/api/v1/admin/access" + query, {
+          headers:
+            actor === null ? {} : { Cookie: "impuls_session=" + tokens[actor] },
+        });
+      const ok = await get("?scope=" + scope);
+      expect(ok.status).toBe(200);
+      expect(ok.headers.get("cache-control")).toContain("no-store");
+      const list = accessListResponseSchema.parse(await ok.json());
+      expect(list.canManage).toBe(true);
+      expect(list.members.some((m) => m.userId === users[2])).toBe(true);
+      expect(list.members.find((m) => m.userId === users[0])).toBeUndefined();
+      const reader = accessListResponseSchema.parse(
+        await (await get("?scope=" + scope, 1)).json(),
+      );
+      expect(reader.canManage).toBe(false);
+      expect((await get("?scope=" + scope, null)).status).toBe(401);
+      expect((await get("?scope=" + foreign)).status).toBe(404);
+      expect((await get("?scope=" + scope, 3)).status).toBe(404);
+      expect((await get("?scope=" + scope + "&x=1")).status).toBe(400);
+      expect((await get("")).status).toBe(400);
     });
   },
 );

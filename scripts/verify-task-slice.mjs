@@ -26,10 +26,11 @@ if (
       "--admin-catalog-only",
       "--catalog-scheduling-only",
       "--catalog-cancellation-only",
+      "--access-management-only",
     ].includes(args[0]))
 )
   throw new Error(
-    "Supported options: --timeline-only, --corrections-only, --ranking-only, --profile-only, --audit-only, --rewards-only, --reward-decisions-only, --reward-fulfillment-only, --reward-pagination-only, --reward-expiry-only, --notification-status-only, --admin-catalog-only, --catalog-scheduling-only or --catalog-cancellation-only",
+    "Supported options: --timeline-only, --corrections-only, --ranking-only, --profile-only, --audit-only, --rewards-only, --reward-decisions-only, --reward-fulfillment-only, --reward-pagination-only, --reward-expiry-only, --notification-status-only, --admin-catalog-only, --catalog-scheduling-only, --catalog-cancellation-only or --access-management-only",
   );
 const timelineOnly = args[0] === "--timeline-only";
 const correctionsOnly = args[0] === "--corrections-only";
@@ -43,6 +44,7 @@ const paginationOnly = args[0] === "--reward-pagination-only";
 const expiryOnly = args[0] === "--reward-expiry-only";
 const adminCatalogOnly = args[0] === "--admin-catalog-only";
 const cancellationOnly = args[0] === "--catalog-cancellation-only";
+const accessOnly = args[0] === "--access-management-only";
 const schedulingOnly = args[0] === "--catalog-scheduling-only";
 const notificationStatusOnly = args[0] === "--notification-status-only";
 const origin = "http://localhost:3100";
@@ -64,6 +66,7 @@ const env = {
   SYNTHETIC_CATALOG_PUBLICATION_ENABLED: "true",
   SYNTHETIC_CATALOG_SCHEDULING_ENABLED: "true",
   SYNTHETIC_CATALOG_CANCELLATION_ENABLED: "true",
+  SYNTHETIC_ACCESS_MANAGEMENT_ENABLED: "true",
   SYNTHETIC_CATALOG_CREATION_ENABLED: "true",
   SYNTHETIC_QUOTA_PUBLICATION_ENABLED: "true",
   SYNTHETIC_NOTIFICATION_STATUS_ENABLED: "true",
@@ -120,7 +123,14 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   if (!ready) throw new Error("Test server did not become ready");
-  if (cancellationOnly) {
+  if (accessOnly) {
+    await run("node_modules/vitest/vitest.mjs", [
+      "run",
+      "tests/integration/access-management.test.ts",
+      "packages/contracts/src/access-management.test.ts",
+    ]);
+    await run("tests/browser/access-management.mjs");
+  } else if (cancellationOnly) {
     await run("node_modules/vitest/vitest.mjs", [
       "run",
       "tests/integration/catalog-cancellation.test.ts",
@@ -244,6 +254,7 @@ try {
   if (
     !adminCatalogOnly &&
     !cancellationOnly &&
+    !accessOnly &&
     !schedulingOnly &&
     !notificationStatusOnly &&
     !timelineOnly &&
@@ -276,6 +287,7 @@ try {
     !notificationStatusOnly &&
     !correctionsOnly &&
     !cancellationOnly &&
+    !accessOnly &&
     !rankingOnly &&
     !profileOnly &&
     !auditOnly &&

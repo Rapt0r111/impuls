@@ -15,6 +15,14 @@ Windows, Node 24.21.0, Bun 1.4.2, loopback PostgreSQL 18.6 (`127.0.0.1:55434`, �
 | `node scripts/verify-database-restore.mjs` (PG_BIN PostgreSQL 18) после 000031 | exit 0                                                                                                                                                                                                                        |
 | `bun run check`                                                                | exit 0 (format, lint, typecheck, unit 120 passed / 379 skipped, build)                                                                                                                                                        |
 
+## Дополнение: HTTP и UI
+
+| Команда                                                       | Результат                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `node scripts/verify-task-slice.mjs --access-management-only` | exit 0: 10 tests (7 PostgreSQL/HTTP, 3 contract) и 8 browser-сценариев (320/360/390, read-only, выдача, повтор 503→201 с тем же ключом и телом, 409 блокирует, отзыв). Реальный HTTP: Origin, CSRF, idempotency, strict body, 401/404/422/409, no-store, GET 401/404/400 |
+
+Browser-сценарии работают на моках API (маршруты `page.route`), а не на реальной БД; связку UI→БД они не доказывают. Скриншоты 320/360/390 в `test-results/task-slice/<pid>/access-management/`; просмотрен только 320 px. Мне пришлось исправить один тест: сессии получателя отзываются выдачей, поэтому проверка «нет права» использует пользователя с живой сессией.
+
 ## Не проверено
 
-HTTP-адаптер (`apps/app/src/shared/server/access-management.ts`) и маршруты проверены только typecheck/build, без реальных HTTP-сценариев Origin/CSRF/лимита. UI нет. Чтение `access_changes` в scoped audit нет. P-01…P-06, Linux 17.6 CI, устройства, внешний выпуск и приёмка R1 открыты.
+Browser-to-database проход, чтение `access_changes` в scoped audit, независимая проверка доступности (клавиатура, скринридер), Telegram WebView. P-01…P-06, Linux 17.6 CI, устройства, внешний выпуск и приёмка R1 открыты.

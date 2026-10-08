@@ -281,3 +281,90 @@ export async function changeAccess(
     client.release();
   }
 }
+
+type ListResult =
+  | { kind: "ok"; response: AccessListResponseShape }
+  | { kind: "revoked" | "unauthorized" | "disabled" | "not_found" };
+type AccessListResponseShape = {
+  mode: "synthetic";
+  scope: string;
+  canManage: boolean;
+  members: {
+    userId: string;
+    displayName: string;
+    isSelf: boolean;
+    bindings: {
+      id: string;
+      action: string;
+      validUntil: string | null;
+      version: number;
+    }[];
+  }[];
+};
+
+// Read needs only admin.access; canManage reports the write right and flag.
+export async function readAccess(
+  pool: Pool,
+  input: {
+    actorId: string;
+    sessionHash: Buffer;
+    scope: string;
+    enabled: boolean;
+    allowAccessManagement: boolean;
+  },
+): Promise<ListResult> {
+  const user = (
+    await pool.query<{ active: boolean }>(
+      "SELECT active FROM impuls.users WHERE id=$1",
+      [input.actorId],
+    )
+  ).rows[0];
+  if (!user?.active) return { kind: "revoked" };
+  const held = (
+    await pool.query<{ action: string }>(
+      `SELECT action FROM impuls.role_bindings
+       WHERE user_id=$1 AND scope_id=$2 AND action IN ('admin.access','admin.access.manage')
+         AND revoked_at IS NULL AND valid_from<=clock_timestamp() AND (valid_until IS NULL OR valid_until>clock_timestamp())`,
+      [input.actorId, input.scope],
+    )
+  ).rows;
+  if (!held.some((p) => p.action === "admin.access"))
+    return { kind: "not_found" };
+  const session = await pool.query(
+    `SELECT 1 FROM impuls.sessions WHERE user_id=$1 AND session_hash=$2
+     AND revoked_at IS NULL AND expires_at>clock_timestamp()`,
+    [input.actorId, input.sessionHash],
+  );
+  if (session.rowCount !== 1) return { kind: "unauthorized" };
+  if (!input.enabled) return { kind: "disabled" };
+  const rows = (
+    await pool.query<{
+      userId: string;
+      displayName: string;
+      bindings: AccessListResponseShape["members"][number]["bindings"];
+    }>(
+      `SELECT u.id "userId",u.display_name "displayName",
+         COALESCE((SELECT jsonb_agg(jsonb_build_object('id',b.id,'action',b.action,'version',b.version,
+           'validUntil',CASE WHEN b.valid_until IS NULL THEN NULL ELSE to_char(b.valid_until AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END) ORDER BY b.action)
+           FROM impuls.role_bindings b WHERE b.user_id=u.id AND b.scope_id=m.scope_id AND b.revoked_at IS NULL
+             AND b.valid_from<=clock_timestamp() AND (b.valid_until IS NULL OR b.valid_until>clock_timestamp())
+             AND b.action NOT IN ('admin.access','admin.access.manage')),'[]'::jsonb) bindings
+       FROM impuls.task_scope_members m JOIN impuls.users u ON u.id=m.user_id
+       WHERE m.scope_id=$1 AND m.synthetic AND u.active AND m.revoked_at IS NULL
+         AND m.valid_from<=clock_timestamp() AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp())
+       ORDER BY u.display_name,u.id LIMIT 200`,
+      [input.scope],
+    )
+  ).rows;
+  return {
+    kind: "ok",
+    response: {
+      mode: "synthetic",
+      scope: input.scope,
+      canManage:
+        input.allowAccessManagement &&
+        held.some((p) => p.action === "admin.access.manage"),
+      members: rows.map((r) => ({ ...r, isSelf: r.userId === input.actorId })),
+    },
+  };
+}

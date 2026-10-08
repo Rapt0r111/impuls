@@ -25,6 +25,7 @@ import { Leaderboard } from "@/features/ranking/leaderboard";
 import { ParticipantProfile } from "@/features/profile/participant-profile";
 import { AuditLog } from "@/features/audit/audit-log";
 import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
+import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
 
@@ -322,6 +323,7 @@ function TaskWorkspace() {
     canReview,
     canReadAudit,
     canInspectCatalog,
+    accessScopes,
     canReadNotificationStatus,
     canManageTasks,
     canSetTasks,
@@ -336,6 +338,7 @@ function TaskWorkspace() {
     | "profile"
     | "audit"
     | "catalog-admin"
+    | "access"
     | "notifications"
     | "rewards"
   >(canReview ? "reviews" : "tasks");
@@ -377,6 +380,12 @@ function TaskWorkspace() {
       id: "catalog-admin",
       label: "Конфигурация",
       accessibleLabel: "Управление каталогом",
+    });
+  if (accessScopes?.length)
+    operations.push({
+      id: "access",
+      label: "Доступ",
+      accessibleLabel: "Управление доступом",
     });
   if (canReadAudit)
     operations.push({
@@ -420,6 +429,8 @@ function TaskWorkspace() {
         <RewardCatalog />
       ) : view === "catalog-admin" && canInspectCatalog ? (
         <CatalogAdmin />
+      ) : view === "access" && accessScopes?.length ? (
+        <AccessAdmin />
       ) : view === "notifications" && canReadNotificationStatus ? (
         <NotificationStatus />
       ) : view === "audit" && canReadAudit ? (

@@ -53,3 +53,26 @@ export type AccessGrantRequest = z.infer<typeof accessGrantRequestSchema>;
 export type AccessRevocationRequest = z.infer<
   typeof accessRevocationRequestSchema
 >;
+
+export const accessQuerySchema = z.strictObject({ scope: z.uuid() });
+export const accessListResponseSchema = z.strictObject({
+  mode: z.literal("synthetic"),
+  scope: z.uuid(),
+  canManage: z.boolean(),
+  members: z.array(
+    z.strictObject({
+      userId: z.uuid(),
+      displayName: z.string().min(1).max(80),
+      isSelf: z.boolean(),
+      bindings: z.array(
+        z.strictObject({
+          id: z.uuid(),
+          action: z.enum(grantableActions),
+          validUntil: z.iso.datetime().nullable(),
+          version: z.number().int().min(1),
+        }),
+      ),
+    }),
+  ),
+});
+export type AccessListResponse = z.infer<typeof accessListResponseSchema>;
