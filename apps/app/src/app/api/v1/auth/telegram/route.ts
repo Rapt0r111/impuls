@@ -10,6 +10,7 @@ import {
   errorResponse,
   isAllowedOrigin,
   jsonResponse,
+  logFailure,
   readJsonLimited,
   requestId,
 } from "@/shared/server/http";
@@ -55,7 +56,8 @@ export async function POST(request: NextRequest) {
       30,
     );
     if (!limit.allowed) return rateLimited(id, limit.retryAfter);
-  } catch {
+  } catch (error) {
+    logFailure(id, "rate_limit_ip", error);
     return errorResponse(503, "UNAVAILABLE", "Вход временно недоступен", id);
   }
 
@@ -98,7 +100,8 @@ export async function POST(request: NextRequest) {
       10,
     );
     if (!limit.allowed) return rateLimited(id, limit.retryAfter);
-  } catch {
+  } catch (error) {
+    logFailure(id, "rate_limit_telegram", error);
     return errorResponse(503, "UNAVAILABLE", "Вход временно недоступен", id);
   }
 
@@ -125,7 +128,8 @@ export async function POST(request: NextRequest) {
       maxAge: 12 * 60 * 60,
     });
     return response;
-  } catch {
+  } catch (error) {
+    logFailure(id, "create_session", error);
     return errorResponse(503, "UNAVAILABLE", "Вход временно недоступен", id);
   }
 }

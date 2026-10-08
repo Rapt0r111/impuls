@@ -20,6 +20,22 @@ export function jsonResponse(
   });
 }
 
+// Logs only the stage and error class/code: messages can carry hosts or SQL.
+export function logFailure(id: string, stage: string, error: unknown): void {
+  const code =
+    error instanceof Error && "code" in error ? String(error.code) : undefined;
+  console.error(
+    JSON.stringify({
+      level: "error",
+      event: "api_failure",
+      requestId: id,
+      stage,
+      errorName: error instanceof Error ? error.name : typeof error,
+      ...(code === undefined ? {} : { errorCode: code }),
+    }),
+  );
+}
+
 export function errorResponse(
   status: number,
   code: string,
