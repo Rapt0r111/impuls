@@ -134,6 +134,7 @@ try {
     await run("tests/browser/task-flow-real.mjs");
     await run("tests/browser/task-negative-real.mjs");
     await run("tests/browser/rewards-real.mjs");
+    await run("tests/browser/reward-decisions-real.mjs");
   } else if (cancellationOnly) {
     await run("node_modules/vitest/vitest.mjs", [
       "run",
