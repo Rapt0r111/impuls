@@ -131,6 +131,7 @@ try {
     ]);
     await run("tests/browser/access-management.mjs");
     await run("tests/browser/access-real.mjs");
+    await run("tests/browser/task-flow-real.mjs");
   } else if (cancellationOnly) {
     await run("node_modules/vitest/vitest.mjs", [
       "run",

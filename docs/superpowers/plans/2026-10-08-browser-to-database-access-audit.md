@@ -26,3 +26,7 @@
 - [ ] Шаг 2. Утверждения: выдача `task.assign` через UI (preview → подтверждение) создаёт ровно одну строку `role_bindings` и одну `access_changes`; журнал показывает «Выдача права»; отзыв через UI ставит `revoked_at`; журнал показывает «Отзыв права»; ширины 320/360/390 без горизонтальной прокрутки.
 - [ ] Шаг 3. Запуск: `node scripts/verify-task-slice.mjs --access-management-only` → exit 0.
 - [ ] Шаг 4. Записать результат в `docs/verification/2026-10-08-access-audit-browser-db.md`, коммит.
+
+## Task 2: Сквозной поток задачи (выполнен)
+
+`tests/browser/task-flow-real.mjs` — создание, назначение, сдача, приёмка, баланс на реальной БД; отчёт `docs/verification/2026-10-08-task-flow-browser-db.md`. Награды в этот срез не входили.
