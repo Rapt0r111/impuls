@@ -1,4 +1,25 @@
-/* Главный экран: уровень и опыт, баллы, ближайшая задача. */
+/* Главный экран: ближайшая задача, уровень и опыт, баллы, остальные задачи.
+   Заголовок раздела остаётся для скринридеров. */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+  border-top: 0;
+}
+.home > .tasks-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.home > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 .home-level {
   display: flex;
   align-items: center;
@@ -83,11 +104,11 @@
   font-size: 14px;
 }
 .home-balances + .home-caption {
-  margin-top: 10px;
+  margin-top: -4px;
 }
 /* Баллы и сезонный XP — отдельные плитки; доступные баллы золотые со свечением. */
 .home-balances {
-  margin: 12px 0 0;
+  margin: 0;
   padding: 0;
   border: 0;
   gap: 12px;
@@ -105,8 +126,10 @@
   box-shadow: 0 12px 26px -16px rgb(0 0 0 / 0.8);
 }
 .home-balances dt {
+  min-width: 0;
   color: var(--color-muted);
   font-size: 14px;
+  overflow-wrap: anywhere;
 }
 .home-balances dd {
   font-size: 34px;
@@ -126,7 +149,7 @@
   text-shadow: 0 0 28px rgb(246 208 131 / 0.45);
 }
 .home-next-title {
-  margin: 24px 0 12px;
+  margin: 4px 0 -4px;
   font-size: 18px;
 }
 /* Ближайшая задача — главная карточка экрана: орбита вокруг угла. */
@@ -166,8 +189,96 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 20px;
 }
 .home-links .tasks-action {
   flex: 1 1 auto;
+}
+.home-more-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.home-more-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 4px;
+  border: 0;
+  border-top: 1px solid var(--color-edge);
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.home-more-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.home-more-row strong {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.home-more-row > span > span {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.home-more-row b {
+  color: var(--color-gold);
+  white-space: nowrap;
+}
+
+/* Уровень и баллы рядом, как на макете; резерв и сезонный XP — короткой строкой ниже. */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5em), 1fr));
+  gap: 12px;
+}
+.home-stats .home-level {
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.home-stats .home-level-body {
+  flex: none;
+  width: 100%;
+}
+.home-stats .home-level-top {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.home-stats .home-level-top b {
+  margin: 0;
+}
+.home-points > div {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+.home-points dd {
+  font-size: 46px;
+  line-height: 1;
+}
+.home-facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-facts > div {
+  min-height: 0;
+  padding: 12px 16px;
+  border-radius: 18px;
+}
+.home-facts dd {
+  font-size: 24px;
+}
+.home-facts > div:first-child dd {
+  color: var(--color-ink);
+  text-shadow: none;
 }

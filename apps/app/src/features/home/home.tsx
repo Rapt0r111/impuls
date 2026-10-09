@@ -81,9 +81,12 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
   const data = profile.data;
   const level = data?.progression.level;
   // Ближайший срок среди задач, которые ещё ждут результата участника.
-  const next = tasks.data?.items
-    .filter((task) => isOpen(task.status))
-    .sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0];
+  const open =
+    tasks.data?.items
+      .filter((task) => isOpen(task.status))
+      .sort((a, b) => a.dueAt.localeCompare(b.dueAt)) ?? [];
+  const next = open[0];
+  const others = open.slice(1, 4);
   return (
     <section className="tasks-section home" aria-labelledby="home-title">
       <div className="tasks-heading">
@@ -111,98 +114,6 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
             Повторить
           </button>
         </p>
-      ) : null}
-      {data ? (
-        <>
-          <div className="home-level">
-            {level ? (
-              <>
-                {/* Кольцо дублирует полосу прогресса ниже и скрыто от
-                    скринридеров; 214 — длина окружности радиуса 34. */}
-                <div className="home-ring" aria-hidden="true">
-                  <svg viewBox="0 0 80 80">
-                    <defs>
-                      <linearGradient
-                        id="home-ring-gradient"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                      >
-                        <stop offset="0" stopColor="#9af7de" />
-                        <stop offset="1" stopColor="#2fc9a2" />
-                      </linearGradient>
-                    </defs>
-                    <circle
-                      className="home-ring-track"
-                      cx="40"
-                      cy="40"
-                      r="34"
-                    />
-                    <circle
-                      className="home-ring-value"
-                      cx="40"
-                      cy="40"
-                      r="34"
-                      transform="rotate(-90 40 40)"
-                      style={{
-                        strokeDashoffset:
-                          level.nextLevelXp !== null && level.spanXp
-                            ? 214 * (1 - level.progressXp / level.spanXp)
-                            : 0,
-                      }}
-                    />
-                  </svg>
-                  <strong>{level.level}</strong>
-                </div>
-                <div className="home-level-body">
-                  <p className="home-level-top">
-                    <span>Уровень {level.level}</span>
-                    <b>{number(data.balance.lifetimeXp)} XP</b>
-                  </p>
-                  {level.nextLevelXp !== null ? (
-                    <>
-                      <progress
-                        aria-label={`Прогресс до уровня ${level.level + 1}`}
-                        max={level.spanXp!}
-                        value={level.progressXp}
-                      />
-                      <p className="home-caption">
-                        {number(level.progressXp)} / {number(level.spanXp!)} XP
-                        · до уровня {level.level + 1} ещё{" "}
-                        {number(level.remainingXp)}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="home-caption">Достигнут последний уровень.</p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="home-level-top">
-                <strong>{number(data.balance.lifetimeXp)}</strong>
-                <span>XP за всё время</span>
-              </p>
-            )}
-          </div>
-          <dl className="ledger-balances home-balances">
-            {season.data?.self ? (
-              <div>
-                <dt>XP за {season.data.season}</dt>
-                <dd>{number(season.data.self.xp)}</dd>
-              </div>
-            ) : null}
-            <div className="home-balance-points">
-              <dt>доступно баллов</dt>
-              <dd>{number(data.balance.availablePoints)}</dd>
-            </div>
-            <div>
-              <dt>в резерве по заявкам</dt>
-              <dd>{number(data.balance.reservedPoints)}</dd>
-            </div>
-          </dl>
-          <p className="home-caption">Данные на {asOfLabel(data.asOf)}</p>
-        </>
       ) : null}
       <h3 className="home-next-title">Ваш следующий результат</h3>
       {tasks.isPending ? (
@@ -239,6 +150,129 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
           Открытых задач нет. Новые назначения появятся в разделе «Задачи».
         </p>
       )}
+      {data ? (
+        <>
+          <div className="home-stats">
+            <div className="home-level">
+              {level ? (
+                <>
+                  {/* Кольцо дублирует полосу прогресса ниже и скрыто от
+                    скринридеров; 214 — длина окружности радиуса 34. */}
+                  <div className="home-ring" aria-hidden="true">
+                    <svg viewBox="0 0 80 80">
+                      <defs>
+                        <linearGradient
+                          id="home-ring-gradient"
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="1"
+                        >
+                          <stop offset="0" stopColor="#9af7de" />
+                          <stop offset="1" stopColor="#2fc9a2" />
+                        </linearGradient>
+                      </defs>
+                      <circle
+                        className="home-ring-track"
+                        cx="40"
+                        cy="40"
+                        r="34"
+                      />
+                      <circle
+                        className="home-ring-value"
+                        cx="40"
+                        cy="40"
+                        r="34"
+                        transform="rotate(-90 40 40)"
+                        style={{
+                          strokeDashoffset:
+                            level.nextLevelXp !== null && level.spanXp
+                              ? 214 * (1 - level.progressXp / level.spanXp)
+                              : 0,
+                        }}
+                      />
+                    </svg>
+                    <strong>{level.level}</strong>
+                  </div>
+                  <div className="home-level-body">
+                    <p className="home-level-top">
+                      <span>Уровень {level.level}</span>
+                      <b>{number(data.balance.lifetimeXp)} XP</b>
+                    </p>
+                    {level.nextLevelXp !== null ? (
+                      <>
+                        <progress
+                          aria-label={`Прогресс до уровня ${level.level + 1}`}
+                          max={level.spanXp!}
+                          value={level.progressXp}
+                        />
+                        <p className="home-caption">
+                          {number(level.progressXp)} / {number(level.spanXp!)}{" "}
+                          XP · до уровня {level.level + 1} ещё{" "}
+                          {number(level.remainingXp)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="home-caption">
+                        Достигнут последний уровень.
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="home-level-top">
+                  <strong>{number(data.balance.lifetimeXp)}</strong>
+                  <span>XP за всё время</span>
+                </p>
+              )}
+            </div>
+            <dl className="ledger-balances home-balances home-points">
+              <div className="home-balance-points">
+                <dt>доступно баллов</dt>
+                <dd>{number(data.balance.availablePoints)}</dd>
+              </div>
+            </dl>
+          </div>
+          <dl className="ledger-balances home-balances home-facts">
+            {season.data?.self ? (
+              <div>
+                <dt>XP за {season.data.season}</dt>
+                <dd>{number(season.data.self.xp)}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>в резерве по заявкам</dt>
+              <dd>{number(data.balance.reservedPoints)}</dd>
+            </div>
+          </dl>
+          <p className="home-caption">Данные на {asOfLabel(data.asOf)}</p>
+        </>
+      ) : null}
+      {others.length > 0 ? (
+        <div className="home-more">
+          <h3 className="home-next-title">Ещё в работе</h3>
+          <ul className="home-more-list">
+            {others.map((task) => (
+              <li key={task.id}>
+                <button
+                  type="button"
+                  className="home-more-row"
+                  onClick={() => onNavigate("tasks")}
+                >
+                  <span>
+                    <strong>{task.title}</strong>
+                    <span>
+                      {statusNames[task.status as OpenStatus]} · до{" "}
+                      {dueLabel(task.dueAt)}
+                    </span>
+                  </span>
+                  <b>{number(task.fundXp)} XP</b>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="home-links">
         <button
           type="button"

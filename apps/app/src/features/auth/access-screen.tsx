@@ -140,6 +140,14 @@ async function readCode(response: Response): Promise<string | null> {
   return null;
 }
 
+// Приветствие считается на клиенте после входа, поэтому серверная разметка с ним не расходится.
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Доброй ночи";
+  if (hour < 12) return "Доброе утро";
+  return hour < 18 ? "Добрый день" : "Добрый вечер";
+}
+
 export function AccessScreen({ children }: { children?: ReactNode }) {
   const [state, setState] = useState<AccessState>({ kind: "checking" });
   const [telegramApp, setTelegramApp] = useState<TelegramWebApp | null>(null);
@@ -379,36 +387,45 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
             ) : null}
             {state.kind === "authorized" && (
               <>
-                <div className="access-identity">
-                  <span className="access-avatar" aria-hidden="true">
-                    {state.data.user.displayName.trim().charAt(0).toUpperCase()}
-                  </span>
-                  <strong>{state.data.user.displayName}</strong>
+                <div className="access-profile">
+                  <div className="access-identity">
+                    <span className="access-avatar" aria-hidden="true">
+                      {state.data.user.displayName
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                    <div>
+                      <span className="access-greeting">{greeting()}</span>
+                      <strong>{state.data.user.displayName}</strong>
+                    </div>
+                  </div>
+                  <details className="access-permissions">
+                    <summary>Полномочия</summary>
+                    {state.permissions === null ? (
+                      <p>
+                        Не удалось загрузить полномочия. Обновите проверку
+                        позже.
+                      </p>
+                    ) : state.permissions.length === 0 ? (
+                      <p>Назначенных полномочий нет.</p>
+                    ) : (
+                      <ul>
+                        {state.permissions.map((permission, index) => (
+                          <li
+                            key={`${permission.action}:${permission.scope.id}:${index}`}
+                          >
+                            <strong>{actionNames[permission.action]}</strong>
+                            <span>
+                              {scopeNames[permission.scope.kind]} ·{" "}
+                              {permission.scope.name}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </details>
                 </div>
-                <details className="access-permissions">
-                  <summary>Полномочия</summary>
-                  {state.permissions === null ? (
-                    <p>
-                      Не удалось загрузить полномочия. Обновите проверку позже.
-                    </p>
-                  ) : state.permissions.length === 0 ? (
-                    <p>Назначенных полномочий нет.</p>
-                  ) : (
-                    <ul>
-                      {state.permissions.map((permission, index) => (
-                        <li
-                          key={`${permission.action}:${permission.scope.id}:${index}`}
-                        >
-                          <strong>{actionNames[permission.action]}</strong>
-                          <span>
-                            {scopeNames[permission.scope.kind]} ·{" "}
-                            {permission.scope.name}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </details>
                 <SessionContext.Provider
                   value={{
                     csrfToken: state.data.csrfToken,

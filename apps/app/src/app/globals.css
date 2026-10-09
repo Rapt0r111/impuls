@@ -321,7 +321,51 @@ body::after {
 }
 
 .access-content--authorized .access-permissions {
+  margin-top: 0;
+}
+/* Приветствие и кнопка «Полномочия» в одной строке; раскрытый список — на всю ширину. */
+.access-profile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   margin-top: 8px;
+}
+.access-profile .access-identity {
+  flex: 1 1 12em;
+  min-width: 0;
+  margin: 0;
+}
+.access-profile .access-identity > div {
+  display: grid;
+  min-width: 0;
+}
+.access-profile .access-permissions[open] {
+  flex-basis: 100%;
+}
+.access-identity .access-avatar {
+  color: #aef5e0;
+  font-size: 16px;
+}
+.access-greeting {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.access-content--authorized .access-identity strong {
+  font-size: 22px;
+  line-height: 1.2;
+}
+.access-content--authorized .access-permissions summary {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--color-edge);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.07);
+  list-style: none;
+}
+.access-permissions summary::-webkit-details-marker {
+  display: none;
 }
 .access-permissions summary {
   width: fit-content;
