@@ -31,3 +31,11 @@
 - Этап 2 (схема БД, литерал `mode: "synthetic"` в контрактах, защита `economy.ts`) не выполнен; на Production у новых записей будет `mode='synthetic'`.
 - Тексты, зашитые в 000027 и контракты («Автоматическое истечение синтетического резерва»), не менялись.
 - Android/iOS, Linux/PostgreSQL 17.6 CI, P-02/P-04/P-06 открыты.
+
+## Выпуск в Production (09.10.2026)
+
+- В Vercel Production добавлены 16 флагов со значением `true` (`vercel env add`, имена из `vercel env ls production`): `ACCESS_MANAGEMENT`, `MEMBER_MANAGEMENT`, `AUDIT`, `PROFILE`, `TASK_MANAGEMENT`, `ECONOMY`, `LEDGER_CORRECTIONS`, `REWARDS`, `ADMIN_CATALOG`, `CATALOG_CREATION`, `CATALOG_PUBLICATION`, `CATALOG_SCHEDULING`, `CATALOG_CANCELLATION`, `QUOTA_PUBLICATION`, `NOTIFICATION_STATUS`, `RANKING` (все с суффиксом `_ENABLED`) — по запросу владельца, включая рейтинг (P-05 по показу рейтинга реальным участникам не решён). Флаги worker на Vercel не задавались: приложение их не читает.
+- Коммит `ef25129`, `git push origin main` (`92e3ff1..ef25129`); GitHub-интеграция выпустила Production `impuls-1v6srtuaw`: Ready, 33 с, алиас `https://impuls-eta.vercel.app`. Сборка идёт после добавления переменных.
+- Дымовые проверки без сессии: `GET /` 200; `GET /api/v1/{me,me/profile,leaderboard,tasks,rewards,admin/access,admin/audit,admin/notifications,admin/rewards,task-management/options}` 401; `POST /api/v1/auth/telegram` с неверным `initData` 401. `vercel logs --level error --since 15m` — записей нет.
+- Не проверено: что флаги реально открывают экраны (для этого нужна сессия владельца; вход после выдачи прав не проверялся), Android/iOS, работа админ-экранов на Production.
+- Откат приложения: `vercel rollback` на `impuls-hk3p1xrhu` (код с прежними именами флагов; переменные с новыми именами при этом перестанут читаться).
