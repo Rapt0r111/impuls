@@ -6,6 +6,7 @@ export const notificationEventSchema = z
   .object({
     kind: z.enum([
       "task.assigned",
+      "task.due_soon",
       "task.returned",
       "task.accepted",
       "ledger.corrected",
@@ -24,6 +25,7 @@ export const notificationEventSchema = z
       "processing",
       "retry",
       "simulated",
+      "delivered",
       "failed",
       "suppressed",
     ]),
@@ -34,6 +36,8 @@ export const notificationEventSchema = z
         "attempts_exhausted",
         "recipient_inactive",
         "unsupported_kind",
+        "rate_limited",
+        "recipient_unreachable",
       ])
       .nullable(),
   })
@@ -55,6 +59,7 @@ export const notificationStatusResponseSchema = z
         processing: count,
         retry: count,
         simulated: count,
+        delivered: count,
         failed: count,
         suppressed: count,
       })
@@ -66,6 +71,8 @@ export const notificationStatusResponseSchema = z
         attempts_exhausted: count,
         recipient_inactive: count,
         unsupported_kind: count,
+        rate_limited: count,
+        recipient_unreachable: count,
       })
       .strict(),
   })

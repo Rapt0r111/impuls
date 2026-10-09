@@ -57,6 +57,9 @@ describe("F08 attempt journal wire boundary", () => {
       { ...row, phase: "retry" },
       { ...row, phase: "retry", errorCode: "attempts_exhausted" },
       { ...row, phase: "suppressed", errorCode: "timeout" },
+      { ...row, phase: "suppressed", errorCode: "rate_limited" },
+      { ...row, phase: "retry", errorCode: "recipient_unreachable" },
+      { ...row, phase: "delivered", errorCode: "timeout" },
       { ...row, errorCode: "BOT SECRET" },
       { ...row, leaseToken: id },
       { ...row, recipientId: id },
@@ -68,6 +71,10 @@ describe("F08 attempt journal wire boundary", () => {
       ["failed", "attempts_exhausted"],
       ["suppressed", "recipient_inactive"],
       ["lease_expired", null],
+      ["delivered", null],
+      ["retry", "rate_limited"],
+      ["failed", "rate_limited"],
+      ["suppressed", "recipient_unreachable"],
     ])
       expect(
         notificationAttemptSchema.safeParse({ ...row, phase, errorCode })

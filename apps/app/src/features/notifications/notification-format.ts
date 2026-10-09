@@ -8,6 +8,7 @@ export const statusNames: Record<
   processing: "В обработке",
   retry: "Ожидают повтора",
   simulated: "Симуляция успешна",
+  delivered: "Доставлено в Telegram",
   failed: "Попытки завершены с ошибкой",
   suppressed: "Обработка запрещена",
 };
@@ -20,12 +21,15 @@ export const errorNames: Record<
   attempts_exhausted: "Исчерпаны попытки после потери обработчика",
   recipient_inactive: "Доступ получателя отозван",
   unsupported_kind: "Тип события не поддерживается",
+  rate_limited: "Telegram ограничил частоту отправки",
+  recipient_unreachable: "Telegram не принимает сообщения получателя",
 };
 export const eventNames: Record<
   NotificationStatusResponse["recentEvents"][number]["kind"],
   string
 > = {
   "task.assigned": "Назначение задачи",
+  "task.due_soon": "Приближается срок задачи",
   "task.returned": "Возврат результата",
   "task.accepted": "Приёмка результата",
   "ledger.corrected": "Корректировка журнала",

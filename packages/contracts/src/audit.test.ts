@@ -56,6 +56,51 @@ describe("F07 audit wire contract", () => {
         auditResponseSchema.safeParse({ ...data, items: [altered] }).success,
       ).toBe(false);
   });
+  it("accepts member change evidence only on member actions", () => {
+    const member = {
+      membershipId: id,
+      subject: { id, displayName: "Synthetic member" },
+      validUntil: null,
+      userCreated: true,
+      userReactivated: false,
+      userDeactivated: false,
+      revokedBindings: 0,
+    };
+    const item = {
+      id,
+      requestId: id,
+      action: "member.admit",
+      actor: { id, displayName: "Synthetic manager" },
+      occurredAt: "2026-10-09T10:00:00.000Z",
+      reason: "Synthetic admission",
+      task: null,
+      reward: null,
+      member,
+      reviewId: null,
+      correctionId: null,
+      values: [],
+    };
+    const wrap = (altered: unknown) =>
+      auditResponseSchema.safeParse({
+        mode: "synthetic",
+        scopes: [{ id, name: "Synthetic" }],
+        scope: { id, name: "Synthetic" },
+        updatedAt: item.occurredAt,
+        nextCursor: null,
+        items: [altered],
+      }).success;
+    expect(wrap(item)).toBe(true);
+    expect(wrap({ ...item, action: "member.remove" })).toBe(true);
+    for (const altered of [
+      { ...item, member: null },
+      { ...item, action: "task.accept" },
+      { ...item, member: { ...member, telegramId: 7123456 } },
+      { ...item, member: { ...member, revokedBindings: -1 } },
+      { ...item, task: { id, currentTitle: "Synthetic task" } },
+      { ...item, values: [{ field: "xpDelta", value: -17 }] },
+    ])
+      expect(wrap(altered)).toBe(false);
+  });
   it("accepts five reward actions with signed movements and rejects mismatched contexts", () => {
     const reward = {
       redemptionId: id,

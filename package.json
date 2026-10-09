@@ -32,7 +32,7 @@
     "test:integration": "bun run build:worker && vitest run tests/integration",
     "test:restore": "node scripts/verify-database-restore.mjs",
     "test:notifications": "bun run build:worker && vitest run apps/worker/src/loop.test.ts packages/domain/src/notifications/simulation.test.ts tests/integration/notification-simulations.test.ts",
-    "test:access": "vitest run tests/integration/access-management.test.ts",
+    "test:access": "vitest run tests/integration/access-management.test.ts tests/integration/member-management.test.ts",
     "test:task-slice": "node scripts/verify-task-slice.mjs",
     "test:telegram": "node scripts/verify-telegram-bridge.mjs",
     "test:reflow": "bun run build:app && node scripts/verify-workspace-reflow.mjs",
@@ -40,6 +40,7 @@
     "demo:build": "bun work/build.cjs",
     "demo:test": "bun run demo:build && bun work/verify.cjs && bun work/test_features.cjs && bun work/test_new_features.cjs && bun work/test_all_buttons.cjs",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:bootstrap-owner": "node scripts/bootstrap-owner.mjs",
     "db:local": "node scripts/local-db.mjs"
   },
   "devDependencies": {

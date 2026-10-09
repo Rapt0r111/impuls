@@ -45,6 +45,7 @@ const phaseNames = {
   started: "Событие взято в обработку",
   retry: "Назначен повтор",
   simulated: "Симуляция успешна",
+  delivered: "Доставлено в Telegram",
   failed: "Попытки завершены с ошибкой",
   suppressed: "Обработка запрещена",
   lease_expired: "Обнаружен истёкший захват",

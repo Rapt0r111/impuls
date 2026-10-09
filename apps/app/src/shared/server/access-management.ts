@@ -3,99 +3,47 @@ import {
   accessChangeResponseSchema,
   accessGrantRequestSchema,
   accessRevocationRequestSchema,
-  taskSubmissionHeadersSchema,
+  type AccessGrantRequest,
+  type AccessRevocationRequest,
 } from "@impuls/contracts";
 import { changeAccess, hashSessionToken } from "@impuls/domain";
 import type { NextRequest } from "next/server";
-import { getAuthorizedSession, hasValidCsrf } from "./auth";
+import { openAdminMutation } from "./admin-mutation";
 import { getPool } from "./db";
-import { checkTaskMutationLimit } from "./task-rate-limit";
-import {
-  errorResponse,
-  isAllowedOrigin,
-  jsonResponse,
-  readJsonLimited,
-  requestId,
-} from "./http";
+import { errorResponse, jsonResponse, requestId } from "./http";
 
 function accessHandler(kind: "grant" | "revoke") {
   return async function handle(request: NextRequest) {
     const id = requestId();
-    if (!process.env.APP_ORIGIN || !process.env.CSRF_SECRET)
-      return errorResponse(503, "UNAVAILABLE", "Сервис недоступен", id);
-    if (!isAllowedOrigin(request))
-      return errorResponse(
-        403,
-        "ORIGIN_DENIED",
-        "Недопустимый источник запроса",
-        id,
-      );
     try {
-      const headers = taskSubmissionHeadersSchema.safeParse({
-        idempotencyKey: request.headers.get("idempotency-key"),
-      });
-      if (
-        !headers.success ||
-        request.nextUrl.searchParams.size ||
-        request.headers
-          .get("content-type")
-          ?.split(";")[0]
-          ?.trim()
-          .toLowerCase() !== "application/json"
-      )
-        return errorResponse(400, "BAD_REQUEST", "Неверные параметры", id);
-      let raw;
-      try {
-        raw = await readJsonLimited(request);
-      } catch (error) {
-        return errorResponse(
-          error instanceof Error && error.message === "body too large"
-            ? 413
-            : 400,
-          "BAD_REQUEST",
-          "Неверное или слишком большое тело запроса",
-          id,
-        );
-      }
-      const grant = accessGrantRequestSchema.safeParse(raw);
-      const revoke = accessRevocationRequestSchema.safeParse(raw);
-      if (kind === "grant" ? !grant.success : !revoke.success)
-        return errorResponse(
-          400,
-          "BAD_REQUEST",
-          "Проверьте получателя, право и основание",
-          id,
-        );
-      const session = await getAuthorizedSession(request);
-      if (session.kind !== "authorized")
-        return errorResponse(
-          session.kind === "missing" ? 401 : 403,
-          "ACCESS_REVOKED",
-          "Повторите вход через Telegram",
-          id,
-        );
-      if (!hasValidCsrf(request, session.token))
-        return errorResponse(
-          403,
-          "CSRF_DENIED",
-          "Повторите вход через Telegram",
-          id,
-        );
-      const limited = await checkTaskMutationLimit(session.user.id, id);
-      if (limited) return limited;
+      const opened = await openAdminMutation(
+        request,
+        id,
+        (raw) => {
+          const parsed = (
+            kind === "grant"
+              ? accessGrantRequestSchema
+              : accessRevocationRequestSchema
+          ).safeParse(raw);
+          return parsed.success ? parsed.data : undefined;
+        },
+        "Проверьте получателя, право и основание",
+      );
+      if (opened instanceof Response) return opened;
+      const { body, idempotencyKey, session } = opened;
       const common = {
         actorId: session.user.id,
         sessionHash: hashSessionToken(session.token),
-        idempotencyKey: headers.data.idempotencyKey,
+        idempotencyKey,
         requestId: id,
         allowAccessManagement:
           process.env.SYNTHETIC_ACCESS_MANAGEMENT_ENABLED === "true",
       };
       const result = await changeAccess(
         getPool(),
-        kind === "grant" && grant.success
-          ? { ...grant.data, ...common, kind }
-          : { ...revoke.data!, ...common, kind: "revoke" },
+        kind === "grant"
+          ? { ...(body as AccessGrantRequest), ...common, kind }
+          : { ...(body as AccessRevocationRequest), ...common, kind: "revoke" },
       );
       if (result.kind === "ok")
         return jsonResponse(

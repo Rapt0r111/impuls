@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
       scope: query.data.scope,
       enabled: manage,
       allowAccessManagement: manage,
+      allowMemberManagement:
+        process.env.SYNTHETIC_MEMBER_MANAGEMENT_ENABLED === "true",
     });
     if (result.kind === "unauthorized")
       return errorResponse(

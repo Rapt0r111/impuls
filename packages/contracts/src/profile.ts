@@ -71,3 +71,27 @@ export const participantProfileResponseSchema = z
 export type ParticipantProfileResponse = z.infer<
   typeof participantProfileResponseSchema
 >;
+
+// Shown to other members, so the alphabet is closed: letters, digits, space and . _ ' ’ -.
+// Marks, emoji, control and bidirectional characters are rejected to keep names unambiguous.
+export const profileNameSchema = z
+  .string()
+  .max(200)
+  .transform((value) => value.normalize("NFC").trim().replace(/\s+/gu, " "))
+  .pipe(
+    z
+      .string()
+      .min(2)
+      .max(40)
+      .regex(/^[\p{L}\p{N}][\p{L}\p{N} ._'’-]*$/u),
+  );
+export const profileNameRequestSchema = z
+  .object({ displayName: profileNameSchema })
+  .strict();
+export const profileNameResponseSchema = z.object({
+  mode: z.literal("synthetic"),
+  user: z.object({ id: z.uuid(), displayName: z.string().min(1) }),
+  changed: z.boolean(),
+});
+export type ProfileNameRequest = z.infer<typeof profileNameRequestSchema>;
+export type ProfileNameResponse = z.infer<typeof profileNameResponseSchema>;

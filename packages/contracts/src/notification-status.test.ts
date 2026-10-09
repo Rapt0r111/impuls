@@ -18,6 +18,7 @@ const data = {
     processing: 3,
     retry: 4,
     simulated: 5,
+    delivered: 7,
     failed: 6,
     suppressed: 7,
   },
@@ -27,6 +28,8 @@ const data = {
     attempts_exhausted: 3,
     recipient_inactive: 4,
     unsupported_kind: 5,
+    rate_limited: 6,
+    recipient_unreachable: 7,
   },
 };
 describe("F08 minimal simulation status contract", () => {
@@ -102,7 +105,8 @@ describe("F08 minimal simulation status contract", () => {
       { ...event, recipientId: id },
       { ...event, text: "private" },
       { ...event, kind: "private.kind" },
-      { ...event, status: "delivered" },
+      { ...event, status: "sent" },
+      { ...event, errorCode: "bot_blocked" },
       { ...event, errorCode: "raw exception" },
       { ...event, createdAt: "yesterday" },
     ])
@@ -118,6 +122,26 @@ describe("F08 minimal simulation status contract", () => {
         recentEvents: Array(21).fill(event),
       }).success,
     ).toBe(false);
+  });
+  it("accepts the delivery state and the two Bot API reasons as fixed codes", () => {
+    for (const [status, errorCode] of [
+      ["delivered", null],
+      ["retry", "rate_limited"],
+      ["suppressed", "recipient_unreachable"],
+    ] as const)
+      expect(
+        notificationStatusResponseSchema.safeParse({
+          ...data,
+          recentEvents: [
+            {
+              kind: "task.assigned",
+              createdAt: "2026-10-04T10:00:00.000Z",
+              status,
+              errorCode,
+            },
+          ],
+        }).success,
+      ).toBe(true);
   });
   it("accepts only an optional exact scope", () => {
     expect(notificationStatusQuerySchema.parse({})).toEqual({});

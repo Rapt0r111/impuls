@@ -26,6 +26,7 @@ const counts = {
   processing: 2,
   retry: 4,
   simulated: 12345,
+  delivered: 7,
   failed: 6,
   suppressed: 2,
 };
@@ -35,6 +36,8 @@ const errors = {
   attempts_exhausted: 1,
   recipient_inactive: 1,
   unsupported_kind: 1,
+  rate_limited: 2,
+  recipient_unreachable: 1,
 };
 let scenarios = 0;
 async function fixture(mode = "ready", width = 320) {

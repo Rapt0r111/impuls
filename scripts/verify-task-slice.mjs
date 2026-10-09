@@ -67,6 +67,7 @@ const env = {
   SYNTHETIC_CATALOG_SCHEDULING_ENABLED: "true",
   SYNTHETIC_CATALOG_CANCELLATION_ENABLED: "true",
   SYNTHETIC_ACCESS_MANAGEMENT_ENABLED: "true",
+  SYNTHETIC_MEMBER_MANAGEMENT_ENABLED: "true",
   SYNTHETIC_CATALOG_CREATION_ENABLED: "true",
   SYNTHETIC_QUOTA_PUBLICATION_ENABLED: "true",
   SYNTHETIC_NOTIFICATION_STATUS_ENABLED: "true",
@@ -127,6 +128,7 @@ try {
     await run("node_modules/vitest/vitest.mjs", [
       "run",
       "tests/integration/access-management.test.ts",
+      "tests/integration/member-management.test.ts",
       "packages/contracts/src/access-management.test.ts",
     ]);
     await run("tests/browser/access-management.mjs");
@@ -229,6 +231,7 @@ try {
       "run",
       "tests/integration/profile.test.ts",
       "tests/integration/profile-migration.test.ts",
+      "tests/integration/profile-name.test.ts",
     ]);
     await run("tests/browser/profile.mjs");
     await run("tests/browser/home.mjs");

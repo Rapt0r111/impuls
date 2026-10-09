@@ -37,6 +37,8 @@ const actionNames: Record<Action, string> = {
   "quota.publish": "Публикация периода квоты",
   "access.grant": "Выдача права",
   "access.revoke": "Отзыв права",
+  "member.admit": "Допуск участника",
+  "member.remove": "Отзыв допуска участника",
 };
 const fieldNames: Record<
   AuditResponse["items"][number]["values"][number]["field"],
@@ -320,6 +322,31 @@ export function AuditLog() {
                     {item.access.validUntil
                       ? `Срок права: до ${date(item.access.validUntil)} МСК.`
                       : "Срок права: без ограничения."}
+                  </p>
+                </div>
+              ) : null}
+              {item.member ? (
+                <div className="audit-task">
+                  <p>
+                    {item.action === "member.admit"
+                      ? item.member.userCreated
+                        ? "Допущен новый участник"
+                        : item.member.userReactivated
+                          ? "Допущен вновь участник"
+                          : "Допущен участник"
+                      : "Отозван допуск участника"}{" "}
+                    {item.member.subject.displayName}.
+                  </p>
+                  <p>
+                    {item.action === "member.admit"
+                      ? item.member.validUntil
+                        ? `Срок допуска: до ${date(item.member.validUntil)} МСК.`
+                        : "Срок допуска: без ограничения."
+                      : `Снято прав: ${item.member.revokedBindings}.${
+                          item.member.userDeactivated
+                            ? " Учётная запись отключена."
+                            : ""
+                        }`}
                   </p>
                 </div>
               ) : null}

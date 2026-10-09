@@ -61,7 +61,7 @@ export async function readNotificationAttempts(
         AND s.id=$4::uuid
     ), entries AS MATERIALIZED (
       SELECT e.id,e.outbox_id,e.attempt,e.phase,e.error_code,e.recorded_at,
-        CASE WHEN o.kind IN ('task.assigned','task.returned','task.accepted','ledger.corrected',
+        CASE WHEN o.kind IN ('task.assigned','task.due_soon','task.returned','task.accepted','ledger.corrected',
           'reward.reserved','reward.cancelled','reward.approved','reward.rejected','reward.fulfilled','reward.expired')
           THEN o.kind ELSE 'unsupported' END AS kind
       FROM impuls.notification_simulation_events e JOIN impuls.notification_outbox o ON o.id=e.outbox_id

@@ -28,7 +28,12 @@ await db.query(
   "INSERT INTO impuls.access_scopes(id,kind,name) VALUES($1,'project','Реальная область')",
   [scope],
 );
-for (const action of ["admin.access", "admin.access.manage", "admin.audit"])
+for (const action of [
+  "admin.access",
+  "admin.access.manage",
+  "admin.members.manage",
+  "admin.audit",
+])
   await db.query(
     "INSERT INTO impuls.role_bindings(user_id,scope_id,action,granted_by,reason) VALUES($1,$2,$3,$1,'Synthetic fixture')",
     [adminId, scope, action],
@@ -93,6 +98,65 @@ for (const width of [320, 360, 390]) {
     await page.getByText("Право отозвано.").waitFor();
     assert.equal(await count(live), 0);
     assert.equal(await count(changes), 2);
+    // Admission and removal of a person through the real server and database.
+    const telegramId = randomInt(7e12, 8e12);
+    const person = async (sql) => (await db.query(sql, [telegramId])).rows[0];
+    await page.getByLabel("Telegram ID").fill(String(telegramId));
+    await page.getByLabel("Имя или псевдоним").fill("Допущенный участник");
+    await page.getByLabel("Основание допуска").fill("Реальный допуск");
+    await page.getByRole("button", { name: "Проверить допуск" }).click();
+    assert.equal(
+      (
+        await person(
+          "SELECT count(*)::int n FROM impuls.users WHERE telegram_id=$1",
+        )
+      ).n,
+      0,
+      "preview creates no account",
+    );
+    await page.getByRole("button", { name: "Подтвердить изменение" }).click();
+    await page.getByText("Участник допущен.").waitFor();
+    const admitted = await person(
+      `SELECT u.id,u.active,u.display_name,
+         (SELECT count(*)::int FROM impuls.task_scope_members m WHERE m.user_id=u.id AND m.revoked_at IS NULL) memberships,
+         (SELECT count(*)::int FROM impuls.member_changes c WHERE c.subject_id=u.id AND c.kind='admit') changes
+       FROM impuls.users u WHERE u.telegram_id=$1`,
+    );
+    assert.deepEqual(
+      { ...admitted, id: undefined },
+      {
+        id: undefined,
+        active: true,
+        display_name: "Допущенный участник",
+        memberships: 1,
+        changes: 1,
+      },
+    );
+    await page
+      .getByRole("list", { name: "Участники области" })
+      .getByText("Допущенный участник")
+      .waitFor();
+    await page
+      .getByRole("button", { name: "Отозвать допуск", exact: true })
+      .click();
+    await page
+      .locator("select")
+      .last()
+      .selectOption({ label: "Допущенный участник" });
+    await page
+      .getByLabel("Основание отзыва")
+      .last()
+      .fill("Реальный отзыв допуска");
+    await page.getByRole("button", { name: "Проверить отзыв" }).last().click();
+    await page.getByRole("button", { name: "Подтвердить изменение" }).click();
+    await page.getByText("Допуск отозван. Сессии участника закрыты.").waitFor();
+    const removed = await person(
+      `SELECT u.active,
+         (SELECT count(*)::int FROM impuls.task_scope_members m WHERE m.user_id=u.id AND m.revoked_at IS NULL) memberships,
+         (SELECT count(*)::int FROM impuls.member_changes c WHERE c.subject_id=u.id) changes
+       FROM impuls.users u WHERE u.telegram_id=$1`,
+    );
+    assert.deepEqual(removed, { active: false, memberships: 0, changes: 2 });
     await page
       .getByRole("button", { name: "Журнал действий", exact: true })
       .click();
@@ -103,6 +167,12 @@ for (const width of [320, 360, 390]) {
       .getByText(
         "Отозвано право «Назначение задач» участнику Реальный участник.",
       )
+      .waitFor();
+    await page
+      .getByText("Допущен новый участник Допущенный участник.")
+      .waitFor();
+    await page
+      .getByText("Отозван допуск участника Допущенный участник.")
       .waitFor();
   }
   await page.screenshot({

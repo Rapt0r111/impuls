@@ -47,3 +47,11 @@ ADR-0003: [условия черновика и отмена задачи](0003-
 ADR-0023: [управление синтетическим доступом](0023-synthetic-access-management.md), два точных права, запрет самовыдачи и делегирования прав управления.
 
 ADR-0024: [владелец функций в миграциях на управляемом PostgreSQL](0024-migration-owner-grant-managed-postgres.md), временное `SET` для `ALTER OWNER` в 000027/000028.
+
+ADR-0025: [доставка нейтральных уведомлений через Telegram Bot API](0025-telegram-bot-api-delivery.md), второй флаг, worker-only chat ID, классификация ответов, at-least-once.
+
+ADR-0026: [допуск и отзыв участников в приложении](0026-synthetic-member-management.md), право `admin.members.manage`, узкие SECURITY DEFINER-функции, неизменяемый журнал.
+
+ADR-0027: [напоминание о приближении срока задачи](0027-task-due-reminders.md), вид `task.due_soon`, окно 24 часа, третий флаг, одно напоминание на задачу.
+
+ADR-0028: [участник сам задаёт отображаемое имя](0028-participant-self-service-name.md), `PATCH /api/v1/me/profile`, закрытый алфавит, уникальность без учёта регистра, неизменяемая история.

@@ -37,6 +37,7 @@ export const notificationAttemptSchema = z
       "started",
       "retry",
       "simulated",
+      "delivered",
       "failed",
       "suppressed",
       "lease_expired",
@@ -45,15 +46,23 @@ export const notificationAttemptSchema = z
     errorCode: notificationEventSchema.shape.errorCode,
   })
   .superRefine((row, ctx) => {
-    const valid = ["started", "simulated", "lease_expired"].includes(row.phase)
+    const valid = [
+      "started",
+      "simulated",
+      "delivered",
+      "lease_expired",
+    ].includes(row.phase)
       ? row.errorCode === null
       : row.phase === "suppressed"
-        ? ["recipient_inactive", "unsupported_kind"].includes(
-            row.errorCode ?? "",
-          )
+        ? [
+            "recipient_inactive",
+            "unsupported_kind",
+            "recipient_unreachable",
+          ].includes(row.errorCode ?? "")
         : [
             "transport_unavailable",
             "timeout",
+            "rate_limited",
             ...(row.phase === "failed" ? ["attempts_exhausted"] : []),
           ].includes(row.errorCode ?? "");
     if (!valid)

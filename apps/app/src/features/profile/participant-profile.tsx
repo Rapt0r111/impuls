@@ -1,9 +1,14 @@
 "use client";
 
-import { participantProfileResponseSchema } from "@impuls/contracts";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import {
+  participantProfileResponseSchema,
+  profileNameResponseSchema,
+  profileNameSchema,
+} from "@impuls/contracts";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useId, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import "./participant-profile.css";
 
 export class ProfileError extends Error {
@@ -35,6 +40,127 @@ export function useParticipantProfile() {
       return participantProfileResponseSchema.parse(await response.json());
     },
   });
+}
+
+const nameRule = "От 2 до 40 символов: буквы, цифры, пробел и . _ ' -";
+
+// The participant chooses the name other members see. The key is reused for a retry of the same
+// text, so a lost response can be repeated safely; the server treats repeats as no change.
+function ProfileNameForm({ current }: { current: string }) {
+  const { csrfToken, loseAccess } = useAuthorizedSession();
+  const queryClient = useQueryClient();
+  const id = useId();
+  const [value, setValue] = useState(current);
+  const [status, setStatus] = useState("");
+  const [failed, setFailed] = useState(false);
+  const [pending, setPending] = useState(false);
+  const key = useRef<{ text: string; key: string } | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  const parsed = profileNameSchema.safeParse(value);
+  const unchanged = parsed.success && parsed.data === current;
+
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!parsed.success || pending) return;
+    if (key.current?.text !== parsed.data)
+      key.current = { text: parsed.data, key: crypto.randomUUID() };
+    const intent = key.current;
+    setPending(true);
+    setFailed(false);
+    setStatus("Сохраняем имя…");
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), 15000);
+    try {
+      const response = await fetch("/api/v1/me/profile", {
+        method: "PATCH",
+        credentials: "same-origin",
+        cache: "no-store",
+        signal: abort.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+          "Idempotency-Key": intent.key,
+        },
+        body: JSON.stringify({ displayName: parsed.data }),
+      });
+      if (!alive.current) return;
+      if ([401, 403].includes(response.status)) {
+        loseAccess(response.status);
+        return;
+      }
+      if (response.ok) {
+        const saved = profileNameResponseSchema.parse(await response.json());
+        setValue(saved.user.displayName);
+        setStatus(
+          saved.changed ? "Имя сохранено." : "Это имя уже установлено.",
+        );
+        await queryClient.invalidateQueries({
+          queryKey: ["participant-profile"],
+        });
+        return;
+      }
+      setFailed(true);
+      setStatus(
+        response.status === 409
+          ? "Такое имя уже занято. Выберите другое."
+          : response.status === 429
+            ? mutationLimitMessage(response)
+            : response.status === 404
+              ? "Смена имени сейчас недоступна."
+              : response.status === 400
+                ? `Имя не подходит. ${nameRule}.`
+                : "Результат не подтверждён. Повторите сохранение.",
+      );
+    } catch {
+      if (!alive.current) return;
+      setFailed(true);
+      setStatus(
+        navigator.onLine
+          ? "Результат не подтверждён. Повторите сохранение."
+          : "Нет соединения. Имя не сохранено.",
+      );
+    } finally {
+      clearTimeout(timeout);
+      if (alive.current) setPending(false);
+    }
+  }
+  return (
+    <section className="profile-block" aria-labelledby={`${id}-title`}>
+      <h3 id={`${id}-title`}>Имя в приложении</h3>
+      <form className="profile-name-form" onSubmit={submit} noValidate>
+        <label htmlFor={`${id}-name`}>Как вас видят другие участники</label>
+        <input
+          id={`${id}-name`}
+          value={value}
+          maxLength={40}
+          autoComplete="nickname"
+          aria-describedby={`${id}-hint`}
+          aria-invalid={value !== current && !parsed.success}
+          onChange={(event) => {
+            setValue(event.target.value);
+            setStatus("");
+          }}
+        />
+        <p id={`${id}-hint`}>
+          {nameRule}. Имя видно в рейтинге, очереди проверки и журналах области.
+        </p>
+        <button
+          type="submit"
+          className="tasks-action"
+          disabled={pending || !parsed.success || unchanged}
+        >
+          Сохранить имя
+        </button>
+        <p role={failed ? "alert" : "status"}>{status}</p>
+      </form>
+    </section>
+  );
 }
 
 export function ParticipantProfile() {
@@ -94,6 +220,7 @@ export function ParticipantProfile() {
           <p className="ledger-asof">
             Подтверждено сервером: {date(data.asOf)} МСК
           </p>
+          <ProfileNameForm current={data.user.displayName} />
           <section
             className="profile-block"
             aria-labelledby="profile-level-title"

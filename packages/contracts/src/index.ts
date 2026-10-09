@@ -34,6 +34,7 @@ export const permissionsResponseSchema = z.object({
         "reward.fulfill",
         "admin.access",
         "admin.access.manage",
+        "admin.members.manage",
         "admin.rules",
         "admin.catalog",
         "admin.catalog.publish",
@@ -144,8 +145,17 @@ export {
   leaderboardResponseSchema,
 } from "./leaderboard";
 export type { LeaderboardResponse } from "./leaderboard";
-export { participantProfileResponseSchema } from "./profile";
-export type { ParticipantProfileResponse } from "./profile";
+export {
+  participantProfileResponseSchema,
+  profileNameRequestSchema,
+  profileNameSchema,
+  profileNameResponseSchema,
+} from "./profile";
+export type {
+  ParticipantProfileResponse,
+  ProfileNameRequest,
+  ProfileNameResponse,
+} from "./profile";
 export {
   auditActionSchema,
   auditCursorSchema,
@@ -257,9 +267,15 @@ export {
   accessGrantRequestSchema,
   accessRevocationRequestSchema,
   grantableActions,
+  memberAdmissionRequestSchema,
+  memberChangeResponseSchema,
+  memberRemovalRequestSchema,
 } from "./access-management";
 export type {
   AccessGrantRequest,
   AccessListResponse,
   AccessRevocationRequest,
+  MemberAdmissionRequest,
+  MemberChangeResponse,
+  MemberRemovalRequest,
 } from "./access-management";

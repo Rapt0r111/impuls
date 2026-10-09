@@ -21,7 +21,10 @@ async function fixture(mode = "populated", width = 390) {
   const page = await context.newPage(),
     errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  let fail = false;
+  let fail = false,
+    name = "Синтетический участник";
+  const patches = [],
+    patchReplies = [];
   const json = (r, body, status = 200) =>
     r.fulfill({
       status,
@@ -39,7 +42,7 @@ async function fixture(mode = "populated", width = 390) {
     (url) => url.pathname === "/api/v1/me",
     (r) =>
       json(r, {
-        user: { id, displayName: "Синтетический участник" },
+        user: { id, displayName: name },
         csrfToken: "synthetic",
       }),
   );
@@ -54,6 +57,25 @@ async function fixture(mode = "populated", width = 390) {
   await page.route(
     (url) => url.pathname === "/api/v1/me/profile",
     async (r) => {
+      if (r.request().method() === "PATCH") {
+        const body = r.request().postDataJSON();
+        patches.push({ body, headers: r.request().headers() });
+        const reply = patchReplies.shift() ?? { status: 200 };
+        if (reply.status !== 200)
+          return r.fulfill({
+            status: reply.status,
+            contentType: "application/json",
+            headers: reply.status === 429 ? { "Retry-After": "7" } : {},
+            body: JSON.stringify({ code: "TEST" }),
+          });
+        const changed = body.displayName !== name;
+        name = body.displayName;
+        return json(r, {
+          mode: "synthetic",
+          user: { id, displayName: name },
+          changed,
+        });
+      }
       if (mode === "loading")
         await new Promise((resolve) => setTimeout(resolve, 1500));
       if (mode === "disabled" || mode === "unavailable" || fail)
@@ -71,7 +93,7 @@ async function fixture(mode = "populated", width = 390) {
       const xp = mode === "empty" ? 0 : mode === "maximum" ? 250 : 125;
       return json(r, {
         mode: "synthetic",
-        user: { id, displayName: "Синтетический участник" },
+        user: { id, displayName: name },
         balance: {
           lifetimeXp: xp,
           availablePoints: 400,
@@ -142,6 +164,8 @@ async function fixture(mode = "populated", width = 390) {
     page,
     context,
     errors,
+    patches,
+    patchReplies,
     setFail: () => {
       fail = true;
     },
@@ -230,6 +254,87 @@ try {
         .waitFor();
       assert.equal(await f.page.locator(".participant-profile").count(), 0);
     }
+    await close(f);
+  }
+  // Self-service display name: the participant picks the name other members see.
+  for (const width of [320, 390]) {
+    const f = await fixture("populated", width);
+    const input = f.page.getByLabel("Как вас видят другие участники");
+    const save = f.page.getByRole("button", {
+      name: "Сохранить имя",
+      exact: true,
+    });
+    await input.waitFor();
+    assert.equal(await input.inputValue(), "Синтетический участник");
+    assert.equal(await save.isDisabled(), true, "unchanged name");
+    assert.ok(
+      (await save.evaluate((e) => e.getBoundingClientRect().height)) >= 44,
+    );
+    for (const bad of [
+      "a",
+      "  ",
+      `Имя${String.fromCodePoint(0x202e)}гнев`,
+      "😀😀",
+      "-Имя",
+    ]) {
+      await input.fill(bad);
+      assert.equal(await save.isDisabled(), true, `rejects ${bad}`);
+    }
+    assert.equal(await input.getAttribute("aria-invalid"), "true");
+    await input.fill("x".repeat(41));
+    assert.equal((await input.inputValue()).length, 40, "field caps at 40");
+    await input.fill("  Анна   Петрова ");
+    assert.equal(await save.isDisabled(), false);
+    await save.click();
+    await f.page.getByText("Имя сохранено.").waitFor();
+    assert.equal(f.patches.length, 1);
+    assert.deepEqual(f.patches[0].body, { displayName: "Анна Петрова" });
+    assert.equal(f.patches[0].headers["x-csrf-token"], "synthetic");
+    assert.match(f.patches[0].headers["idempotency-key"], /^[0-9a-f-]{36}$/);
+    assert.equal(await input.inputValue(), "Анна Петрова");
+    assert.equal(await save.isDisabled(), true);
+    await f.page.screenshot({
+      path: path.join(dir, `profile-name-${width}.png`),
+      fullPage: true,
+    });
+    await close(f);
+  }
+  for (const [status, text] of [
+    [409, "Такое имя уже занято"],
+    [429, "Подождите 7 с"],
+    [400, "Имя не подходит"],
+    [404, "Смена имени сейчас недоступна"],
+    [503, "Результат не подтверждён"],
+  ]) {
+    const f = await fixture("populated", 320);
+    const input = f.page.getByLabel("Как вас видят другие участники");
+    await input.fill("Мария");
+    f.patchReplies.push({ status });
+    await f.page.getByRole("button", { name: "Сохранить имя" }).click();
+    await f.page.getByRole("alert").filter({ hasText: text }).waitFor();
+    assert.equal(await input.inputValue(), "Мария", "text kept for retry");
+    // Retrying the same text repeats the same key; changed text gets a new one.
+    await f.page.getByRole("button", { name: "Сохранить имя" }).click();
+    await f.page.getByText("Имя сохранено.").waitFor();
+    assert.equal(f.patches.length, 2);
+    assert.equal(
+      f.patches[0].headers["idempotency-key"],
+      f.patches[1].headers["idempotency-key"],
+    );
+    await close(f);
+  }
+  for (const status of [401, 403]) {
+    const f = await fixture("populated", 320);
+    await f.page.getByLabel("Как вас видят другие участники").fill("Мария");
+    f.patchReplies.push({ status });
+    await f.page.getByRole("button", { name: "Сохранить имя" }).click();
+    await f.page
+      .getByRole("heading", {
+        name:
+          status === 403 ? "Доступ отозван" : "Не удалось подтвердить сессию",
+      })
+      .waitFor();
+    assert.equal(await f.page.locator(".participant-profile").count(), 0);
     await close(f);
   }
   const large = await fixture("populated", 320);

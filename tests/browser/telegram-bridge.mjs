@@ -254,6 +254,8 @@ async function fixture(width = 390, mode = "modern", role = "participant") {
       });
     if (url.pathname === "/api/v1/me/profile")
       return json(route, homeFallbackProfile);
+    // «Главная» читает собственную строку рейтинга; ответ даёт mockHomeFallback.
+    if (url.pathname === "/api/v1/leaderboard") return route.fallback();
     if (url.pathname === "/api/v1/auth/logout") return json(route, {});
     return json(
       route,

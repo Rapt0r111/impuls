@@ -10,6 +10,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import { actionLabels } from "./action-labels";
+import { MemberAdmin } from "./member-admin";
 import "../notifications/notification-status.css";
 import "../catalog-admin/catalog-admin.css";
 
@@ -63,6 +64,7 @@ export function AccessAdmin() {
   const [pending, setPending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [memberDirty, setMemberDirty] = useState(false);
   const intent = useRef<{ key: string; change: Change } | null>(null);
   const running = useRef(false);
   const alive = useRef(true);
@@ -98,7 +100,7 @@ export function AccessAdmin() {
       alive.current = false;
     };
   }, []);
-  const dirty = Boolean(reason || until || preview);
+  const dirty = Boolean(reason || until || preview || memberDirty);
   useEffect(() => {
     reportDirty(dirty);
     return () => reportDirty(false);
@@ -470,6 +472,23 @@ export function AccessAdmin() {
             <p className="notification-note">
               Изменение прав выключено или не назначено вам. Доступен просмотр.
             </p>
+          ) : null}
+          {data.canManageMembers ? (
+            <MemberAdmin
+              key={scope}
+              scope={scope}
+              data={data}
+              onDirty={setMemberDirty}
+              onChanged={() => void query.refetch()}
+              onUnavailable={() => {
+                client.setQueriesData<AccessListResponse | null>(
+                  { queryKey: ["admin-access"] },
+                  () => null,
+                );
+                setBlocked(true);
+                setStatus("Управление составом в этой области недоступно.");
+              }}
+            />
           ) : null}
         </>
       ) : null}

@@ -7,6 +7,7 @@ type Status =
   | "processing"
   | "retry"
   | "simulated"
+  | "delivered"
   | "failed"
   | "suppressed";
 type ErrorCode =
@@ -14,7 +15,9 @@ type ErrorCode =
   | "timeout"
   | "attempts_exhausted"
   | "recipient_inactive"
-  | "unsupported_kind";
+  | "unsupported_kind"
+  | "rate_limited"
+  | "recipient_unreachable";
 type Summary = {
   mode: "simulation";
   scope: Scope;
@@ -70,7 +73,7 @@ export async function readNotificationStatus(
       SELECT * FROM permitted WHERE $4::uuid IS NULL OR id=$4 ORDER BY name,id LIMIT 1
     ), events AS MATERIALIZED (
       SELECT o.id,o.created_at,
-        CASE WHEN o.kind IN ('task.assigned','task.returned','task.accepted','ledger.corrected',
+        CASE WHEN o.kind IN ('task.assigned','task.due_soon','task.returned','task.accepted','ledger.corrected',
           'reward.reserved','reward.cancelled','reward.approved','reward.rejected','reward.fulfilled','reward.expired')
           THEN o.kind ELSE 'unsupported' END AS kind,
         coalesce(d.status,'unclaimed') AS status,d.error_code
@@ -115,6 +118,7 @@ export async function readNotificationStatus(
         processing: Number(gate.counts.processing ?? 0),
         retry: Number(gate.counts.retry ?? 0),
         simulated: Number(gate.counts.simulated ?? 0),
+        delivered: Number(gate.counts.delivered ?? 0),
         failed: Number(gate.counts.failed ?? 0),
         suppressed: Number(gate.counts.suppressed ?? 0),
       },
@@ -124,6 +128,8 @@ export async function readNotificationStatus(
         attempts_exhausted: Number(gate.errors.attempts_exhausted ?? 0),
         recipient_inactive: Number(gate.errors.recipient_inactive ?? 0),
         unsupported_kind: Number(gate.errors.unsupported_kind ?? 0),
+        rate_limited: Number(gate.errors.rate_limited ?? 0),
+        recipient_unreachable: Number(gate.errors.recipient_unreachable ?? 0),
       },
     },
   };

@@ -4,6 +4,7 @@ import type { Pool } from "pg";
 // Fixed text only. Never interpolate task/reward titles, reports, reasons, or names.
 const messages: Record<string, string> = {
   "task.assigned": "В приложении назначена задача.",
+  "task.due_soon": "В приложении приближается срок задачи.",
   "task.returned": "В приложении результат возвращён на доработку.",
   "task.accepted": "В приложении принято решение по результату.",
   "ledger.corrected": "В приложении обновлён журнал начислений.",
@@ -20,17 +21,51 @@ export function neutralNotification(kind: string): string | null {
 }
 
 export type NotificationClaim = { outboxId: string; token: string };
+// "simulation" never reads a Telegram ID; "telegram" reads exactly one through a worker-only function.
+export type DeliveryMode = "simulation" | "telegram";
+export type NotificationReceipt = "simulated" | "delivered";
 export type SimulationTransport = (message: {
   eventId: string;
   recipientId: string;
+  // Telegram private chat ID as decimal text; null in simulation mode.
+  chatId: string | null;
   text: string;
   signal: AbortSignal;
-}) => Promise<"simulated">;
+}) => Promise<NotificationReceipt>;
 export type SimulationResult =
-  "simulated" | "retry" | "failed" | "suppressed" | "lost";
+  "simulated" | "delivered" | "retry" | "failed" | "suppressed" | "lost";
+
+// Allowlisted outcomes of a transport. Anything else becomes transport_unavailable.
+export class NotificationTransportError extends Error {
+  constructor(
+    readonly code:
+      | "transport_unavailable"
+      | "timeout"
+      | "rate_limited"
+      | "recipient_unreachable",
+    readonly retryAfterSeconds?: number,
+  ) {
+    super(code);
+  }
+}
+// Misconfiguration (bad token, unknown method): retrying per event would burn every attempt.
+export class NotificationTransportFatal extends Error {}
+const MAX_RETRY_AFTER_SECONDS = 3600;
 
 // One short transaction; independent workers skip each other's row locks.
 // Disabled operation does not even open a connection.
+// Queues reminders for open assigned work due within 24 hours (migration 000034). Idempotent per task.
+export async function enqueueTaskDueReminders(
+  pool: Pool,
+  enabled: boolean,
+): Promise<number> {
+  if (!enabled) return 0;
+  const result = await pool.query<{ enqueued: number }>(
+    "SELECT impuls.enqueue_task_due_reminders() AS enqueued",
+  );
+  return result.rows[0]!.enqueued;
+}
+
 export async function claimNotificationSimulation(
   pool: Pool,
   enabled: boolean,
@@ -83,6 +118,7 @@ export async function processNotificationSimulation(
   claim: NotificationClaim,
   transport: SimulationTransport,
   enabled: boolean,
+  delivery: DeliveryMode = "simulation",
 ): Promise<SimulationResult> {
   if (!enabled) return "lost";
   const client = await pool.connect();
@@ -107,12 +143,25 @@ export async function processNotificationSimulation(
       await client.query("ROLLBACK");
       return "lost";
     }
-    const active = (
-      await client.query<{ allowed: boolean }>(
-        "SELECT impuls.lock_notification_recipient($1) allowed",
-        [row.recipient_id],
-      )
-    ).rows[0]!.allowed;
+    let chatId: string | null = null;
+    let active: boolean;
+    if (delivery === "telegram") {
+      chatId =
+        (
+          await client.query<{ chat: string | null }>(
+            "SELECT impuls.lock_notification_recipient_chat($1)::text chat",
+            [row.recipient_id],
+          )
+        ).rows[0]!.chat ?? null;
+      active = chatId !== null;
+    } else {
+      active = (
+        await client.query<{ allowed: boolean }>(
+          "SELECT impuls.lock_notification_recipient($1) allowed",
+          [row.recipient_id],
+        )
+      ).rows[0]!.allowed;
+    }
     // Access checking may wait on a revocation transaction past the lease deadline.
     const valid = (
       await client.query<{ valid: boolean }>(
@@ -126,17 +175,18 @@ export async function processNotificationSimulation(
     }
     const text = neutralNotification(row.kind);
     let status: Exclude<SimulationResult, "lost">,
-      code: string | null = null;
+      code: string | null = null,
+      retryAfter = 0;
     if (!active || !text) {
       status = "suppressed";
       code = active ? "unsupported_kind" : "recipient_inactive";
     } else {
-      // This boundary only accepts simulation receipts; it is not a Bot API adapter.
+      // The transport owns the network; this boundary only accepts allowlisted receipts and errors.
       const signal = AbortSignal.timeout(5000);
       let onAbort: (() => void) | undefined;
       try {
         const timeout = new Promise<never>((_, reject) => {
-          onAbort = () => reject(new Error("simulation timeout"));
+          onAbort = () => reject(new Error("transport timeout"));
           signal.addEventListener("abort", onAbort, { once: true });
         });
         const receipt = await Promise.race([
@@ -144,18 +194,33 @@ export async function processNotificationSimulation(
             transport({
               eventId: claim.outboxId,
               recipientId: row.recipient_id,
+              chatId,
               text,
               signal,
             }),
           ),
           timeout,
         ]);
-        if (receipt !== "simulated")
-          throw new Error("Invalid simulation receipt");
-        status = "simulated";
-      } catch {
-        status = row.attempts >= 5 ? "failed" : "retry";
-        code = signal.aborted ? "timeout" : "transport_unavailable";
+        if (receipt !== (delivery === "telegram" ? "delivered" : "simulated"))
+          throw new Error("Invalid transport receipt");
+        status = receipt;
+      } catch (error) {
+        if (error instanceof NotificationTransportFatal) throw error;
+        const known =
+          error instanceof NotificationTransportError ? error : null;
+        if (known?.code === "recipient_unreachable") {
+          status = "suppressed";
+          code = "recipient_unreachable";
+        } else {
+          status = row.attempts >= 5 ? "failed" : "retry";
+          code = signal.aborted
+            ? "timeout"
+            : (known?.code ?? "transport_unavailable");
+          retryAfter = Math.min(
+            known?.retryAfterSeconds ?? 0,
+            MAX_RETRY_AFTER_SECONDS,
+          );
+        }
       } finally {
         if (onAbort) signal.removeEventListener("abort", onAbort);
       }
@@ -164,10 +229,16 @@ export async function processNotificationSimulation(
       `UPDATE impuls.notification_simulations
       SET status=$3,error_code=$4,lease_token=NULL,lease_until=NULL,
         next_attempt_at=clock_timestamp()+($5::integer*interval '1 second'),
-        completed_at=CASE WHEN $3 IN ('simulated','failed','suppressed') THEN clock_timestamp() ELSE NULL END,
+        completed_at=CASE WHEN $3 IN ('simulated','delivered','failed','suppressed') THEN clock_timestamp() ELSE NULL END,
         updated_at=clock_timestamp()
       WHERE outbox_id=$1 AND lease_token=$2 AND lease_until>clock_timestamp()`,
-      [claim.outboxId, claim.token, status, code, 30 * 2 ** (row.attempts - 1)],
+      [
+        claim.outboxId,
+        claim.token,
+        status,
+        code,
+        Math.max(30 * 2 ** (row.attempts - 1), retryAfter),
+      ],
     );
     if (!updated.rowCount) {
       await client.query("ROLLBACK");

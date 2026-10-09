@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import { assertWorkerTlsUrl } from "./database-tls";
 import {
   claimNotificationSimulation,
+  enqueueTaskDueReminders,
   processNotificationSimulation,
   readNotificationSimulationCounts,
 } from "@impuls/domain/notification-simulation";
@@ -10,13 +11,15 @@ import {
   readSyntheticExpiryStatus,
 } from "@impuls/domain/reservation-expiry";
 import { installWorkerShutdown } from "./shutdown";
+import { assertBotToken, createTelegramTransport } from "./telegram";
 import {
   runExpiryLoop,
   runSimulationLoop,
   simulationPollInterval,
 } from "./loop";
 
-// Never loads app .env or a bot token. Hosting/restart policy belongs to an external supervisor.
+// Never loads the app .env. The bot token is read only here, from the worker's own environment,
+// and only when TELEGRAM_DELIVERY_ENABLED=true. Hosting/restart policy belongs to an external supervisor.
 async function main() {
   const args = process.argv.slice(2);
   if (
@@ -42,6 +45,19 @@ async function main() {
     console.log(JSON.stringify({ mode, status: "disabled" }));
     return;
   }
+  // Real delivery is a second, independent opt-in on top of the synthetic notification flag.
+  const telegram = !expiry && process.env.TELEGRAM_DELIVERY_ENABLED === "true";
+  const transport = telegram
+    ? createTelegramTransport({
+        token: assertBotToken(process.env.TELEGRAM_BOT_TOKEN),
+        ...(process.env.TELEGRAM_API_BASE_URL
+          ? { apiBase: process.env.TELEGRAM_API_BASE_URL }
+          : {}),
+      })
+    : async () => "simulated" as const;
+  // Reminders only add outbox events; a third opt-in keeps them off until the 24 h window is agreed.
+  const reminders = !expiry && process.env.TASK_REMINDERS_ENABLED === "true";
+  const label = telegram ? "telegram" : mode;
   const pollIntervalMs =
     args[0] === "--watch" || args[0] === "--expire-watch"
       ? simulationPollInterval(process.env.WORKER_POLL_INTERVAL_MS)
@@ -75,13 +91,13 @@ async function main() {
   const heartbeat = () =>
     console.log(
       JSON.stringify({
-        mode,
+        mode: label,
         status: "alive",
         observedAt: new Date().toISOString(),
       }),
     );
   const unavailable = () => {
-    console.error(JSON.stringify({ mode, error: "WORKER_UNAVAILABLE" }));
+    console.error(JSON.stringify({ mode: label, error: "WORKER_UNAVAILABLE" }));
     process.exitCode = 1;
     stop.stop();
   };
@@ -118,32 +134,36 @@ async function main() {
     } else if (args[0] === "--status") {
       console.log(
         JSON.stringify({
-          mode: "simulation",
+          mode: label,
           counts: await readNotificationSimulationCounts(pool),
         }),
       );
     } else {
       const watch = args[0] === "--watch";
       if (watch)
-        console.log(JSON.stringify({ mode: "simulation", status: "watching" }));
+        console.log(JSON.stringify({ mode: label, status: "watching" }));
       await runSimulationLoop({
         mode: watch ? "watch" : "once",
         signal: stop.signal,
         pollIntervalMs,
-        claim: () => claimNotificationSimulation(pool, true),
+        claim: async () => {
+          await enqueueTaskDueReminders(pool, reminders);
+          return claimNotificationSimulation(pool, true);
+        },
         processClaim: (claim) =>
           processNotificationSimulation(
             pool,
             claim,
-            async () => "simulated",
+            transport,
             true,
+            telegram ? "telegram" : "simulation",
           ),
         report: (results) =>
-          console.log(JSON.stringify({ mode: "simulation", results })),
+          console.log(JSON.stringify({ mode: label, results })),
         heartbeat,
       });
       if (watch)
-        console.log(JSON.stringify({ mode: "simulation", status: "stopped" }));
+        console.log(JSON.stringify({ mode: label, status: "stopped" }));
     }
   } catch (error) {
     stop.stop();
@@ -162,7 +182,9 @@ main().catch(() => {
     JSON.stringify({
       mode: process.argv[2]?.startsWith("--expire-")
         ? "reservation_expiry"
-        : "simulation",
+        : process.env.TELEGRAM_DELIVERY_ENABLED === "true"
+          ? "telegram"
+          : "simulation",
       error: "WORKER_UNAVAILABLE",
     }),
   );

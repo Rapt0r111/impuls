@@ -25,6 +25,8 @@ export const auditActionSchema = z.enum([
   "quota.publish",
   "access.grant",
   "access.revoke",
+  "member.admit",
+  "member.remove",
 ]);
 const cursorParts = z.strictObject({
   actor: z.uuid(),
@@ -190,6 +192,18 @@ export const accessAuditEvidenceSchema = z.strictObject({
   permission: z.enum(grantableActions),
   validUntil: z.iso.datetime().nullable(),
 });
+export const memberAuditEvidenceSchema = z.strictObject({
+  membershipId: z.uuid(),
+  subject: z.strictObject({
+    id: z.uuid(),
+    displayName: z.string().min(1).max(80),
+  }),
+  validUntil: z.iso.datetime().nullable(),
+  userCreated: z.boolean(),
+  userReactivated: z.boolean(),
+  userDeactivated: z.boolean(),
+  revokedBindings: z.number().int().min(0).max(1000),
+});
 export const auditResponseSchema = z.strictObject({
   mode: z.literal("synthetic"),
   scopes: z.array(scopeSchema),
@@ -243,6 +257,7 @@ export const auditResponseSchema = z.strictObject({
             .nullable()
             .default(null),
           access: accessAuditEvidenceSchema.nullable().default(null),
+          member: memberAuditEvidenceSchema.nullable().default(null),
           values: z.array(savedValueSchema).max(20),
         })
         .superRefine((item, ctx) => {
@@ -255,6 +270,31 @@ export const auditResponseSchema = z.strictObject({
             ctx.addIssue({
               code: "custom",
               message: "Invalid automatic actor",
+            });
+          if (item.action.startsWith("member.")) {
+            if (
+              !item.member ||
+              item.access ||
+              item.creation ||
+              item.quota ||
+              item.catalog ||
+              item.cancellation ||
+              item.task ||
+              item.reward ||
+              item.reviewId ||
+              item.correctionId ||
+              item.values.length
+            )
+              ctx.addIssue({
+                code: "custom",
+                message: "Invalid member change evidence",
+              });
+            return;
+          }
+          if (item.member)
+            ctx.addIssue({
+              code: "custom",
+              message: "Unexpected member change evidence",
             });
           if (item.action.startsWith("access.")) {
             if (

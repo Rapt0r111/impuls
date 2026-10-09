@@ -54,14 +54,69 @@ export type AccessRevocationRequest = z.infer<
   typeof accessRevocationRequestSchema
 >;
 
+// Admission and removal of participants. The Telegram ID is accepted here and never returned.
+export const memberAdmissionRequestSchema = z.strictObject({
+  scope: z.uuid(),
+  telegramId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  displayName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .regex(/^[^\p{Cc}]+$/u),
+  validUntil: z.iso.datetime().nullable(),
+  reason: z.string().trim().min(1).max(500),
+});
+export const memberRemovalRequestSchema = z.strictObject({
+  scope: z.uuid(),
+  membershipId: z.uuid(),
+  expectedVersion: z.number().int().min(1).max(2147483647),
+  reason: z.string().trim().min(1).max(500),
+});
+const memberChangeBase = {
+  mode: z.literal("synthetic"),
+  scope: z.uuid(),
+  changeId: z.uuid(),
+  member: z.strictObject({
+    membershipId: z.uuid(),
+    userId: z.uuid(),
+    displayName: z.string().min(1).max(80),
+    version: z.number().int().min(1),
+    validUntil: z.iso.datetime().nullable(),
+  }),
+  updatedAt: z.iso.datetime(),
+};
+export const memberChangeResponseSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    ...memberChangeBase,
+    kind: z.literal("admit"),
+    userCreated: z.boolean(),
+    userReactivated: z.boolean(),
+  }),
+  z.strictObject({
+    ...memberChangeBase,
+    kind: z.literal("remove"),
+    revokedBindings: z.number().int().min(0),
+    userDeactivated: z.boolean(),
+  }),
+]);
+export type MemberAdmissionRequest = z.infer<
+  typeof memberAdmissionRequestSchema
+>;
+export type MemberRemovalRequest = z.infer<typeof memberRemovalRequestSchema>;
+export type MemberChangeResponse = z.infer<typeof memberChangeResponseSchema>;
+
 export const accessQuerySchema = z.strictObject({ scope: z.uuid() });
 export const accessListResponseSchema = z.strictObject({
   mode: z.literal("synthetic"),
   scope: z.uuid(),
   canManage: z.boolean(),
+  canManageMembers: z.boolean(),
   members: z.array(
     z.strictObject({
       userId: z.uuid(),
+      membershipId: z.uuid(),
+      membershipVersion: z.number().int().min(1),
       displayName: z.string().min(1).max(80),
       isSelf: z.boolean(),
       bindings: z.array(

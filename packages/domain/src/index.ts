@@ -48,6 +48,7 @@ export { decideRedemption, readRedemptionReview } from "./rewards/decisions";
 export { fulfillRedemption } from "./rewards/fulfillment";
 export { readLeaderboard } from "./ranking/read";
 export { readParticipantProfile } from "./profile/read";
+export { renameSelf } from "./profile/name";
 export { readAudit } from "./admin/audit";
 export { readNotificationStatus } from "./notifications/status";
 export { readNotificationEvents } from "./notifications/events";
@@ -82,3 +83,5 @@ export { cancelScheduledCatalogTerms } from "./admin/cancel-schedule";
 
 export { changeAccess, readAccess } from "./admin/access";
 export type { AccessChangeInput } from "./admin/access";
+export { changeMember } from "./admin/members";
+export type { MemberChangeInput, MemberChangeResult } from "./admin/members";

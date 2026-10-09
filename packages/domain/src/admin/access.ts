@@ -46,15 +46,20 @@ type Result =
         | "forbidden_target";
     };
 
-const protectedActions = ["admin.access", "admin.access.manage"];
+const protectedActions = [
+  "admin.access",
+  "admin.access.manage",
+  "admin.members.manage",
+];
 const iso = `to_char($X AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 const stamp = (column: string) => iso.replace("$X", column);
 
-// Exact scope; both rights are required, matching the project's split between
-// reading access and changing it.
-async function authority(
+// Exact scope; every listed right is required, matching the project's split between
+// reading and changing. Shared with member management.
+export async function checkAuthority(
   client: PoolClient,
-  input: Common,
+  input: { actorId: string; sessionHash: Buffer; scope: string },
+  rights: readonly string[],
   lock: boolean,
 ): Promise<"ok" | "revoked" | "unauthorized" | "not_found"> {
   const user = (
@@ -67,16 +72,13 @@ async function authority(
   const held = (
     await client.query<{ action: string }>(
       `SELECT action FROM impuls.role_bindings
-       WHERE user_id=$1 AND scope_id=$2 AND action IN ('admin.access','admin.access.manage')
+       WHERE user_id=$1 AND scope_id=$2 AND action=ANY($3::text[])
          AND revoked_at IS NULL AND valid_from<=clock_timestamp() AND (valid_until IS NULL OR valid_until>clock_timestamp())
        ORDER BY id${lock ? " FOR SHARE" : ""}`,
-      [input.actorId, input.scope],
+      [input.actorId, input.scope, rights],
     )
   ).rows;
-  if (
-    !held.some((p) => p.action === "admin.access") ||
-    !held.some((p) => p.action === "admin.access.manage")
-  )
+  if (!rights.every((right) => held.some((p) => p.action === right)))
     return "not_found";
   const session = await client.query(
     `SELECT 1 FROM impuls.sessions WHERE user_id=$1 AND session_hash=$2
@@ -85,6 +87,9 @@ async function authority(
   );
   return session.rowCount === 1 ? "ok" : "unauthorized";
 }
+const accessRights = ["admin.access", "admin.access.manage"] as const;
+const authority = (client: PoolClient, input: Common, lock: boolean) =>
+  checkAuthority(client, input, accessRights, lock);
 
 export async function changeAccess(
   pool: Pool,
@@ -289,8 +294,11 @@ type AccessListResponseShape = {
   mode: "synthetic";
   scope: string;
   canManage: boolean;
+  canManageMembers: boolean;
   members: {
     userId: string;
+    membershipId: string;
+    membershipVersion: number;
     displayName: string;
     isSelf: boolean;
     bindings: {
@@ -311,6 +319,7 @@ export async function readAccess(
     scope: string;
     enabled: boolean;
     allowAccessManagement: boolean;
+    allowMemberManagement: boolean;
   },
 ): Promise<ListResult> {
   const user = (
@@ -323,7 +332,7 @@ export async function readAccess(
   const held = (
     await pool.query<{ action: string }>(
       `SELECT action FROM impuls.role_bindings
-       WHERE user_id=$1 AND scope_id=$2 AND action IN ('admin.access','admin.access.manage')
+       WHERE user_id=$1 AND scope_id=$2 AND action IN ('admin.access','admin.access.manage','admin.members.manage')
          AND revoked_at IS NULL AND valid_from<=clock_timestamp() AND (valid_until IS NULL OR valid_until>clock_timestamp())`,
       [input.actorId, input.scope],
     )
@@ -340,15 +349,17 @@ export async function readAccess(
   const rows = (
     await pool.query<{
       userId: string;
+      membershipId: string;
+      membershipVersion: number;
       displayName: string;
       bindings: AccessListResponseShape["members"][number]["bindings"];
     }>(
-      `SELECT u.id "userId",u.display_name "displayName",
+      `SELECT u.id "userId",m.id "membershipId",m.version "membershipVersion",u.display_name "displayName",
          COALESCE((SELECT jsonb_agg(jsonb_build_object('id',b.id,'action',b.action,'version',b.version,
            'validUntil',CASE WHEN b.valid_until IS NULL THEN NULL ELSE to_char(b.valid_until AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END) ORDER BY b.action)
            FROM impuls.role_bindings b WHERE b.user_id=u.id AND b.scope_id=m.scope_id AND b.revoked_at IS NULL
              AND b.valid_from<=clock_timestamp() AND (b.valid_until IS NULL OR b.valid_until>clock_timestamp())
-             AND b.action NOT IN ('admin.access','admin.access.manage')),'[]'::jsonb) bindings
+             AND b.action NOT IN ('admin.access','admin.access.manage','admin.members.manage')),'[]'::jsonb) bindings
        FROM impuls.task_scope_members m JOIN impuls.users u ON u.id=m.user_id
        WHERE m.scope_id=$1 AND m.synthetic AND u.active AND m.revoked_at IS NULL
          AND m.valid_from<=clock_timestamp() AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp())
@@ -364,6 +375,9 @@ export async function readAccess(
       canManage:
         input.allowAccessManagement &&
         held.some((p) => p.action === "admin.access.manage"),
+      canManageMembers:
+        input.allowMemberManagement &&
+        held.some((p) => p.action === "admin.members.manage"),
       members: rows.map((r) => ({ ...r, isSelf: r.userId === input.actorId })),
     },
   };

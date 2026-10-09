@@ -53,6 +53,7 @@ const url = process.env.TEST_DATABASE_URL,
     processing: 1,
     retry: 2,
     simulated: 1,
+    delivered: 0,
     failed: 2,
     suppressed: 2,
   };
@@ -181,6 +182,8 @@ const url = process.env.TEST_DATABASE_URL,
     attempts_exhausted: 1,
     recipient_inactive: 1,
     unsupported_kind: 1,
+    rate_limited: 0,
+    recipient_unreachable: 0,
   };
   const base = () => ({
     actorId: actor,
@@ -401,7 +404,9 @@ const url = process.env.TEST_DATABASE_URL,
     const empty = await read({ scope: emptyScope });
     expect(empty.kind).toBe("ok");
     if (empty.kind !== "ok") throw new Error(empty.kind);
-    expect(Object.values(empty.response.counts)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+    expect(Object.values(empty.response.counts)).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 0,
+    ]);
   });
   it("is off by default and checks expired/wrong/revoked sessions and inactive users before the flag", async () => {
     expect(await read({ enabled: false })).toEqual({ kind: "disabled" });
