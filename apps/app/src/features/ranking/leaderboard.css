@@ -180,3 +180,78 @@
     transform: scaleY(0.4);
   }
 }
+
+/* Рейтинг по макету: компактные фильтры, строка «вы» плиткой, таблица без шапки. */
+.ranking-filters {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+.ranking-filters select,
+.ranking-filters input {
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.07);
+  border-color: var(--color-edge);
+  font-size: 15px;
+}
+.ranking-self {
+  padding: 14px 16px;
+  border: 1px solid rgb(112 225 194 / 0.3);
+  border-radius: 18px;
+  background: var(--color-mint-tint);
+}
+.ranking-self span {
+  flex-basis: auto;
+}
+.ranking-table {
+  margin-top: 8px;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+.ranking-table thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.ranking-table th,
+.ranking-table td {
+  padding: 14px 8px;
+  border-bottom: 0;
+  vertical-align: middle;
+}
+.ranking-table tbody td:first-child {
+  padding-left: 12px;
+  color: var(--color-muted);
+  font-size: 17px;
+  font-weight: 700;
+}
+.ranking-table tbody td:last-child {
+  padding-right: 12px;
+}
+.ranking-table tbody th {
+  font-weight: 700;
+}
+.ranking-own-row td,
+.ranking-own-row th {
+  background: linear-gradient(
+    135deg,
+    rgb(112 225 194 / 0.24),
+    rgb(112 225 194 / 0.08)
+  );
+}
+.ranking-own-row td:first-child,
+.ranking-own-row th:first-child {
+  border-radius: 16px 0 0 16px;
+  color: var(--color-mint);
+}
+.ranking-own-row td:last-child {
+  border-radius: 0 16px 16px 0;
+  color: var(--color-mint);
+}
+@media (max-width: 359px) {
+  .ranking-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

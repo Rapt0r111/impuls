@@ -104,6 +104,33 @@ function dateLabel(value: string): string {
   }).format(new Date(value));
 }
 
+// Значок состояния задачи в карточке: форма отличается, а не только цвет.
+const statusIcons: Record<string, ReactNode> = {
+  assigned: (
+    <>
+      <rect x="5" y="4" width="14" height="16" rx="3" />
+      <path d="M9 9h6M9 13h6M9 17h3" />
+    </>
+  ),
+  in_progress: <path d="M13 3 5 14h6l-1 7 8-11h-6z" />,
+  in_review: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
+  needs_work: (
+    <path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5" />
+  ),
+  accepted: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="m8.5 12 2.5 2.5 4.5-5" />
+    </>
+  ),
+  cancelled: <path d="M6 6l12 12M18 6 6 18" />,
+};
+
 function TaskListContent() {
   const { confirmLeave, loseAccess } = useAuthorizedSession();
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -152,24 +179,25 @@ function TaskListContent() {
           <h2 id="tasks-title">Назначенные задачи</h2>
           <p>Ваши текущие и завершённые назначения.</p>
         </div>
-        <label className="tasks-filter">
-          <span>Статус</span>
-          <select
-            value={status}
-            onChange={(event) => {
-              if (!confirmLeave()) return;
-              setStatus(event.target.value as StatusFilter);
-              setSelectedId(null);
-            }}
-          >
-            <option value="all">Все</option>
-            {Object.entries(statusNames).map(([value, label]) => (
-              <option value={value} key={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+      </div>
+      <div className="tasks-seg" role="group" aria-label="Статус">
+        {[["all", "Все"], ...Object.entries(statusNames)].map(
+          ([value, label]) => (
+            <button
+              type="button"
+              key={value}
+              className="tasks-seg-item"
+              aria-pressed={status === value}
+              onClick={() => {
+                if (!confirmLeave()) return;
+                setStatus(value as StatusFilter);
+                setSelectedId(null);
+              }}
+            >
+              {label}
+            </button>
+          ),
+        )}
       </div>
 
       {tasks.isPending ? (
@@ -216,21 +244,37 @@ function TaskListContent() {
                       setSelectedId(selectedId === task.id ? null : task.id);
                   }}
                 >
+                  <span
+                    className={`task-tile task-tile--${task.status}`}
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24">{statusIcons[task.status]}</svg>
+                  </span>
                   <span className="tasks-row-main">
-                    <span className="tasks-row-tags">
-                      <span className={`task-chip task-chip--${task.priority}`}>
-                        {priorityNames[task.priority]}
-                      </span>
-                      <span className="task-chip task-chip--status">
-                        {statusNames[task.status]}
-                      </span>
-                    </span>
                     <strong>{task.title}</strong>
-                    <span>до {dateLabel(task.dueAt)}</span>
+                  </span>
+                  <span className="tasks-row-meta">
+                    <span
+                      className={`task-chip task-chip--status task-chip--${task.status}`}
+                    >
+                      {statusNames[task.status]}
+                    </span>
+                    <span className="tasks-row-due">
+                      до {dateLabel(task.dueAt)}
+                    </span>
                   </span>
                   <span className="tasks-row-fund">
-                    <strong>{task.fundXp} XP</strong>
-                    <span>{task.fundPoints} баллов</span>
+                    <span className="task-chip task-chip--xp">
+                      {task.fundXp} XP
+                    </span>
+                    <span className="task-chip task-chip--points">
+                      {task.fundPoints} баллов
+                    </span>
+                    <span
+                      className={`task-chip task-chip--priority task-chip--${task.priority}`}
+                    >
+                      {priorityNames[task.priority]}
+                    </span>
                   </span>
                 </button>
               </li>
@@ -398,6 +442,13 @@ function TaskWorkspace() {
     },
     10,
   );
+  // Раздел сообщает странице, какой экран открыт: «Главная» получает крупную шапку.
+  useEffect(() => {
+    document.documentElement.dataset.view = view;
+    return () => {
+      delete document.documentElement.dataset.view;
+    };
+  }, [view]);
   // Лента служебных разделов прокручивается: открытый раздел должен быть виден в ней.
   useEffect(() => {
     document

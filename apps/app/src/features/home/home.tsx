@@ -14,10 +14,24 @@ import {
 import "./home.css";
 
 const number = (value: number) => new Intl.NumberFormat("ru-RU").format(value);
-const dueLabel = (value: string) =>
+const dayLabel = (value: string) =>
   new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(
     new Date(value),
   );
+const timeLabel = (value: string) =>
+  new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+const sameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+// «Сегодня до 18:00» или «до 10 окт., 18:00»: срок читается без расчёта в уме.
+const dueText = (value: string) =>
+  sameDay(new Date(value), new Date())
+    ? `Сегодня до ${timeLabel(value)}`
+    : `до ${dayLabel(value)}, ${timeLabel(value)}`;
 const asOfLabel = (value: string) =>
   new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
@@ -25,11 +39,6 @@ const asOfLabel = (value: string) =>
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
-const priorityNames = {
-  critical: "Критический",
-  high: "Высокий",
-  normal: "Штатный",
-} as const;
 const statusNames = {
   assigned: "Назначена",
   in_progress: "В работе",
@@ -115,41 +124,61 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
           </button>
         </p>
       ) : null}
-      <h3 className="home-next-title">Ваш следующий результат</h3>
-      {tasks.isPending ? (
-        <p role="status">Загружаем задачи…</p>
-      ) : tasks.isError && !tasks.data ? (
-        <p className="tasks-state" role="alert">
-          Задачи недоступны. Откройте раздел «Задачи» и повторите.
-        </p>
-      ) : next && isOpen(next.status) ? (
-        <button
-          type="button"
-          className="tasks-row home-next"
-          onClick={() => onNavigate("tasks")}
-        >
-          <span className="tasks-row-main">
-            <span className="tasks-row-tags">
-              <span className={`task-chip task-chip--${next.priority}`}>
-                {priorityNames[next.priority]}
-              </span>
-              <span className="task-chip task-chip--status">
-                {statusNames[next.status]}
-              </span>
+
+      <section className="home-next" aria-labelledby="home-next-title">
+        <div className="home-next-top">
+          <h3 id="home-next-title">Ближайший срок</h3>
+          {next && isOpen(next.status) ? (
+            <span
+              className={`task-chip task-chip--status task-chip--${next.status}`}
+            >
+              {statusNames[next.status]}
             </span>
-            <strong>{next.title}</strong>
-            <span>до {dueLabel(next.dueAt)}</span>
-          </span>
-          <span className="tasks-row-fund">
-            <strong>{number(next.fundXp)} XP</strong>
-            <span>{number(next.fundPoints)} баллов</span>
-          </span>
-        </button>
-      ) : (
-        <p className="tasks-state">
-          Открытых задач нет. Новые назначения появятся в разделе «Задачи».
-        </p>
-      )}
+          ) : null}
+        </div>
+        {tasks.isPending ? (
+          <p role="status">Загружаем задачи…</p>
+        ) : tasks.isError && !tasks.data ? (
+          <p role="alert">
+            Задачи недоступны. Откройте раздел «Задачи» и повторите.
+          </p>
+        ) : next && isOpen(next.status) ? (
+          <>
+            <strong className="home-next-name">{next.title}</strong>
+            <p className="home-next-due">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 7.5V12l3 2" />
+              </svg>
+              {dueText(next.dueAt)}
+            </p>
+            <button
+              type="button"
+              className="access-button home-next-cta"
+              onClick={() => onNavigate("tasks")}
+            >
+              Открыть задачу
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="home-next-empty">
+              Открытых задач нет. Новые назначения появятся в разделе «Задачи».
+            </p>
+            <button
+              type="button"
+              className="access-button access-button--quiet home-next-cta"
+              onClick={() => onNavigate("tasks")}
+            >
+              Все задачи
+            </button>
+          </>
+        )}
+      </section>
+
       {data ? (
         <>
           <div className="home-stats">
@@ -157,7 +186,7 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
               {level ? (
                 <>
                   {/* Кольцо дублирует полосу прогресса ниже и скрыто от
-                    скринридеров; 214 — длина окружности радиуса 34. */}
+                      скринридеров; 214 — длина окружности радиуса 34. */}
                   <div className="home-ring" aria-hidden="true">
                     <svg viewBox="0 0 80 80">
                       <defs>
@@ -194,30 +223,24 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
                     </svg>
                     <strong>{level.level}</strong>
                   </div>
-                  <div className="home-level-body">
-                    <p className="home-level-top">
-                      <span>Уровень {level.level}</span>
-                      <b>{number(data.balance.lifetimeXp)} XP</b>
-                    </p>
-                    {level.nextLevelXp !== null ? (
-                      <>
-                        <progress
-                          aria-label={`Прогресс до уровня ${level.level + 1}`}
-                          max={level.spanXp!}
-                          value={level.progressXp}
-                        />
-                        <p className="home-caption">
-                          {number(level.progressXp)} / {number(level.spanXp!)}{" "}
-                          XP · до уровня {level.level + 1} ещё{" "}
-                          {number(level.remainingXp)}
-                        </p>
-                      </>
-                    ) : (
+                  <p className="home-level-top">
+                    <b>{number(data.balance.lifetimeXp)} XP</b>
+                  </p>
+                  {level.nextLevelXp !== null ? (
+                    <>
+                      <progress
+                        aria-label={`Прогресс до уровня ${level.level + 1}`}
+                        max={level.spanXp!}
+                        value={level.progressXp}
+                      />
                       <p className="home-caption">
-                        Достигнут последний уровень.
+                        {number(level.remainingXp)} XP до уровня{" "}
+                        {level.level + 1}
                       </p>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <p className="home-caption">Достигнут последний уровень.</p>
+                  )}
                 </>
               ) : (
                 <p className="home-level-top">
@@ -226,31 +249,38 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
                 </p>
               )}
             </div>
-            <dl className="ledger-balances home-balances home-points">
-              <div className="home-balance-points">
-                <dt>доступно баллов</dt>
-                <dd>{number(data.balance.availablePoints)}</dd>
-              </div>
-            </dl>
-          </div>
-          <dl className="ledger-balances home-balances home-facts">
-            {season.data?.self ? (
-              <div>
-                <dt>XP за {season.data.season}</dt>
-                <dd>{number(season.data.self.xp)}</dd>
-              </div>
-            ) : null}
-            <div>
-              <dt>в резерве по заявкам</dt>
-              <dd>{number(data.balance.reservedPoints)}</dd>
+            <div className="home-points-card">
+              <span className="home-points-label">Баллы</span>
+              <strong aria-label="Доступно баллов">
+                {number(data.balance.availablePoints)}
+              </strong>
+              <span className="home-caption">
+                {number(data.balance.reservedPoints)} в резерве
+              </span>
             </div>
-          </dl>
+          </div>
+          {season.data?.self ? (
+            <dl className="home-season">
+              <dt>XP за {season.data.season}</dt>
+              <dd>{number(season.data.self.xp)}</dd>
+            </dl>
+          ) : null}
           <p className="home-caption">Данные на {asOfLabel(data.asOf)}</p>
         </>
       ) : null}
+
       {others.length > 0 ? (
         <div className="home-more">
-          <h3 className="home-next-title">Ещё в работе</h3>
+          <div className="home-more-head">
+            <h3>Ещё в работе</h3>
+            <button
+              type="button"
+              className="home-more-all"
+              onClick={() => onNavigate("tasks")}
+            >
+              Все задачи
+            </button>
+          </div>
           <ul className="home-more-list">
             {others.map((task) => (
               <li key={task.id}>
@@ -261,34 +291,19 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
                 >
                   <span>
                     <strong>{task.title}</strong>
-                    <span>
-                      {statusNames[task.status as OpenStatus]} · до{" "}
-                      {dueLabel(task.dueAt)}
-                    </span>
+                    <span>{dueText(task.dueAt)}</span>
                   </span>
-                  <b>{number(task.fundXp)} XP</b>
+                  <span
+                    className={`task-chip task-chip--status task-chip--${task.status}`}
+                  >
+                    {statusNames[task.status as OpenStatus]}
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
         </div>
       ) : null}
-      <div className="home-links">
-        <button
-          type="button"
-          className="tasks-action"
-          onClick={() => onNavigate("tasks")}
-        >
-          Все задачи
-        </button>
-        <button
-          type="button"
-          className="tasks-action"
-          onClick={() => onNavigate("ledger")}
-        >
-          Журнал начислений
-        </button>
-      </div>
     </section>
   );
 }

@@ -38,6 +38,18 @@ async function load(
   }
   return leaderboardResponseSchema.parse(await response.json());
 }
+// Инициалы по первым буквам слов: «И. Крылов» → «ИК», одно слово → две буквы.
+const initials = (name: string) => {
+  const words = name.match(/[\p{L}\p{N}]+/gu) ?? [];
+  const letters =
+    words.length > 1
+      ? words
+          .slice(0, 2)
+          .map((word) => word[0])
+          .join("")
+      : (words[0] ?? "").slice(0, 2);
+  return letters.toUpperCase();
+};
 const number = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
 const date = (s: string) =>
   new Intl.DateTimeFormat("ru-RU", {
@@ -206,7 +218,7 @@ export function Leaderboard() {
                           }
                         >
                           <span className="ranking-podium-badge">
-                            {item.displayName.trim().slice(0, 2).toUpperCase()}
+                            {initials(item.displayName)}
                           </span>
                           <span>{number(item.rank)} место</span>
                           <strong>{item.displayName}</strong>
