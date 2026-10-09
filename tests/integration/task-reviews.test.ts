@@ -564,6 +564,10 @@ const url = process.env.TEST_DATABASE_URL;
             }),
         );
         await participantPage.goto(origin);
+        // Участник открывается на «Главной»; задачи — в отдельной вкладке.
+        await participantPage
+          .getByRole("button", { name: "Мои задачи", exact: true })
+          .click();
         await participantPage
           .getByRole("button", {
             name: new RegExp(`Synthetic review task ${taskId}`),

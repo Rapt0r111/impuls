@@ -222,6 +222,10 @@ integration("F03 real HTTP adapter and PostgreSQL", () => {
         }),
       );
       await page.goto(origin!, { waitUntil: "domcontentloaded" });
+      // Участник открывается на «Главной»; задачи — в отдельной вкладке.
+      await page
+        .getByRole("button", { name: "Мои задачи", exact: true })
+        .click();
       await page
         .getByText(`Synthetic HTTP task ${id}`, { exact: true })
         .click();

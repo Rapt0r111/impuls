@@ -9,7 +9,7 @@ import {
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { Pool } from "pg";
-import { mockHomeFallback } from "./home-fallback.mjs";
+import { leaveHome, mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const managerId = "11111111-1111-4111-8111-111111111111";
@@ -531,7 +531,6 @@ async function dbFlow() {
         )
           mutationResponses.push(response);
       });
-      await mockHomeFallback(page);
       await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
         route.fulfill({
           contentType: "application/javascript",
@@ -678,6 +677,7 @@ async function dbFlow() {
       await page
         .getByRole("heading", { name: "Доступ подтверждён", exact: true })
         .waitFor();
+      await leaveHome(page);
       const assignedTask = page.getByRole("button", {
         name: new RegExp(dbTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
       });

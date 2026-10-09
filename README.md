@@ -78,6 +78,8 @@ SQL-проверка подтвердила права `impuls_app`, закры�
 
 ## Проверки
 
+Локальная PostgreSQL для проверок БД: `bun run db:local up` создаёт отдельный кластер в `.local/pg` (127.0.0.1:55432, пользователь `impuls_test`, trust только на loopback, база `impuls_f03`), создаёт роли `anon`/`authenticated`/`service_role` без входа (их наличие в Supabase проверяют тесты) и применяет все миграции. Дальше: `down` — остановить, `reset` — пересоздать кластер с нуля, `status`, `env` — вывести `TEST_DATABASE_URL`. Нужны серверные бинарники PostgreSQL 18 (`PG_BIN`, по умолчанию `C:/Program Files/PostgreSQL/18/bin`); системная служба PostgreSQL не используется. CI работает на PostgreSQL 17.6, локальная проверка на 18 её не заменяет.
+
 Для локальной проверки восстановления (§§ 8/12 плана):
 
 ```powershell

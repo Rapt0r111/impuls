@@ -348,6 +348,10 @@ const origin = process.env.TEST_APP_ORIGIN;
               }),
           );
           await page.goto(origin!);
+          // Участник открывается на «Главной»; задачи — в отдельной вкладке.
+          await page
+            .getByRole("button", { name: "Мои задачи", exact: true })
+            .click();
           await page
             .getByRole("button", { name: /Synthetic history task 0/ })
             .click();

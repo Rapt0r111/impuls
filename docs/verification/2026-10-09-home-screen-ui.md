@@ -19,3 +19,10 @@
 
 - Браузерные сценарии с PostgreSQL (`test:task-slice` и др.): локальной БД в среде нет (`pg_isready`/`postgres` отсутствуют), `TEST_DATABASE_URL` не задан.
 - Физический Telegram на Android/iOS; удалённый CI; P-01…P-06 остаются решениями владельца. Статус R1 и F01–F08 этой записью не меняется.
+
+## Локальная PostgreSQL и проверки на БД (09.10.2026)
+
+- `bun run db:local up` (`scripts/local-db.mjs`): отдельный кластер PostgreSQL 18 в `.local/pg`, 127.0.0.1:55432, миграции 000001–000031 применены; повторный запуск — «No migrations to run».
+- `bun run test:task-slice` с `TEST_DATABASE_URL`/`PG_BIN` — код 0: Vitest 47 файлов, 378 тестов прошли, 4 пропущены; затем все браузерные сценарии (в т.ч. task-management 30, rewards 29, reward-decisions 30, audit 28).
+- Прогон выявил регрессию моей «Главной»: три встроенных браузерных теста и `task-management.mjs` не переходили во вкладку «Мои задачи», а запасной ответ «Главной» перехватывал настоящий `POST /api/v1/tasks`. Исправлено в тестах (переход через `leaveHome`/клик, без моков в реальном потоке).
+- Не проверено: PostgreSQL 17.6 как в CI, удалённый CI, устройства Telegram.
