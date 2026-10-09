@@ -32,6 +32,22 @@ export async function mockHomeFallback(page) {
     (url) => url.pathname === "/api/v1/tasks",
     (route) => json(route, 200, { items: [], nextCursor: null }),
   );
+  await page.route(
+    (url) => url.pathname === "/api/v1/leaderboard",
+    (route) =>
+      json(route, 200, {
+        mode: "synthetic",
+        timeZone: "Europe/Moscow",
+        season: "2026-10",
+        scopes: [],
+        scope: null,
+        self: null,
+        items: [],
+        nextCursor: null,
+        revision: null,
+        updatedAt: at,
+      }),
+  );
 }
 
 // Участник открывается на «Главной», проверяющий — на очереди проверки:

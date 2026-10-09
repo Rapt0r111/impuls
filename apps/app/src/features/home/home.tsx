@@ -1,6 +1,9 @@
 "use client";
 
-import { taskListResponseSchema } from "@impuls/contracts";
+import {
+  leaderboardResponseSchema,
+  taskListResponseSchema,
+} from "@impuls/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
@@ -15,6 +18,13 @@ const dueLabel = (value: string) =>
   new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(
     new Date(value),
   );
+const asOfLabel = (value: string) =>
+  new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 const priorityNames = {
   critical: "Критический",
   high: "Высокий",
@@ -46,13 +56,28 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
       return taskListResponseSchema.parse(await response.json());
     },
   });
+  // Сезонный XP — собственная строка рейтинга текущего месяца. Рейтинг может
+  // быть выключен (404) или недоступен: тогда показатель просто не выводится.
+  const season = useQuery({
+    queryKey: ["home-season"],
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const response = await fetch("/api/v1/leaderboard?limit=1", {
+        signal,
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!response.ok) throw new ProfileError(response.status);
+      return leaderboardResponseSchema.parse(await response.json());
+    },
+  });
   useEffect(() => {
-    for (const error of [profile.error, tasks.error])
+    for (const error of [profile.error, tasks.error, season.error])
       if (error instanceof ProfileError && [401, 403].includes(error.status)) {
         loseAccess(error.status);
         return;
       }
-  }, [profile.error, tasks.error, loseAccess]);
+  }, [profile.error, tasks.error, season.error, loseAccess]);
   const data = profile.data;
   const level = data?.progression.level;
   // Ближайший срок среди задач, которые ещё ждут результата участника.
@@ -110,6 +135,12 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
             )}
           </div>
           <dl className="ledger-balances home-balances">
+            {season.data?.self ? (
+              <div>
+                <dt>XP за {season.data.season}</dt>
+                <dd>{number(season.data.self.xp)}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>доступно баллов</dt>
               <dd>{number(data.balance.availablePoints)}</dd>
@@ -119,6 +150,7 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
               <dd>{number(data.balance.reservedPoints)}</dd>
             </div>
           </dl>
+          <p className="home-caption">Данные на {asOfLabel(data.asOf)}</p>
         </>
       ) : null}
       <h3 className="home-next-title">Ваш следующий результат</h3>

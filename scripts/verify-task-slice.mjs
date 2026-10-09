@@ -231,6 +231,7 @@ try {
       "tests/integration/profile-migration.test.ts",
     ]);
     await run("tests/browser/profile.mjs");
+    await run("tests/browser/home.mjs");
   } else if (rankingOnly) {
     await run("node_modules/vitest/vitest.mjs", [
       "run",
@@ -275,6 +276,7 @@ try {
     !fulfillmentOnly
   ) {
     await run("tests/browser/profile.mjs");
+    await run("tests/browser/home.mjs");
     await run("tests/browser/audit.mjs");
     await run("tests/browser/rewards.mjs");
     await run("tests/browser/reward-decisions.mjs");
