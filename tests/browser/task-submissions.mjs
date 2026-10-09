@@ -276,12 +276,6 @@ try {
       await page.getByLabel("Отчёт о выполнении", { exact: true }).inputValue(),
       report,
     );
-    page.once("dialog", (dialog) => dialog.dismiss());
-    await page.getByRole("button", { name: "Выйти", exact: true }).click();
-    assert.equal(
-      await page.getByLabel("Отчёт о выполнении", { exact: true }).inputValue(),
-      report,
-    );
     assert.deepEqual(errors, []);
     await page.close({ runBeforeUnload: false });
     scenarios++;

@@ -175,7 +175,7 @@ try {
     const cdp = await context.newCDPSession(page);
     await page.goto(parentOrigin);
     const frame = page.frameLocator("iframe");
-    await frame.getByRole("button", { name: /Выйти|Повторить вход/ }).waitFor();
+    await frame.locator("main.access-screen").waitFor();
     await cdp.send("Network.setCookieControls", {
       enableThirdPartyCookieRestriction: true,
     });
@@ -210,10 +210,23 @@ try {
         "A different top-level site must require its own login",
       );
       await otherPage.close();
-      await frame.getByRole("button", { name: "Выйти", exact: true }).click();
-      await frame
-        .getByRole("heading", { name: "Нет данных запуска Telegram" })
-        .waitFor();
+      // В интерфейсе кнопки выхода нет; маршрут и очистка cookie проверяются запросом.
+      assert.equal(
+        await frame.getByRole("button", { name: "Выйти" }).count(),
+        0,
+      );
+      const current = page
+        .frames()
+        .find((item) => item.url().startsWith(appOrigin));
+      await current.evaluate(
+        (csrfToken) =>
+          fetch("/api/v1/auth/logout", {
+            method: "POST",
+            headers: { "X-CSRF-Token": csrfToken },
+            credentials: "same-origin",
+          }),
+        identity.csrfToken,
+      );
       assert.ok(logoutSeen);
       assert.ok(
         (await context.cookies()).every(

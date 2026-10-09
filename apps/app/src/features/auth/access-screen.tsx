@@ -311,23 +311,6 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
     }
   }
 
-  async function logout() {
-    if (state.kind !== "authorized") return;
-    if (!confirmLeave()) return;
-    reportDirty(false);
-    try {
-      const response = await fetch("/api/v1/auth/logout", {
-        method: "POST",
-        headers: { "X-CSRF-Token": state.data.csrfToken },
-        credentials: "same-origin",
-      });
-      if (response.ok) setState({ kind: "outside" });
-      else setState({ kind: "unavailable" });
-    } catch {
-      setState({ kind: navigator.onLine ? "unavailable" : "offline" });
-    }
-  }
-
   const copy = stateText[state.kind];
   return (
     <>
@@ -352,21 +335,14 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
         className={`access-screen${state.kind === "authorized" ? " access-screen--authorized" : ""}`}
       >
         <div className="access-shell">
-          <header className="access-header">
-            <span className="access-logo" aria-hidden="true">
-              И
-            </span>
-            <span className="access-brand">Импульс</span>
-            {state.kind === "authorized" ? (
-              <button
-                type="button"
-                className="access-logout"
-                onClick={() => void logout()}
-              >
-                Выйти
-              </button>
-            ) : null}
-          </header>
+          {state.kind !== "authorized" ? (
+            <header className="access-header">
+              <span className="access-logo" aria-hidden="true">
+                И
+              </span>
+              <span className="access-brand">Импульс</span>
+            </header>
+          ) : null}
           <section
             className={`access-content${state.kind === "authorized" ? " access-content--authorized" : ""}`}
             aria-labelledby="access-title"

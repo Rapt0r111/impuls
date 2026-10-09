@@ -427,10 +427,10 @@ try {
       .getByText("Просмотр журнала действий", { exact: true })
       .waitFor();
     await f.page.getByText("Полномочия", { exact: true }).press("Enter");
-    assert.ok(
-      await f.page
-        .getByRole("button", { name: "Выйти", exact: true })
-        .isVisible(),
+    assert.equal(
+      await f.page.getByRole("button", { name: "Выйти", exact: true }).count(),
+      0,
+      "кнопки выхода в интерфейсе нет",
     );
     await capture(f, "audit-all-permissions-320.png");
     await close(f);
