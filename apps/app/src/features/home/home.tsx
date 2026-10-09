@@ -117,27 +117,66 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
           <div className="home-level">
             {level ? (
               <>
-                <p className="home-level-top">
-                  <strong>{level.level}</strong>
-                  <span>уровень</span>
-                  <b>{number(data.balance.lifetimeXp)} XP</b>
-                </p>
-                {level.nextLevelXp !== null ? (
-                  <>
-                    <progress
-                      aria-label={`Прогресс до уровня ${level.level + 1}`}
-                      max={level.spanXp!}
-                      value={level.progressXp}
+                {/* Кольцо дублирует полосу прогресса ниже и скрыто от
+                    скринридеров; 214 — длина окружности радиуса 34. */}
+                <div className="home-ring" aria-hidden="true">
+                  <svg viewBox="0 0 80 80">
+                    <defs>
+                      <linearGradient
+                        id="home-ring-gradient"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                      >
+                        <stop offset="0" stopColor="#9af7de" />
+                        <stop offset="1" stopColor="#2fc9a2" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      className="home-ring-track"
+                      cx="40"
+                      cy="40"
+                      r="34"
                     />
-                    <p className="home-caption">
-                      {number(level.progressXp)} / {number(level.spanXp!)} XP ·
-                      до уровня {level.level + 1} ещё{" "}
-                      {number(level.remainingXp)}
-                    </p>
-                  </>
-                ) : (
-                  <p className="home-caption">Достигнут последний уровень.</p>
-                )}
+                    <circle
+                      className="home-ring-value"
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      transform="rotate(-90 40 40)"
+                      style={{
+                        strokeDashoffset:
+                          level.nextLevelXp !== null && level.spanXp
+                            ? 214 * (1 - level.progressXp / level.spanXp)
+                            : 0,
+                      }}
+                    />
+                  </svg>
+                  <strong>{level.level}</strong>
+                </div>
+                <div className="home-level-body">
+                  <p className="home-level-top">
+                    <span>Уровень {level.level}</span>
+                    <b>{number(data.balance.lifetimeXp)} XP</b>
+                  </p>
+                  {level.nextLevelXp !== null ? (
+                    <>
+                      <progress
+                        aria-label={`Прогресс до уровня ${level.level + 1}`}
+                        max={level.spanXp!}
+                        value={level.progressXp}
+                      />
+                      <p className="home-caption">
+                        {number(level.progressXp)} / {number(level.spanXp!)} XP
+                        · до уровня {level.level + 1} ещё{" "}
+                        {number(level.remainingXp)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="home-caption">Достигнут последний уровень.</p>
+                  )}
+                </div>
               </>
             ) : (
               <p className="home-level-top">
@@ -153,7 +192,7 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
                 <dd>{number(season.data.self.xp)}</dd>
               </div>
             ) : null}
-            <div>
+            <div className="home-balance-points">
               <dt>доступно баллов</dt>
               <dd>{number(data.balance.availablePoints)}</dd>
             </div>

@@ -36,7 +36,7 @@
 .task-mgmt__item-meta {
   margin: 6px 0 0;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .task-mgmt__form,
@@ -68,7 +68,7 @@
   border-radius: 5px;
   color: var(--color-gold);
   background: #3b3323;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -89,7 +89,7 @@
   min-width: 0;
   gap: 5px;
   color: var(--color-muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -137,7 +137,7 @@
   color: var(--color-ink);
   background: var(--color-panel);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.45;
   text-align: center;
@@ -237,7 +237,7 @@
   padding: 12px 0;
   border-top: 1px solid var(--color-line);
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 

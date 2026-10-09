@@ -12,7 +12,7 @@
 .notification-asof,
 .notification-note {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 .notification-intro {
@@ -94,5 +94,5 @@
 .notification-identity code {
   display: block;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: 14px;
 }

@@ -1,14 +1,57 @@
-/* Главный экран по прототипу R0: уровень и опыт, баллы, ближайшая задача. */
+/* Главный экран: уровень и опыт, баллы, ближайшая задача. */
 .home-level {
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 22px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02)),
+    var(--color-panel);
+  box-shadow: 0 12px 26px -16px rgb(0 0 0 / 0.8);
+}
+.home-ring {
+  position: relative;
+  flex: none;
+  width: 76px;
+  height: 76px;
+}
+.home-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+}
+.home-ring-track {
+  stroke: rgb(255 255 255 / 0.1);
+  stroke-width: 7;
+}
+.home-ring-value {
+  stroke: url(#home-ring-gradient);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 214;
+  animation: ring-fill 1.5s 0.35s var(--ease-out) both;
+}
+.home-ring strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+.home-level-body {
+  flex: 1;
+  min-width: 0;
 }
 .home-level-top {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 10px;
-  margin: 0 0 14px;
+  margin: 0 0 8px;
 }
 .home-level-top strong {
   font-size: 56px;
@@ -21,40 +64,103 @@
 }
 .home-level-top b {
   margin-inline-start: auto;
-  color: var(--color-gold);
+  color: var(--color-ink);
+  font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
+/* Полоса остаётся в разметке для скринридеров; видимый прогресс — кольцо. */
 .home-level progress {
-  display: block;
-  width: 100%;
-  height: 8px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
   overflow: hidden;
-  border-radius: 4px;
-  accent-color: var(--color-mint);
-  background: var(--color-panel);
-}
-.home-level progress::-webkit-progress-bar {
-  background: var(--color-panel);
-}
-.home-level progress::-webkit-progress-value,
-.home-level progress::-moz-progress-bar {
-  background: var(--color-mint);
+  clip-path: inset(50%);
 }
 .home-caption {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
+.home-balances + .home-caption {
+  margin-top: 10px;
+}
+/* Баллы и сезонный XP — отдельные плитки; доступные баллы золотые со свечением. */
 .home-balances {
-  margin-top: 0;
-  border-top: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  gap: 12px;
+}
+.home-balances > div {
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 112px;
+  padding: 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 22px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02)),
+    var(--color-panel);
+  box-shadow: 0 12px 26px -16px rgb(0 0 0 / 0.8);
+}
+.home-balances dt {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.home-balances dd {
+  font-size: 34px;
+}
+.home-balances > div.home-balance-points {
+  border-color: rgb(246 208 131 / 0.3);
+  background:
+    linear-gradient(
+      150deg,
+      rgb(246 208 131 / 0.2),
+      rgb(246 208 131 / 0.03) 60%
+    ),
+    var(--color-panel);
+}
+.home-balances > div.home-balance-points dd {
+  color: var(--color-gold);
+  text-shadow: 0 0 28px rgb(246 208 131 / 0.45);
 }
 .home-next-title {
-  margin: 24px 0 4px;
+  margin: 24px 0 12px;
   font-size: 18px;
 }
+/* Ближайшая задача — главная карточка экрана: орбита вокруг угла. */
 .home-next {
-  border-bottom: 1px solid var(--color-line);
+  position: relative;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  min-height: 112px;
+  border: 1px solid rgb(112 225 194 / 0.3);
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      150deg,
+      rgb(112 225 194 / 0.24),
+      rgb(112 225 194 / 0.04) 58%
+    ),
+    var(--color-panel);
+  box-shadow: 0 12px 26px -16px rgb(0 0 0 / 0.8);
+}
+.home-next::before {
+  position: absolute;
+  top: -70px;
+  right: -64px;
+  width: 190px;
+  height: 190px;
+  border: 1.2px dashed rgb(112 225 194 / 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: spin 48s linear infinite;
+  content: "";
+}
+.home-next .tasks-row-main,
+.home-next .tasks-row-fund {
+  position: relative;
 }
 .home-links {
   display: flex;

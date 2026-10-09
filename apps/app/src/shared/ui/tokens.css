@@ -3,11 +3,24 @@
   --color-panel: #11262f;
   --color-line: #29404a;
   --color-ink: #edf5f2;
-  --color-muted: #acc0c6;
+  --color-muted: #b2c6cc;
   --color-mint: #70e1c2;
   --color-mint-hover: #a1efd9;
-  --color-gold: #f0ca7a;
+  --color-mint-deep: #34cba3;
+  --color-gold: #f6d083;
   --color-panel-hover: #203c47;
   --color-data: #5ba8ff;
   --color-error: #ffb9a9;
+
+  /* Стеклянные поверхности: слой света поверх панели и мягкая граница. */
+  --color-edge: rgb(255 255 255 / 0.09);
+  --color-glass: rgb(16 37 46 / 0.84);
+  --color-mint-tint: rgb(112 225 194 / 0.15);
+  --color-gold-tint: rgb(246 208 131 / 0.15);
+  --color-blue-tint: rgb(140 196 255 / 0.15);
+  --color-error-tint: rgb(255 185 169 / 0.15);
+
+  /* Кривые и длительности движения. */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-pop: cubic-bezier(0.16, 1, 0.3, 1);
 }

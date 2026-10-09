@@ -16,7 +16,7 @@
 .audit-intro {
   margin: 8px 0 0;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .audit-filters .tasks-filter {
   min-width: 0;
@@ -44,7 +44,7 @@
 .audit-note,
 .audit-meta {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .audit-list {
   list-style: none;
@@ -93,7 +93,7 @@
   font-variant-numeric: tabular-nums;
 }
 .audit-ids {
-  font-size: 13px;
+  font-size: 14px;
 }
 @media (max-width: 480px) {
   .audit-filters,

@@ -462,13 +462,11 @@ function TaskWorkspace() {
       }}
     >
       {tabIcons[item.id] ? (
-        <svg
-          className="workspace-tab-icon"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          {tabIcons[item.id]}
-        </svg>
+        <span className="workspace-tab-pill" aria-hidden="true">
+          <svg className="workspace-tab-icon" viewBox="0 0 24 24">
+            {tabIcons[item.id]}
+          </svg>
+        </span>
       ) : null}
       <span>{item.label}</span>
     </button>

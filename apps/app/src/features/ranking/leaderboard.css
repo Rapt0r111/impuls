@@ -49,7 +49,7 @@
   text-align: left;
   padding-top: 16px;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .ranking-table th,
 .ranking-table td {
@@ -60,7 +60,7 @@
 .ranking-table thead th {
   color: var(--color-muted);
   font-weight: 400;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
 }
 .ranking-table th:first-child,
@@ -86,14 +86,14 @@
   font-weight: 700;
 }
 .ranking-own-row {
-  background: var(--color-panel);
+  background: rgb(112 225 194 / 0.14);
 }
 .ranking-you {
   display: block;
   margin-top: 4px;
   color: var(--color-mint);
   font-weight: 400;
-  font-size: 13px;
+  font-size: 14px;
 }
 @media (max-width: 480px) {
   .ranking-filters {
@@ -112,7 +112,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
-  gap: 8px;
+  gap: 10px;
   margin: 24px 0 8px;
   padding: 0;
   list-style: none;
@@ -124,32 +124,48 @@
   gap: 4px;
   min-width: 0;
   padding: 16px 6px 14px;
-  border-radius: 12px 12px 0 0;
-  background: var(--color-panel);
+  border-radius: 18px 18px 8px 8px;
+  background: linear-gradient(
+    180deg,
+    rgb(220 232 235 / 0.28),
+    rgb(220 232 235 / 0.05)
+  );
   color: var(--color-muted);
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
+  transform-origin: 50% 100%;
+  animation: podium-grow 0.8s 0.15s var(--ease-out) both;
 }
-.ranking-podium-first {
-  padding-block: 28px 16px;
-  background: #24352f;
+.ranking-podium li.ranking-podium-first {
+  padding-block: 30px 16px;
+  background: linear-gradient(
+    180deg,
+    rgb(246 208 131 / 0.48),
+    rgb(246 208 131 / 0.07)
+  );
 }
 .ranking-podium-badge {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   place-items: center;
-  border-radius: 12px;
-  background: #234a4b;
-  color: var(--color-mint);
-  font-size: 13px;
-  font-weight: 800;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.12);
+  color: #e6eff1;
+  font-size: 15px;
+  font-weight: 700;
+  animation: pop 0.6s 0.35s var(--ease-pop) both;
+}
+.ranking-podium-first .ranking-podium-badge {
+  background: linear-gradient(145deg, #f9d98f, #d99f3c);
+  color: #3a2706;
+  box-shadow: 0 0 30px -4px rgb(246 208 131 / 0.7);
 }
 .ranking-podium strong {
   max-width: 100%;
   overflow: hidden;
   color: var(--color-ink);
-  font-size: 13px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -157,4 +173,10 @@
   color: var(--color-gold);
   font-size: 22px;
   font-variant-numeric: tabular-nums;
+}
+@keyframes podium-grow {
+  from {
+    opacity: 0;
+    transform: scaleY(0.4);
+  }
 }

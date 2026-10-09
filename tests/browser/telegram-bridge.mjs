@@ -304,7 +304,7 @@ try {
     });
     // Нижняя панель занимает 76 px сверх прежнего нижнего отступа 50 px.
     assert.deepEqual(layout, {
-      padding: ["72px", "30px", "126px", "30px"],
+      padding: ["72px", "30px", "146px", "30px"],
       minHeight: "740px",
       colorScheme: "dark",
       overflow: false,
