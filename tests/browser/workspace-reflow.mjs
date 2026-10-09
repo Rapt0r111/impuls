@@ -352,11 +352,11 @@ async function inspect(page) {
       const rect = el.getBoundingClientRect();
       if (!rect.width || !rect.height) continue;
       const name = `${el.tagName.toLowerCase()}.${el.className}`;
-      // Служебные разделы — одна строка с горизонтальной прокруткой: сама лента
+      // Служебные разделы и фильтр статуса — строки с горизонтальной прокруткой: сама лента
       // обязана помещаться в экран, а её чипы могут уходить за край.
       if (
         (rect.left < -1 || rect.right > innerWidth + 1) &&
-        !el.closest(".workspace-nav-operations .workspace-tab")
+        !el.closest(".workspace-nav-operations .workspace-tab, .tasks-seg")
       )
         outside.push(name);
       if (
