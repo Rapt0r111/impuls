@@ -49,7 +49,7 @@ export async function GET(
       path.data.id,
       {
         ...query.data,
-        enabled: process.env.SYNTHETIC_ADMIN_CATALOG_ENABLED === "true",
+        enabled: process.env.ADMIN_CATALOG_ENABLED === "true",
       },
     );
     if (result.kind === "unauthorized")

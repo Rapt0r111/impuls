@@ -105,10 +105,10 @@ export async function handleCatalogPublication(
       idempotencyKey: headers.data.idempotencyKey,
       requestId: id,
       allowPublication:
-        process.env.SYNTHETIC_ADMIN_CATALOG_ENABLED === "true" &&
+        process.env.ADMIN_CATALOG_ENABLED === "true" &&
         (scheduling
-          ? process.env.SYNTHETIC_CATALOG_SCHEDULING_ENABLED
-          : process.env.SYNTHETIC_CATALOG_PUBLICATION_ENABLED) === "true",
+          ? process.env.CATALOG_SCHEDULING_ENABLED
+          : process.env.CATALOG_PUBLICATION_ENABLED) === "true",
     });
     if (result.kind === "ok")
       return jsonResponse(

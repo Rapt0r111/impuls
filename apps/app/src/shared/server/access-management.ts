@@ -36,8 +36,7 @@ function accessHandler(kind: "grant" | "revoke") {
         sessionHash: hashSessionToken(session.token),
         idempotencyKey,
         requestId: id,
-        allowAccessManagement:
-          process.env.SYNTHETIC_ACCESS_MANAGEMENT_ENABLED === "true",
+        allowAccessManagement: process.env.ACCESS_MANAGEMENT_ENABLED === "true",
       };
       const result = await changeAccess(
         getPool(),

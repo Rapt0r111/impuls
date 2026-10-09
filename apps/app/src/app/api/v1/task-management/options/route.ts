@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const options = await readTaskManagementOptions(
       getPool(),
       session.user.id,
-      { enabled: process.env.SYNTHETIC_TASK_MANAGEMENT_ENABLED === "true" },
+      { enabled: process.env.TASK_MANAGEMENT_ENABLED === "true" },
     );
     return jsonResponse(
       taskManagementOptionsResponseSchema.parse(options),

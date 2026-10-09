@@ -24,15 +24,14 @@ export async function GET(request: NextRequest) {
     const query = accessQuerySchema.safeParse(Object.fromEntries(params));
     if (new Set(keys).size !== keys.length || !query.success)
       return errorResponse(400, "BAD_REQUEST", "Неверная область", id);
-    const manage = process.env.SYNTHETIC_ACCESS_MANAGEMENT_ENABLED === "true";
+    const manage = process.env.ACCESS_MANAGEMENT_ENABLED === "true";
     const result = await readAccess(getPool(), {
       actorId: session.user.id,
       sessionHash: hashSessionToken(session.token),
       scope: query.data.scope,
       enabled: manage,
       allowAccessManagement: manage,
-      allowMemberManagement:
-        process.env.SYNTHETIC_MEMBER_MANAGEMENT_ENABLED === "true",
+      allowMemberManagement: process.env.MEMBER_MANAGEMENT_ENABLED === "true",
     });
     if (result.kind === "unauthorized")
       return errorResponse(

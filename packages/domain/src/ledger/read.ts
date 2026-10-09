@@ -98,7 +98,7 @@ export async function readAccountLedger(
     ).rows[0];
     const limit = Math.min(50, Math.max(1, options.limit ?? 20));
     const result = await client.query<EntryRow>(
-      `SELECT l.id, l.currency, l.amount, l.kind, coalesce(c.reason,r.reason,CASE WHEN l.kind='reward_reservation' THEN 'Резерв по синтетической заявке' WHEN l.kind IN ('reward_approval','reward_rejection','reward_expiration') THEN d.decision_reason ELSE d.cancellation_reason END) AS reason, l.task_id, l.task_title, l.rule_version, l.season_key, l.time_zone, l.created_at,
+      `SELECT l.id, l.currency, l.amount, l.kind, coalesce(c.reason,r.reason,CASE WHEN l.kind='reward_reservation' THEN 'Резерв по заявке' WHEN l.kind IN ('reward_approval','reward_rejection','reward_expiration') THEN d.decision_reason ELSE d.cancellation_reason END) AS reason, l.task_id, l.task_title, l.rule_version, l.season_key, l.time_zone, l.created_at,
         l.redemption_id,d.title AS reward_title,d.reward_version,l.reserved_delta,
         c.id AS correction_id,l.original_entry_id,c.actor_id,u.display_name AS actor_name
       FROM impuls.ledger_entries l LEFT JOIN impuls.reviews r ON r.id = l.review_id

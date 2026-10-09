@@ -8,7 +8,7 @@
 2. Собран `bun run build:worker` на закреплённых Bun/Node из package.json. Для supervisor запускать непосредственно Node `apps/worker/dist/index.mjs`, чтобы сигнал достигал основного процесса.
 3. Два отдельных процесса и два отдельных environment files: notification process использует current_user `impuls_worker`; expiry process — `impuls_expiry_worker`. NOLOGIN service roles требуют разрешённого provisioning authenticator/member и фактической проверки current_user. Не использовать owner/app credential. Секреты не входят в unit или CLI-аргументы, env files вне репозитория с доступом только оператору/нужному process identity. Приложение не получает worker URL.
 4. Для remote БД проверенный CA в SUPABASE_CA_CERT_B64, отсутствие ssl URL parameters; worker отклоняет неоднозначный TLS URL. Локальный loopback допускается только для synthetic rehearsal. Не печатать environment в shell/systemd diagnostics или отчёт.
-5. Notification env: SYNTHETIC_NOTIFICATIONS_ENABLED=true, SYNTHETIC_RESERVATION_EXPIRY_ENABLED=false. Expiry env: наоборот. WORKER_DATABASE_URL задаётся отдельно; WORKER_POLL_INTERVAL_MS=5000 — технический default, диапазон 1000–60000. Не задавать Bot token: transport — симуляция.
+5. Notification env: SYNTHETIC_NOTIFICATIONS_ENABLED=true, RESERVATION_EXPIRY_ENABLED=false. Expiry env: наоборот. WORKER_DATABASE_URL задаётся отдельно; WORKER_POLL_INTERVAL_MS=5000 — технический default, диапазон 1000–60000. Не задавать Bot token: transport — симуляция.
 
 ## Реальная доставка Telegram (ADR-0025)
 

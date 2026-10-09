@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       hashSessionToken(session.token),
       {
         ...query.data,
-        enabled: process.env.SYNTHETIC_NOTIFICATION_STATUS_ENABLED === "true",
+        enabled: process.env.NOTIFICATION_STATUS_ENABLED === "true",
       },
     );
     if (result.kind === "unauthorized")

@@ -23,8 +23,7 @@ import {
 } from "@/shared/server/http";
 
 export const runtime = "nodejs";
-const enabled = () =>
-  process.env.SYNTHETIC_LEDGER_CORRECTIONS_ENABLED === "true";
+const enabled = () => process.env.LEDGER_CORRECTIONS_ENABLED === "true";
 
 export async function GET(request: NextRequest) {
   const id = requestId();

@@ -162,7 +162,7 @@ function ReturnForm({
       setBlocked(true);
       setSuccess(
         "award" in result
-          ? `Результат принят. Начислено ${result.award.xp} XP и ${result.award.points} баллов · синтетический режим. Основание: ${result.review.reason}`
+          ? `Результат принят. Начислено ${result.award.xp} XP и ${result.award.points} баллов. Основание: ${result.review.reason}`
           : `Возврат сохранён. Исполнитель увидит причину: ${result.review.reason}`,
       );
       await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
@@ -282,7 +282,7 @@ function ReturnForm({
             </p>
             <p>
               Версия задачи {item.task.version} · правила{" "}
-              {item.task.ruleVersion} · синтетический режим
+              {item.task.ruleVersion}
             </p>
             <label>
               <input

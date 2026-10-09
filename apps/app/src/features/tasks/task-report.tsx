@@ -155,7 +155,7 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
           {task.latestReview.decision === "accept" && (
             <p className="task-report-success">
               Начислено {task.latestReview.fundXp} XP и{" "}
-              {task.latestReview.fundPoints} баллов · синтетический режим
+              {task.latestReview.fundPoints} баллов
             </p>
           )}
           <p className="tasks-detail-criteria">{task.latestReview.reason}</p>

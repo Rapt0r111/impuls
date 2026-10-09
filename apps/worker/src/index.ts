@@ -39,7 +39,7 @@ async function main() {
   const expiry = args[0]!.startsWith("--expire-");
   const mode = expiry ? "reservation_expiry" : "simulation";
   const enabled = expiry
-    ? process.env.SYNTHETIC_RESERVATION_EXPIRY_ENABLED === "true"
+    ? process.env.RESERVATION_EXPIRY_ENABLED === "true"
     : process.env.SYNTHETIC_NOTIFICATIONS_ENABLED === "true";
   if (!enabled) {
     console.log(JSON.stringify({ mode, status: "disabled" }));

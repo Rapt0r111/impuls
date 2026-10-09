@@ -463,9 +463,9 @@ async function manageTask(
         action,
         input.requestId,
         input.action === "create"
-          ? "Создание синтетической задачи"
+          ? "Создание задачи"
           : input.action === "assign"
-            ? "Назначение синтетической задачи"
+            ? "Назначение задачи"
             : input.data.reason,
         JSON.stringify({
           ...(input.action === "edit"

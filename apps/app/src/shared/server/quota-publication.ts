@@ -99,8 +99,8 @@ export async function handleQuotaPublication(
       idempotencyKey: headers.data.idempotencyKey,
       requestId: id,
       allowPublication:
-        process.env.SYNTHETIC_ADMIN_CATALOG_ENABLED === "true" &&
-        process.env.SYNTHETIC_QUOTA_PUBLICATION_ENABLED === "true",
+        process.env.ADMIN_CATALOG_ENABLED === "true" &&
+        process.env.QUOTA_PUBLICATION_ENABLED === "true",
     });
     if (result.kind === "ok")
       return jsonResponse(

@@ -748,7 +748,7 @@ try {
       width === 320 ? "dirty-nav-dismiss" : "success",
     );
     await page
-      .getByText("только синтетические значения", { exact: false })
+      .getByText("утверждённая экономика пока не задана", { exact: false })
       .waitFor();
     await fillCreateForm(page);
     assert.equal(await page.evaluate(() => window.closingCalls.at(-1)), true);

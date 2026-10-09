@@ -94,8 +94,8 @@ export async function handleCatalogCancellation(
       idempotencyKey: headers.data.idempotencyKey,
       requestId: id,
       allowCancellation:
-        process.env.SYNTHETIC_ADMIN_CATALOG_ENABLED === "true" &&
-        process.env.SYNTHETIC_CATALOG_CANCELLATION_ENABLED === "true",
+        process.env.ADMIN_CATALOG_ENABLED === "true" &&
+        process.env.CATALOG_CANCELLATION_ENABLED === "true",
     });
     if (result.kind === "ok")
       return jsonResponse(

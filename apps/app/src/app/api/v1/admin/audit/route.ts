@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       hashSessionToken(session.token),
       {
         ...query.data,
-        allowSyntheticAudit: process.env.SYNTHETIC_AUDIT_ENABLED === "true",
+        allowSyntheticAudit: process.env.AUDIT_ENABLED === "true",
       },
     );
     if (result.kind === "unauthorized")

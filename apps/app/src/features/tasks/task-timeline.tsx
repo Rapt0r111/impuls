@@ -167,7 +167,7 @@ export function TaskTimeline({ taskId }: { taskId: string }) {
                             <p className="task-history-funds">
                               {item.kind === "accepted" ? "Начислено" : "Фонд"}:{" "}
                               {item.fundXp} XP и {item.fundPoints} баллов ·
-                              правила {item.ruleVersion} · синтетический режим
+                              правила {item.ruleVersion}
                             </p>
                           </li>
                         ))}

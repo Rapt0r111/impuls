@@ -70,7 +70,7 @@ export async function handleTaskManagementMutation(
       sessionHash: hashSessionToken(session.token),
       idempotencyKey: headers.data.idempotencyKey,
       requestId: id,
-      enabled: process.env.SYNTHETIC_TASK_MANAGEMENT_ENABLED === "true",
+      enabled: process.env.TASK_MANAGEMENT_ENABLED === "true",
     };
     let result;
     if (taskId === undefined) {

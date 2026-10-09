@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       hashSessionToken(session.token),
       {
         ...query.data,
-        allowSyntheticRanking: process.env.SYNTHETIC_RANKING_ENABLED === "true",
+        allowSyntheticRanking: process.env.RANKING_ENABLED === "true",
       },
     );
     if (result.kind === "unauthorized")

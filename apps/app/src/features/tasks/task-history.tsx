@@ -150,8 +150,7 @@ export function TaskHistory({ taskId }: { taskId: string }) {
                                 {item.review.decision === "accept" && (
                                   <p className="task-history-funds">
                                     Начислено {item.review.fundXp} XP и{" "}
-                                    {item.review.fundPoints} баллов ·
-                                    синтетический режим
+                                    {item.review.fundPoints} баллов
                                   </p>
                                 )}
                               </div>

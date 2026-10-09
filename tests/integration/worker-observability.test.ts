@@ -309,7 +309,7 @@ const require = createRequire(import.meta.url),
     }
     const cliEnv = (extra: NodeJS.ProcessEnv = {}) => ({
       ...process.env,
-      SYNTHETIC_RESERVATION_EXPIRY_ENABLED: "true",
+      RESERVATION_EXPIRY_ENABLED: "true",
       SYNTHETIC_NOTIFICATIONS_ENABLED: "false",
       WORKER_DATABASE_URL: workerUrl(),
       WORKER_POLL_INTERVAL_MS: "1000",
@@ -326,7 +326,7 @@ const require = createRequire(import.meta.url),
         JSON.parse(
           (
             await cli({
-              SYNTHETIC_RESERVATION_EXPIRY_ENABLED: "false",
+              RESERVATION_EXPIRY_ENABLED: "false",
               WORKER_DATABASE_URL: "invalid",
             })
           ).stdout,

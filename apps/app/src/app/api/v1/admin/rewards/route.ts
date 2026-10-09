@@ -40,17 +40,12 @@ export async function GET(request: NextRequest) {
       hashSessionToken(session.token),
       {
         ...query.data,
-        enabled: process.env.SYNTHETIC_ADMIN_CATALOG_ENABLED === "true",
-        allowCreation:
-          process.env.SYNTHETIC_CATALOG_CREATION_ENABLED === "true",
-        allowPublication:
-          process.env.SYNTHETIC_CATALOG_PUBLICATION_ENABLED === "true",
-        allowCancellation:
-          process.env.SYNTHETIC_CATALOG_CANCELLATION_ENABLED === "true",
-        allowScheduling:
-          process.env.SYNTHETIC_CATALOG_SCHEDULING_ENABLED === "true",
-        allowQuotaPublication:
-          process.env.SYNTHETIC_QUOTA_PUBLICATION_ENABLED === "true",
+        enabled: process.env.ADMIN_CATALOG_ENABLED === "true",
+        allowCreation: process.env.CATALOG_CREATION_ENABLED === "true",
+        allowPublication: process.env.CATALOG_PUBLICATION_ENABLED === "true",
+        allowCancellation: process.env.CATALOG_CANCELLATION_ENABLED === "true",
+        allowScheduling: process.env.CATALOG_SCHEDULING_ENABLED === "true",
+        allowQuotaPublication: process.env.QUOTA_PUBLICATION_ENABLED === "true",
       },
     );
     if (result.kind === "unauthorized")

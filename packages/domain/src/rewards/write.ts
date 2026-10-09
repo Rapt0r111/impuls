@@ -335,9 +335,7 @@ export async function mutateRedemption(
       ],
     );
     const reason =
-      input.action === "reserve"
-        ? "Резерв по синтетической заявке"
-        : input.reason;
+      input.action === "reserve" ? "Резерв по заявке" : input.reason;
     await client.query(
       `INSERT INTO impuls.audit_events(actor_id,redemption_id,action,request_id,reason,diff,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$7)`,
       [

@@ -92,8 +92,8 @@ export async function handleCatalogCreation(request: NextRequest) {
       idempotencyKey: headers.data.idempotencyKey,
       requestId: id,
       allowCreation:
-        process.env.SYNTHETIC_ADMIN_CATALOG_ENABLED === "true" &&
-        process.env.SYNTHETIC_CATALOG_CREATION_ENABLED === "true",
+        process.env.ADMIN_CATALOG_ENABLED === "true" &&
+        process.env.CATALOG_CREATION_ENABLED === "true",
     });
     if (result.kind === "ok")
       return jsonResponse(

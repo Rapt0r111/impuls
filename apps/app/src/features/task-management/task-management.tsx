@@ -277,7 +277,7 @@ export function TaskManagement() {
           return;
         }
         const accepted = window.confirm(
-          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nВерсия правил: ${task.ruleVersion} · версия задачи: ${task.version}\nФонд: ${formatFunds(task)} · синтетические значения.`,
+          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nВерсия правил: ${task.ruleVersion} · версия задачи: ${task.version}\nФонд: ${formatFunds(task)}`,
         );
         if (!accepted) return;
         nextAttempt = {
@@ -384,9 +384,7 @@ export function TaskManagement() {
       setUncertain(false);
       if (currentAttempt.action === "create") {
         setDraft(emptyDraft());
-        setSuccess(
-          `Черновик «${result.task.title}» создан. Значения фондов синтетические.`,
-        );
+        setSuccess(`Черновик «${result.task.title}» создан.`);
       } else if (currentAttempt.action === "assign") {
         setAssignees((current) => ({
           ...current,
@@ -523,8 +521,8 @@ export function TaskManagement() {
                 <span>Черновик</span>
               </div>
               <p className="task-mgmt__note">
-                XP и баллы ниже — только синтетические значения тестового
-                контура. Они не задают утверждённую экономику.
+                XP и баллы задаются выбранной версией правил. Значения версии 1
+                тестовые: утверждённая экономика пока не задана.
               </p>
               <div className="task-mgmt__fields">
                 <label>
@@ -562,7 +560,7 @@ export function TaskManagement() {
                     <option value="">Выберите версию</option>
                     {options.data?.ruleSets.map((rule) => (
                       <option key={rule.id} value={rule.id}>
-                        Версия {rule.version} · синтетические тестовые правила
+                        Версия {rule.version}
                       </option>
                     ))}
                   </select>
@@ -1028,7 +1026,7 @@ function TaskChangeForm({
           : "Отчёты и история сохранятся. Задача выйдет из очереди проверки. Начислений при отмене нет."}{" "}
         Версия {f.expectedVersion} ·{" "}
         {change.task.assignee?.displayName ?? "Исполнитель не назначен"} ·{" "}
-        {formatFunds(change.task)} (синтетические значения).
+        {formatFunds(change.task)}.
       </p>
       {closed ? (
         <p role="alert">

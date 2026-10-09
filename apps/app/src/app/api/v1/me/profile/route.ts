@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       session.user.id,
       hashSessionToken(session.token),
       {
-        allowSyntheticProfile: process.env.SYNTHETIC_PROFILE_ENABLED === "true",
+        allowSyntheticProfile: process.env.PROFILE_ENABLED === "true",
       },
     );
     if (result.kind === "unauthorized")
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest) {
       sessionHash: hashSessionToken(session.token),
       displayName: body.displayName,
       requestId: id,
-      allowSyntheticProfile: process.env.SYNTHETIC_PROFILE_ENABLED === "true",
+      allowSyntheticProfile: process.env.PROFILE_ENABLED === "true",
     });
     if (result.kind === "ok")
       return jsonResponse(

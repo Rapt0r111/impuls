@@ -36,8 +36,7 @@ function memberHandler(kind: "admit" | "remove") {
         sessionHash: hashSessionToken(session.token),
         idempotencyKey,
         requestId: id,
-        allowMemberManagement:
-          process.env.SYNTHETIC_MEMBER_MANAGEMENT_ENABLED === "true",
+        allowMemberManagement: process.env.MEMBER_MANAGEMENT_ENABLED === "true",
       };
       const result = await changeMember(
         getPool(),

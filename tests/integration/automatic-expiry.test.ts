@@ -489,7 +489,7 @@ const require = createRequire(import.meta.url),
         {
           env: {
             ...process.env,
-            SYNTHETIC_RESERVATION_EXPIRY_ENABLED: "true",
+            RESERVATION_EXPIRY_ENABLED: "true",
             SYNTHETIC_NOTIFICATIONS_ENABLED: "false",
             WORKER_DATABASE_URL: workerUrl(),
             WORKER_POLL_INTERVAL_MS: "1000",
@@ -532,7 +532,7 @@ const require = createRequire(import.meta.url),
             env: {
               ...process.env,
               SYNTHETIC_NOTIFICATIONS_ENABLED: "false",
-              SYNTHETIC_RESERVATION_EXPIRY_ENABLED: "true",
+              RESERVATION_EXPIRY_ENABLED: "true",
               WORKER_DATABASE_URL: workerUrl(),
               ...env,
             },
@@ -543,7 +543,7 @@ const require = createRequire(import.meta.url),
         JSON.parse(
           (
             await cli({
-              SYNTHETIC_RESERVATION_EXPIRY_ENABLED: "false",
+              RESERVATION_EXPIRY_ENABLED: "false",
               WORKER_DATABASE_URL: "invalid",
             })
           ).stdout,
@@ -579,7 +579,7 @@ const require = createRequire(import.meta.url),
           {
             env: {
               ...process.env,
-              SYNTHETIC_RESERVATION_EXPIRY_ENABLED: "true",
+              RESERVATION_EXPIRY_ENABLED: "true",
               WORKER_DATABASE_URL: workerUrl(),
             },
             stdio: "ignore",
@@ -663,8 +663,8 @@ const require = createRequire(import.meta.url),
             ...process.env,
             DATABASE_URL: appUrl.toString(),
             APP_ORIGIN: origin,
-            SYNTHETIC_REWARDS_ENABLED: "true",
-            SYNTHETIC_AUDIT_ENABLED: "true",
+            REWARDS_ENABLED: "true",
+            AUDIT_ENABLED: "true",
             SPEED_INSIGHTS_ENABLED: "false",
             CSRF_SECRET: "synthetic-expiry-http-only",
             TELEGRAM_BOT_TOKEN: "synthetic-expiry-http-only",

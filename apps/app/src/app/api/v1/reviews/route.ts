@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       );
     const queue = await listReviewQueue(getPool(), session.user.id, {
       ...query.data,
-      allowSyntheticAccrual: process.env.SYNTHETIC_ECONOMY_ENABLED === "true",
+      allowSyntheticAccrual: process.env.ECONOMY_ENABLED === "true",
     });
     return jsonResponse(reviewListResponseSchema.parse(queue), 200, id);
   } catch {

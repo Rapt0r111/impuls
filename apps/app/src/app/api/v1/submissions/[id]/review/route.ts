@@ -67,7 +67,7 @@ export async function POST(
       );
     const result = await reviewTaskSubmission(getPool(), {
       action: body.data.action,
-      allowSyntheticAccrual: process.env.SYNTHETIC_ECONOMY_ENABLED === "true",
+      allowSyntheticAccrual: process.env.ECONOMY_ENABLED === "true",
       requestId: id,
       actorId: session.user.id,
       sessionHash: hashSessionToken(session.token),
@@ -127,7 +127,7 @@ export async function POST(
       return errorResponse(
         422,
         "ECONOMY_RULES_INVALID",
-        "Версия правил не разрешает синтетические начисления",
+        "Версия правил не разрешает начисления",
         id,
       );
     return jsonResponse(

@@ -55,7 +55,7 @@ export async function handleRewardRead(
       return errorResponse(400, "BAD_REQUEST", "Повторяющиеся параметры", id);
     const raw = Object.fromEntries(entries);
     const options = {
-      allowSyntheticRewards: process.env.SYNTHETIC_REWARDS_ENABLED === "true",
+      allowSyntheticRewards: process.env.REWARDS_ENABLED === "true",
     };
     const hash = hashSessionToken(session.token);
     let result;
@@ -194,7 +194,7 @@ export async function handleRewardMutation(
       sessionHash: hashSessionToken(session.token),
       idempotencyKey: headers.data.idempotencyKey,
       requestId: id,
-      allowSyntheticRewards: process.env.SYNTHETIC_REWARDS_ENABLED === "true",
+      allowSyntheticRewards: process.env.REWARDS_ENABLED === "true",
     };
     let result;
     if (redemptionId !== undefined && action === "fulfill") {
