@@ -18,6 +18,7 @@ const season = {
 const browser = await chromium.launch();
 let scenarios = 0;
 
+const network = { down: false };
 async function open(leaderboardStatus, width = 390) {
   const context = await browser.newContext({
     viewport: { width, height: 900 },
@@ -49,6 +50,11 @@ async function open(leaderboardStatus, width = 390) {
   await page.route(
     (url) => url.pathname === "/api/v1/me/permissions",
     (route) => json(route, { permissions: [] }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/v1/me/profile",
+    (route) =>
+      network.down ? route.abort("internetdisconnected") : route.fallback(),
   );
   await page.route(
     (url) => url.pathname === "/api/v1/leaderboard",
@@ -98,6 +104,38 @@ for (const width of [320, 390]) {
     state: "detached",
   });
   assert.equal(await page.getByText(/^Данные на /).count(), 0);
+  await context.close();
+  scenarios++;
+}
+
+{
+  network.down = false;
+  const { context, page, errors } = await open(200);
+  await page.getByText(/^Данные на /).waitFor();
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
+  await page.getByRole("heading", { name: "Главная", exact: true }).waitFor({
+    state: "detached",
+  });
+  network.down = true;
+  await context.setOffline(true);
+  await page.getByRole("button", { name: "Главная", exact: true }).click();
+  const alert = page.getByRole("alert").filter({ hasText: "Нет соединения" });
+  await alert.waitFor();
+  assert.match(
+    (await alert.textContent()) ?? "",
+    /Показаны данные на .+\d{2}:\d{2}/,
+  );
+  await page.getByText("XP за 2026-10", { exact: true }).waitFor();
+  assert.equal(
+    await page.evaluate(() => Object.keys(localStorage).length),
+    0,
+    "рабочие данные не хранятся в localStorage",
+  );
+  network.down = false;
+  await context.setOffline(false);
+  await alert.getByRole("button", { name: "Повторить" }).click();
+  await alert.waitFor({ state: "detached" });
+  assert.deepEqual(errors, []);
   await context.close();
   scenarios++;
 }

@@ -95,9 +95,21 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
       {profile.isPending ? <p role="status">Загружаем прогресс…</p> : null}
       {profile.isError ? (
         <p className="tasks-state" role="alert">
-          {!navigator.onLine
-            ? "Нет соединения. Восстановите сеть и обновите страницу."
-            : "Прогресс недоступен. Повторите загрузку."}
+          {!navigator.onLine ? "Нет соединения. " : "Обновление не удалось. "}
+          {data
+            ? `Показаны данные на ${asOfLabel(data.asOf)}; изменения не проводятся.`
+            : "Прогресс недоступен."}{" "}
+          <button
+            type="button"
+            className="tasks-action"
+            onClick={() => {
+              void profile.refetch();
+              void tasks.refetch();
+              void season.refetch();
+            }}
+          >
+            Повторить
+          </button>
         </p>
       ) : null}
       {data ? (
@@ -156,7 +168,7 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
       <h3 className="home-next-title">Ваш следующий результат</h3>
       {tasks.isPending ? (
         <p role="status">Загружаем задачи…</p>
-      ) : tasks.isError ? (
+      ) : tasks.isError && !tasks.data ? (
         <p className="tasks-state" role="alert">
           Задачи недоступны. Откройте раздел «Задачи» и повторите.
         </p>
