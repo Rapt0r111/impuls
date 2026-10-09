@@ -693,13 +693,9 @@ try {
         return { width: r.width, height: r.height, top: r.top };
       }),
     );
-    // Пять разделов переносятся 2 + 2 + 1; одинокий последний чип растягивается.
-    assert.equal(new Set(sizes.map((s) => s.top)).size, 3);
-    for (const [i, s] of sizes.entries())
-      assert.ok(
-        s.height >= 44 &&
-          (i === sizes.length - 1 || Math.abs(s.width - sizes[0].width) < 1),
-      );
+    // Пять разделов стоят в одной прокручиваемой строке.
+    assert.equal(new Set(sizes.map((s) => s.top)).size, 1);
+    for (const s of sizes) assert.ok(s.height >= 44);
     await capture(f, "status-all-permissions-320.png");
     await close(f);
   }

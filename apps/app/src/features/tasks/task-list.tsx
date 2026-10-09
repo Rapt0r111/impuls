@@ -398,6 +398,14 @@ function TaskWorkspace() {
     },
     10,
   );
+  // Лента служебных разделов прокручивается: открытый раздел должен быть виден в ней.
+  useEffect(() => {
+    document
+      .querySelector(
+        ".workspace-nav-operations .workspace-tab[aria-pressed=true]",
+      )
+      ?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [view]);
   type Destination = {
     id: typeof view;
     label: string;

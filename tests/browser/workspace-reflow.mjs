@@ -352,7 +352,13 @@ async function inspect(page) {
       const rect = el.getBoundingClientRect();
       if (!rect.width || !rect.height) continue;
       const name = `${el.tagName.toLowerCase()}.${el.className}`;
-      if (rect.left < -1 || rect.right > innerWidth + 1) outside.push(name);
+      // Служебные разделы — одна строка с горизонтальной прокруткой: сама лента
+      // обязана помещаться в экран, а её чипы могут уходить за край.
+      if (
+        (rect.left < -1 || rect.right > innerWidth + 1) &&
+        !el.closest(".workspace-nav-operations .workspace-tab")
+      )
+        outside.push(name);
       if (
         el.matches(
           "button, summary, select, textarea, input:not([type=checkbox]):not([type=radio])",

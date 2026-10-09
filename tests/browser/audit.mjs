@@ -418,10 +418,15 @@ try {
         };
       }),
     );
-    // Tabs may wrap (workspace-reflow slice); they must stay tappable and inside 320 px.
+    // Служебные разделы — одна прокручиваемая строка: чипы нажимаемы, а лента не
+    // расширяет страницу (открытый раздел может быть прокручен к краю).
     assert.equal(new Set(dimensions.map((d) => d.height)).size, 1);
-    for (const d of dimensions)
-      assert.ok(d.height >= 44 && d.left >= 0 && d.right <= 320);
+    for (const d of dimensions) assert.ok(d.height >= 44);
+    assert.ok(
+      await f.page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    );
     await f.page.getByText("Полномочия", { exact: true }).press("Enter");
     await f.page
       .getByText("Просмотр журнала действий", { exact: true })
