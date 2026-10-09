@@ -1,6 +1,17 @@
 import { chromium } from "playwright";
 
 async function mockEmptyWorkspace(page) {
+  // «Главная» тоже читает рейтинг и профиль; без моков запрос без сессии давал бы 401.
+  await page.route(
+    (url) =>
+      ["/api/v1/leaderboard", "/api/v1/me/profile"].includes(url.pathname),
+    (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: '{"code":"UNAVAILABLE"}',
+      }),
+  );
   await page.route(
     (url) => ["/api/v1/tasks", "/api/v1/reviews"].includes(url.pathname),
     (route) =>
@@ -170,6 +181,73 @@ async function main() {
     }
     await loginPage.close();
     console.log("Launch fragment and synthetic login: authorized state");
+
+    // A permission change revokes the user's sessions (migration 000004). The old
+    // cookie then answers 403 while the account stays active: Telegram must log in again.
+    for (const initData of ["synthetic", ""]) {
+      const staleCookiePage = await browser.newPage();
+      await mockEmptyWorkspace(staleCookiePage);
+      await staleCookiePage.route(
+        "https://telegram.org/js/telegram-web-app.js",
+        (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/javascript",
+            body: `window.Telegram={WebApp:{initData:"${initData}",ready(){},expand(){},close(){},setHeaderColor(){},setBackgroundColor(){}}};`,
+          }),
+      );
+      let reloggedIn = false;
+      const identity = JSON.stringify({
+        user: {
+          id: "11111111-1111-4111-8111-111111111111",
+          displayName: "Тестовый участник",
+        },
+        csrfToken: "synthetic-token",
+      });
+      await staleCookiePage.route("**/api/v1/me", (route) =>
+        route.fulfill(
+          reloggedIn
+            ? { status: 200, contentType: "application/json", body: identity }
+            : {
+                status: 403,
+                contentType: "application/json",
+                body: '{"code":"ACCESS_REVOKED"}',
+              },
+        ),
+      );
+      await staleCookiePage.route("**/api/v1/me/permissions", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: '{"permissions":[]}',
+        }),
+      );
+      await staleCookiePage.route("**/api/v1/auth/telegram", (route) => {
+        reloggedIn = true;
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: identity,
+        });
+      });
+      await staleCookiePage.goto("http://localhost:3000", {
+        waitUntil: "domcontentloaded",
+      });
+      await staleCookiePage
+        .getByRole("heading", {
+          name: initData ? "Доступ подтверждён" : "Доступ отозван",
+        })
+        .waitFor({ timeout: 5_000 });
+      if (reloggedIn !== Boolean(initData)) {
+        throw new Error(
+          "A stale revoked session must trigger exactly the Telegram login when launch data exists",
+        );
+      }
+      await staleCookiePage.close();
+    }
+    console.log(
+      "Stale revoked session: re-login with launch data, revoked screen without it",
+    );
 
     const missingSessionPage = await browser.newPage();
     await missingSessionPage.route(

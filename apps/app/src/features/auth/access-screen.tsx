@@ -252,11 +252,14 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
         else update({ kind: "unavailable" });
         return;
       }
-      if (current.status === 403) {
+      // 403 is a closed session, not yet a closed account: a permission change closes
+      // every session of an active user. With Telegram launch data the server decides
+      // again (login answers ACCESS_DENIED when the account itself was withdrawn).
+      if (current.status === 403 && !app?.initData) {
         update({ kind: "revoked" });
         return;
       }
-      if (current.status !== 401) {
+      if (current.status !== 401 && current.status !== 403) {
         update({ kind: "unavailable" });
         return;
       }
@@ -486,7 +489,8 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
             <div className="access-actions">
               {(state.kind === "offline" ||
                 state.kind === "unavailable" ||
-                state.kind === "session") && (
+                state.kind === "session" ||
+                (state.kind === "revoked" && telegramAvailable)) && (
                 <button
                   type="button"
                   className="access-button"

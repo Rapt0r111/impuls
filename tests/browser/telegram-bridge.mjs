@@ -567,6 +567,10 @@ try {
     await f.page
       .getByRole("heading", { name: "Доступ отозван", exact: true })
       .waitFor();
+    // Sessions close on any permission change: Telegram launch data allows a re-check.
+    await f.page
+      .getByRole("button", { name: "Проверить снова", exact: true })
+      .waitFor();
     assert.equal(await backVisible(f.page), false);
     assert.equal(
       await f.page.evaluate(() => window.telegramTest.listeners().back),
