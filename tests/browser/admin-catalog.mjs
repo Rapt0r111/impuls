@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -65,6 +66,7 @@ async function fixture(mode = "ready", width = 320) {
       contentType: "application/json",
       body: JSON.stringify(b),
     });
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
     r.fulfill({
       contentType: "application/javascript",
@@ -288,6 +290,7 @@ async function fixture(mode = "ready", width = 320) {
   );
   await page.goto(origin);
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (mode !== "no-permission")
     await page
       .getByRole("button", { name: "Управление каталогом", exact: true })
@@ -836,7 +839,7 @@ try {
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".admin-catalog-items > li").count(), 0);
     await f.page.evaluate(() => window.__back?.());
-    await f.page.getByRole("heading", { name: "Назначенные задачи" }).waitFor();
+    await f.page.getByRole("heading", { name: "Главная" }).waitFor();
     await close(f);
   }
   console.log(

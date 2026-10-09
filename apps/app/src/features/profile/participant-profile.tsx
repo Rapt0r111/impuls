@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import "./participant-profile.css";
 
-class ProfileError extends Error {
+export class ProfileError extends Error {
   constructor(readonly status: number) {
     super("Profile unavailable");
   }
@@ -19,9 +19,8 @@ const date = (value: string) =>
     timeZone: "Europe/Moscow",
   }).format(new Date(value));
 
-export function ParticipantProfile() {
-  const { loseAccess } = useAuthorizedSession();
-  const query = useQuery({
+export function useParticipantProfile() {
+  return useQuery({
     queryKey: ["participant-profile"],
     retry: false,
     networkMode: "always",
@@ -36,6 +35,11 @@ export function ParticipantProfile() {
       return participantProfileResponseSchema.parse(await response.json());
     },
   });
+}
+
+export function ParticipantProfile() {
+  const { loseAccess } = useAuthorizedSession();
+  const query = useParticipantProfile();
   useEffect(() => {
     if (
       query.error instanceof ProfileError &&
@@ -97,9 +101,12 @@ export function ParticipantProfile() {
             <h3 id="profile-level-title">Уровень</h3>
             {level ? (
               <>
-                <p>
-                  <strong>Уровень {level.level}</strong> · правила{" "}
-                  {data.progression.ruleVersion}
+                <p className="profile-level">
+                  <strong className="sr-only">Уровень {level.level}</strong>
+                  <span className="profile-level-number" aria-hidden="true">
+                    {level.level}
+                  </span>
+                  <span>уровень · правила {data.progression.ruleVersion}</span>
                 </p>
                 {level.nextLevelXp === null ? (
                   <p>Достигнут последний настроенный уровень.</p>
@@ -114,8 +121,9 @@ export function ParticipantProfile() {
                       max={level.spanXp!}
                       value={level.progressXp}
                     />
-                    <p>
-                      Порог следующего уровня: {number(level.nextLevelXp)} XP за
+                    <p className="profile-level-caption">
+                      {number(level.progressXp)} / {number(level.spanXp!)} XP ·
+                      порог следующего уровня {number(level.nextLevelXp)} XP за
                       всё время.
                     </p>
                   </>

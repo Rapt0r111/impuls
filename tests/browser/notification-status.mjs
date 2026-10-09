@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
   process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -65,6 +66,7 @@ async function fixture(mode = "ready", width = 320) {
       contentType: "application/json",
       body: JSON.stringify(body),
     });
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
     r.fulfill({
       contentType: "application/javascript",
@@ -271,6 +273,7 @@ async function fixture(mode = "ready", width = 320) {
   );
   await page.goto(origin);
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (mode !== "no-permission")
     await page
       .getByRole("button", { name: "Состояние уведомлений", exact: true })
@@ -680,16 +683,20 @@ try {
     const f = await fixture("all-permissions");
     await ready(f);
     const buttons = f.page.locator(".workspace-nav-operations button");
-    assert.equal(await buttons.count(), 4);
+    assert.equal(await buttons.count(), 5);
     const sizes = await buttons.evaluateAll((els) =>
       els.map((el) => {
         const r = el.getBoundingClientRect();
         return { width: r.width, height: r.height, top: r.top };
       }),
     );
-    assert.equal(new Set(sizes.map((s) => s.top)).size, 2);
-    for (const s of sizes)
-      assert.ok(s.height >= 44 && Math.abs(s.width - sizes[0].width) < 1);
+    // Пять разделов переносятся 2 + 2 + 1; одинокий последний чип растягивается.
+    assert.equal(new Set(sizes.map((s) => s.top)).size, 3);
+    for (const [i, s] of sizes.entries())
+      assert.ok(
+        s.height >= 44 &&
+          (i === sizes.length - 1 || Math.abs(s.width - sizes[0].width) < 1),
+      );
     await capture(f, "status-all-permissions-320.png");
     await close(f);
   }
@@ -832,7 +839,7 @@ try {
       other,
     );
     await f.page.evaluate(() => window.__back?.());
-    await f.page.getByRole("heading", { name: "Назначенные задачи" }).waitFor();
+    await f.page.getByRole("heading", { name: "Главная" }).waitFor();
     await close(f);
   }
   for (const width of [320, 360, 390, 1280]) {

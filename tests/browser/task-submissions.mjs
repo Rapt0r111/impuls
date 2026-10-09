@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const taskId = "33333333-3333-4333-8333-333333333333";
@@ -44,6 +45,7 @@ async function fixture(width, mode = "success") {
   let detailFails = false;
   let calls = [];
   let saved;
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
@@ -153,6 +155,7 @@ async function fixture(width, mode = "success") {
     },
   );
   await page.goto(origin, { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   await page.getByText(initial.title, { exact: true }).click();
   await page
     .getByRole("button", { name: "Начать работу", exact: true })

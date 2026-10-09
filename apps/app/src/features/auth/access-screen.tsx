@@ -376,6 +376,9 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
             {state.kind === "authorized" && (
               <>
                 <div className="access-identity">
+                  <span className="access-avatar" aria-hidden="true">
+                    {state.data.user.displayName.trim().charAt(0).toUpperCase()}
+                  </span>
                   <strong>{state.data.user.displayName}</strong>
                 </div>
                 <details className="access-permissions">

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const actorId = "11111111-1111-4111-8111-111111111111";
@@ -55,6 +56,7 @@ async function fixture(width, mode = "success") {
       { code, message: "Synthetic test", requestId: actorId },
       status,
     );
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",

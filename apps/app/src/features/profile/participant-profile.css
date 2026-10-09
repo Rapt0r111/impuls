@@ -38,3 +38,34 @@
 .profile-block progress::-moz-progress-bar {
   background: var(--color-mint);
 }
+/* Крупный уровень и полоса опыта, как карточка прогресса в прототипе R0. */
+.profile-block .profile-level {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 14px;
+}
+.profile-block .profile-level-number {
+  color: var(--color-ink);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.profile-block .profile-level-xp {
+  margin-inline-start: auto;
+  color: var(--color-gold);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.profile-block progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--color-panel);
+}
+.profile-block .profile-level-caption {
+  margin: 8px 0 0;
+  font-size: 13px;
+}

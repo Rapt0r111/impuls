@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const actorId = "11111111-1111-4111-8111-111111111111";
@@ -58,6 +59,7 @@ async function fixture(width, mode = "ready") {
       contentType: "application/json",
       body: JSON.stringify(body),
     });
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
@@ -176,6 +178,7 @@ async function fixture(width, mode = "ready") {
     },
   );
   await page.goto(origin);
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   await page
     .getByRole("button", { name: /Синтетическая задача для сравнения/ })
     .click();

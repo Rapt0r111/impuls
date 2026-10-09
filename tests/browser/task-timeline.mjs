@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const uuid = (n) => `11111111-1111-4111-8111-${String(n).padStart(12, "0")}`;
@@ -49,6 +50,7 @@ async function fixture(width, mode = "ready", role = "owner") {
       contentType: "application/json",
       body: JSON.stringify(body),
     });
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
@@ -180,6 +182,9 @@ async function fixture(width, mode = "ready", role = "owner") {
     },
   );
   await page.goto(origin);
+  // Проверяющий открывается на очереди проверки, остальные — на «Главной».
+  if (role !== "reviewer")
+    await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (role === "reviewer")
     await page
       .getByRole("button", { name: /Синтетическая задача с историей/ })

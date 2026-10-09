@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const taskId = "33333333-3333-4333-8333-333333333333";
 const task = {
@@ -16,6 +17,7 @@ const task = {
 };
 
 async function mockSession(page) {
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       status: 200,
@@ -89,6 +91,9 @@ async function main() {
       await page.goto(process.env.TEST_APP_ORIGIN ?? "http://localhost:3000", {
         waitUntil: "domcontentloaded",
       });
+      await page
+        .getByRole("button", { name: "Мои задачи", exact: true })
+        .click();
       await page.getByRole("heading", { name: "Назначенные задачи" }).waitFor();
       await page.getByText(task.title).click();
       await page.getByText("Подтвердить результат", { exact: false }).waitFor();
@@ -119,6 +124,9 @@ async function main() {
     await empty.goto(process.env.TEST_APP_ORIGIN ?? "http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
+    await empty
+      .getByRole("button", { name: "Мои задачи", exact: true })
+      .click();
     await empty.getByText("По выбранному статусу задач нет.").waitFor();
     await empty.close();
 
@@ -141,6 +149,9 @@ async function main() {
         waitUntil: "domcontentloaded",
       },
     );
+    await unavailable
+      .getByRole("button", { name: "Мои задачи", exact: true })
+      .click();
     await unavailable
       .getByText("Не удалось загрузить задачи. Повторите попытку.")
       .waitFor();
@@ -174,6 +185,9 @@ async function main() {
     await revoked.goto(process.env.TEST_APP_ORIGIN ?? "http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
+    await revoked
+      .getByRole("button", { name: "Мои задачи", exact: true })
+      .click();
     await revoked.getByText(task.title).waitFor();
     await revoked.getByRole("button", { name: "Показать ещё" }).click();
     await revoked.getByRole("heading", { name: "Доступ отозван" }).waitFor();

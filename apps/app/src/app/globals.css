@@ -65,6 +65,16 @@ body {
   overflow-wrap: anywhere;
 }
 
+.access-screen--authorized .access-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: 0 -20px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-line);
+  background: #122832;
+}
+
 .access-header {
   display: flex;
   flex-wrap: wrap;
@@ -159,26 +169,19 @@ body {
   padding: 12px 0 24px;
 }
 
+/* Статус доступа остаётся для скринридеров; визуально экран начинается с содержимого. */
 .access-content--authorized h1 {
-  max-width: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--color-muted);
-  letter-spacing: 0;
-}
-.access-content--authorized h1::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-mint);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .access-content--authorized .access-identity {
-  margin-top: 8px;
+  margin-top: 6px;
   padding: 0;
   border: 0;
 }
@@ -204,12 +207,26 @@ body {
 }
 
 .access-identity {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
   margin-top: 38px;
   padding: 16px 0;
   border-top: 1px solid var(--color-line);
   border-bottom: 1px solid var(--color-line);
+}
+
+.access-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: #234a4b;
+  color: var(--color-mint);
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .access-identity span {
@@ -280,35 +297,78 @@ body {
   background: var(--color-panel);
 }
 
-.workspace-nav {
-  margin: 12px 0 8px;
-  padding: 4px;
-  border: 1px solid var(--color-line);
-  border-radius: 12px;
-  background: var(--color-panel);
+/* Нижняя панель как в прототипе R0: пять личных разделов с иконками. */
+.access-screen--authorized {
+  padding-bottom: calc(76px + var(--app-safe-bottom));
 }
-.workspace-nav-personal,
-.workspace-nav-operations {
-  display: grid;
-  gap: 4px;
+.workspace-nav {
+  margin: 4px 0 8px;
 }
 .workspace-nav-personal {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
   display: flex;
-  flex-wrap: wrap;
+  padding: 7px max(4px, var(--app-safe-right))
+    calc(10px + var(--app-safe-bottom)) max(4px, var(--app-safe-left));
+  border-top: 1px solid var(--color-line);
+  background: #11252e;
 }
 .workspace-nav-personal .workspace-tab {
-  flex: 1 1 auto;
-  min-width: 44px;
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 48px;
 }
+.workspace-tab-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.workspace-nav-personal .workspace-tab[aria-pressed="true"] {
+  color: var(--color-mint);
+  background: transparent;
+}
+.workspace-nav-personal .workspace-tab[aria-pressed="true"]::after {
+  position: absolute;
+  bottom: 0;
+  width: 20px;
+  height: 2px;
+  background: var(--color-mint);
+  content: "";
+}
+/* Служебные разделы — чипы в стиле фильтров прототипа, с переносом строк. */
 .workspace-nav-operations {
   display: flex;
   flex-wrap: wrap;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid var(--color-line);
+  gap: 6px;
 }
 .workspace-nav-operations .workspace-tab {
-  flex: 1 1 max(8em, calc(50% - 2px));
+  flex: 1 1 max(8em, calc(50% - 3px));
+  font-size: 13px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #18303a;
+}
+.workspace-nav-operations .workspace-tab-icon {
+  display: none;
+}
+.workspace-nav-operations .workspace-tab[aria-pressed="true"] {
+  color: var(--color-bg);
+  background: var(--color-mint);
 }
 .workspace-tab {
   min-width: 0;
@@ -316,10 +376,10 @@ body {
   padding: 8px 4px;
   border: 0;
   border-radius: 8px;
-  color: var(--color-muted);
+  color: #a7bec5;
   background: transparent;
   font: inherit;
-  font-size: 13px;
+  font-size: 11px;
   cursor: pointer;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -327,20 +387,18 @@ body {
     color 180ms ease-out,
     background 180ms ease-out;
 }
+.workspace-nav-personal .workspace-tab span {
+  max-width: 100%;
+  text-align: center;
+}
+@media (max-width: 359px) {
+  .workspace-nav-personal .workspace-tab {
+    padding-inline: 0;
+    font-size: 10px;
+  }
+}
 .workspace-tab:hover {
   color: var(--color-ink);
-  background: var(--color-panel-hover);
-}
-.workspace-tab[aria-pressed="true"] {
-  color: var(--color-bg);
-  background: var(--color-mint);
-  font-weight: 700;
-}
-@media (max-width: 380px) {
-  .workspace-tab {
-    padding-inline: 0;
-    font-size: 12px;
-  }
 }
 
 .access-button {
@@ -396,14 +454,18 @@ body {
 
 .tasks-heading h2 {
   margin: 0;
-  font-size: 20px;
-  line-height: 1.25;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-wrap: balance;
 }
 
 .tasks-heading p {
-  margin: 5px 0 0;
+  margin: 8px 0 0;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .tasks-filter {
@@ -511,6 +573,15 @@ body {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+
+.tasks-heading > .tasks-action {
+  min-height: 44px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-mint);
+  padding-inline: 0;
+  font-weight: 700;
 }
 
 .tasks-action:hover,
@@ -754,29 +825,38 @@ body {
 .ledger-xp {
   color: var(--color-gold);
 }
+/* Крупные числа с подписью под ними, как блок баланса в прототипе R0. */
 .ledger-balances {
-  margin: 22px 0 12px;
+  margin: 8px 0 12px;
+  padding: 18px 0;
+  border-block: 1px solid var(--color-line);
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(7.5em, 1fr));
+  gap: 16px 20px;
 }
 .ledger-balances div {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
 }
 .ledger-balances dt,
 .ledger-asof,
 .ledger-entry p {
   color: var(--color-muted);
 }
+.ledger-balances dt {
+  font-size: 13px;
+}
 .ledger-balances dd {
   margin: 0;
-  font-size: 18px;
+  font-size: 26px;
   font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
-  text-align: right;
 }
 .ledger-balances div:first-child dd {
   color: var(--color-gold);
@@ -807,4 +887,33 @@ body {
   margin-bottom: 0;
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+/* Чипы приоритета и статуса в строке задачи, как в прототипе R0. */
+.tasks-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.task-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #1b3641;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.task-chip--high {
+  background: #3a2f1c;
+  color: var(--color-gold);
+}
+.task-chip--critical {
+  background: #3d2222;
+  color: var(--color-error);
+}
+.task-chip--status {
+  margin-inline-start: auto;
+  background: #1f3a45;
+  color: var(--color-ink);
 }

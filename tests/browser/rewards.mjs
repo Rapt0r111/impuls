@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
   process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -79,6 +80,7 @@ async function fixture(mode = "populated", width = 390) {
     attempt = 0;
   const posts = [];
   const catalogReads = [];
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
     r.fulfill({
       contentType: "application/javascript",
@@ -367,7 +369,7 @@ try {
         .evaluateAll((buttons) =>
           buttons.every((b) => {
             const range = document.createRange();
-            range.selectNodeContents(b);
+            range.selectNodeContents(b.querySelector("span"));
             return (
               range.getClientRects().length === 1 &&
               b.scrollWidth <= b.clientWidth

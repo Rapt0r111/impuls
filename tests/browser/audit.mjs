@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
@@ -202,6 +203,7 @@ async function fixture(mode = "populated", width = 390, open = true) {
       contentType: "application/json",
       body: JSON.stringify(body),
     });
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
     r.fulfill({
       contentType: "application/javascript",
@@ -332,6 +334,7 @@ async function fixture(mode = "populated", width = 390, open = true) {
   );
   await page.goto(origin);
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (open && mode !== "no-permission")
     await page
       .getByRole("button", { name: "Журнал действий", exact: true })
@@ -403,7 +406,8 @@ try {
     const operations = f.page.locator(
       ".workspace-nav-operations .workspace-tab",
     );
-    assert.equal(await operations.count(), 3);
+    // Журнал начислений (Баланс) входит в строку разделов для всех.
+    assert.equal(await operations.count(), 4);
     const dimensions = await operations.evaluateAll((elements) =>
       elements.map((el) => {
         const rect = el.getBoundingClientRect();
@@ -597,7 +601,7 @@ try {
     assert.ok(f.calls.length > before);
     assert.ok(!f.calls.at(-1).cursor);
     await f.page.evaluate(() => window.__back());
-    await f.page.getByRole("heading", { name: "Назначенные задачи" }).waitFor();
+    await f.page.getByRole("heading", { name: "Главная" }).waitFor();
     assert.equal(await f.page.locator(".audit-list").count(), 0);
     await close(f);
   }

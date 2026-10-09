@@ -12,12 +12,13 @@ import {
   useInfiniteQuery,
   useQuery,
 } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import { TaskReport } from "./task-report";
 import { TaskHistory } from "./task-history";
 import { TaskTimeline } from "./task-timeline";
+import { Home } from "@/features/home/home";
 import { ReviewQueue } from "@/features/reviews/review-queue";
 import { AccountLedger } from "@/features/ledger/account-ledger";
 import { TaskManagement } from "@/features/task-management/task-management";
@@ -216,10 +217,16 @@ function TaskListContent() {
                   }}
                 >
                   <span className="tasks-row-main">
-                    <strong>{task.title}</strong>
-                    <span>
-                      {statusNames[task.status]} · до {dateLabel(task.dueAt)}
+                    <span className="tasks-row-tags">
+                      <span className={`task-chip task-chip--${task.priority}`}>
+                        {priorityNames[task.priority]}
+                      </span>
+                      <span className="task-chip task-chip--status">
+                        {statusNames[task.status]}
+                      </span>
                     </span>
+                    <strong>{task.title}</strong>
+                    <span>до {dateLabel(task.dueAt)}</span>
                   </span>
                   <span className="tasks-row-fund">
                     <strong>{task.fundXp} XP</strong>
@@ -318,6 +325,46 @@ function TaskListContent() {
   );
 }
 
+// Линейные иконки 24×24, как в прототипе R0 (stroke 1.7, round).
+const tabIcons: Record<string, ReactNode> = {
+  home: (
+    <>
+      <path d="M4 11.5 12 4l8 7.5" />
+      <path d="M6 10v10h12V10M10 20v-5h4v5" />
+    </>
+  ),
+  tasks: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2.5" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </>
+  ),
+  ledger: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.6 2.5 1.6c0 2.2-5 1.2-5 3.6 0 1 1 1.6 2.5 1.6s2.5-.6 2.5-1.6" />
+    </>
+  ),
+  rewards: (
+    <>
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M8 8a2.5 2.5 0 1 1 4-2M16 8a2.5 2.5 0 1 0-4-2" />
+    </>
+  ),
+  ranking: (
+    <>
+      <path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H4v1a3 3 0 0 0 3 3M16 6h4v1a3 3 0 0 1-3 3" />
+      <path d="M12 13v4M8 20h8M10 17h4" />
+    </>
+  ),
+  profile: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+    </>
+  ),
+};
+
 function TaskWorkspace() {
   const {
     canReview,
@@ -330,6 +377,7 @@ function TaskWorkspace() {
     confirmLeave,
   } = useAuthorizedSession();
   const [view, setView] = useState<
+    | "home"
     | "tasks"
     | "reviews"
     | "ledger"
@@ -341,8 +389,8 @@ function TaskWorkspace() {
     | "access"
     | "notifications"
     | "rewards"
-  >(canReview ? "reviews" : "tasks");
-  const rootView = canReview ? "reviews" : "tasks";
+  >(canReview ? "reviews" : "home");
+  const rootView = canReview ? "reviews" : "home";
   useTelegramBack(
     view !== rootView,
     () => {
@@ -356,13 +404,16 @@ function TaskWorkspace() {
     accessibleLabel: string;
   };
   const personal: Destination[] = [
+    { id: "home", label: "Главная", accessibleLabel: "Главная" },
     { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
-    { id: "ledger", label: "Баланс", accessibleLabel: "Баланс и журнал" },
-    { id: "rewards", label: "Каталог", accessibleLabel: "Поощрения" },
     { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
+    { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
     { id: "profile", label: "Профиль", accessibleLabel: "Мой профиль" },
   ];
-  const operations: Destination[] = [];
+  // Журнал начислений вне нижней панели (там пять разделов, как в прототипе).
+  const operations: Destination[] = [
+    { id: "ledger", label: "Баланс", accessibleLabel: "Баланс и журнал" },
+  ];
   if (canReview)
     operations.push({
       id: "reviews",
@@ -410,7 +461,16 @@ function TaskWorkspace() {
         if (confirmLeave()) setView(item.id);
       }}
     >
-      {item.label}
+      {tabIcons[item.id] ? (
+        <svg
+          className="workspace-tab-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          {tabIcons[item.id]}
+        </svg>
+      ) : null}
+      <span>{item.label}</span>
     </button>
   );
   return (
@@ -441,6 +501,8 @@ function TaskWorkspace() {
         <ParticipantProfile />
       ) : view === "ranking" ? (
         <Leaderboard />
+      ) : view === "home" ? (
+        <Home onNavigate={setView} />
       ) : view === "ledger" ? (
         <AccountLedger />
       ) : view === "reviews" && canReview ? (

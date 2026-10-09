@@ -5,6 +5,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
+import { leaveHome } from "./home-fallback.mjs";
 
 // Negative F03/F04 paths through the real app and database (no API mocks):
 // own result is not reviewable, two reviewers race for one acceptance,
@@ -84,6 +85,7 @@ async function open(key, width = viewportWidth) {
   await page
     .getByRole("heading", { name: "Доступ подтверждён", exact: true })
     .waitFor();
+  await leaveHome(page);
   return { page, context, errors };
 }
 const finish = async (s, name) => {

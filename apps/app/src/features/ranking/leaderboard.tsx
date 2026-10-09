@@ -192,34 +192,61 @@ export function Leaderboard() {
                 после приёмки задач.
               </p>
             ) : (
-              <table className="ranking-table">
-                <caption className="ranking-note">
-                  Места при равном XP совпадают. Нулевые результаты видны только
-                  вам.
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Место</th>
-                    <th scope="col">Участник</th>
-                    <th scope="col">XP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className={item.isSelf ? "ranking-own-row" : undefined}
-                    >
-                      <td>{number(item.rank)}</td>
-                      <th scope="row">
-                        {item.displayName}
-                        {item.isSelf && <span className="ranking-you">Вы</span>}
-                      </th>
-                      <td>{number(item.xp)}</td>
+              <>
+                {items.length >= 3 && (
+                  // Декоративный пьедестал; данные доступны в таблице ниже.
+                  <ol className="ranking-podium" aria-hidden="true">
+                    {[1, 0, 2]
+                      .flatMap((index) => items[index] ?? [])
+                      .map((item) => (
+                        <li
+                          key={item.id}
+                          className={
+                            item.rank === 1 ? "ranking-podium-first" : ""
+                          }
+                        >
+                          <span className="ranking-podium-badge">
+                            {item.displayName.trim().slice(0, 2).toUpperCase()}
+                          </span>
+                          <span>{number(item.rank)} место</span>
+                          <strong>{item.displayName}</strong>
+                          <b>{number(item.xp)}</b>
+                          <small>XP</small>
+                        </li>
+                      ))}
+                  </ol>
+                )}
+                <table className="ranking-table">
+                  <caption className="ranking-note">
+                    Места при равном XP совпадают. Нулевые результаты видны
+                    только вам.
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Место</th>
+                      <th scope="col">Участник</th>
+                      <th scope="col">XP</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr
+                        key={item.id}
+                        className={item.isSelf ? "ranking-own-row" : undefined}
+                      >
+                        <td>{number(item.rank)}</td>
+                        <th scope="row">
+                          {item.displayName}
+                          {item.isSelf && (
+                            <span className="ranking-you">Вы</span>
+                          )}
+                        </th>
+                        <td>{number(item.xp)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             ))}
           {first.scope && (
             <p className="ledger-asof">

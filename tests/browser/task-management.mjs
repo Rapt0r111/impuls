@@ -9,6 +9,7 @@ import {
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { Pool } from "pg";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const managerId = "11111111-1111-4111-8111-111111111111";
@@ -134,6 +135,7 @@ async function pageFixture(width, mode = "success") {
   let assigned = false;
   let delayedOptionsRelease;
   let delayedCreateRelease;
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
@@ -335,6 +337,8 @@ async function pageFixture(width, mode = "success") {
   );
 
   await page.goto(origin, { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   await page
     .getByRole("button", { name: "Постановка задач", exact: true })
     .click();
@@ -527,6 +531,7 @@ async function dbFlow() {
         )
           mutationResponses.push(response);
       });
+      await mockHomeFallback(page);
       await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
         route.fulfill({
           contentType: "application/javascript",

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { homeFallbackProfile, mockHomeFallback } from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3101";
 const id = "11111111-1111-4111-8111-111111111111";
@@ -146,6 +147,7 @@ async function fixture(width = 390, mode = "modern", role = "participant") {
       contentType: "application/json",
       body: JSON.stringify(body),
     });
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
@@ -250,6 +252,8 @@ async function fixture(width = 390, mode = "modern", role = "participant") {
         nextCursor: null,
         asOf: at,
       });
+    if (url.pathname === "/api/v1/me/profile")
+      return json(route, homeFallbackProfile);
     if (url.pathname === "/api/v1/auth/logout") return json(route, {});
     return json(
       route,
@@ -259,6 +263,9 @@ async function fixture(width = 390, mode = "modern", role = "participant") {
   });
   await page.goto(origin);
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
+  // Проверяющий открывается на очереди проверки, остальные — на «Главной».
+  if (role !== "reviewer")
+    await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   return { page, errors };
 }
 
@@ -293,8 +300,9 @@ try {
         overflow: document.documentElement.scrollWidth > innerWidth,
       };
     });
+    // Нижняя панель занимает 76 px сверх прежнего нижнего отступа 50 px.
     assert.deepEqual(layout, {
-      padding: ["72px", "30px", "50px", "30px"],
+      padding: ["72px", "30px", "126px", "30px"],
       minHeight: "740px",
       colorScheme: "dark",
       overflow: false,
@@ -308,7 +316,8 @@ try {
     await f.page
       .getByLabel("Отчёт о выполнении", { exact: true })
       .waitFor({ state: "detached" });
-    assert.equal(await backVisible(f.page), false);
+    // «Задачи» уже не корневой экран (корень — «Главная»): кнопка «Назад» остаётся.
+    assert.equal(await backVisible(f.page), true);
     await finish(f);
   }
   {
@@ -494,7 +503,7 @@ try {
       );
       await nativeBack(f.page);
       await f.page
-        .getByRole("heading", { name: "Назначенные задачи", exact: true })
+        .getByRole("heading", { name: "Главная", exact: true })
         .waitFor();
       assert.equal(await backVisible(f.page), false);
     } else {
@@ -527,7 +536,7 @@ try {
       );
       await nativeBack(f.page);
       await f.page
-        .getByRole("heading", { name: "Назначенные задачи", exact: true })
+        .getByRole("heading", { name: "Главная", exact: true })
         .waitFor();
       assert.equal(await backVisible(f.page), false);
     }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { mockHomeFallback } from "./home-fallback.mjs";
 
 // API/Telegram fixtures exercise layout only; no database or external writes.
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
@@ -65,6 +66,7 @@ const quota = {
   available: 5433,
 };
 const views = [
+  ["home", "Главная", ".home-level"],
   ["tasks", "Мои задачи", ".tasks-list > li"],
   ["ledger", "Баланс и журнал", ".ledger-balances"],
   ["rewards", "Поощрения", ".reward-row"],
@@ -88,6 +90,7 @@ async function fixture(browser, width) {
   const errors = [],
     unexpected = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  await mockHomeFallback(page);
   await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
     r.fulfill({
       contentType: "application/javascript",
