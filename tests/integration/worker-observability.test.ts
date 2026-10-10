@@ -488,6 +488,9 @@ const require = createRequire(import.meta.url),
         const child = spawn(
           process.execPath,
           [
+            // The worker package has no "type": the TypeScript source loads as ESM and Node
+            // prints a one-time module-type warning, which is not the worker's own output.
+            "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
             "--input-type=module",
             "--eval",
             `
