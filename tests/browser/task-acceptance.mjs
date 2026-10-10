@@ -38,7 +38,7 @@ const item = {
   },
 };
 const bonusOptions = {
-  adjustment: { maxXp: 200, maxPoints: 80 },
+  adjustment: { minXp: 50, minPoints: 15, maxXp: 200, maxPoints: 80 },
   bonuses: [
     { code: "quality", title: "Качество", xp: 20, points: 10 },
     { code: "innovation", title: "Инновация", xp: 40, points: 20 },
@@ -460,11 +460,11 @@ try {
     assert.match(await preview.innerText(), /получит\s+100 XP\s+и\s+30 баллов/);
     await page.getByLabel(/Базовый XP/).fill("201");
     assert.equal(await send(page).isDisabled(), true);
-    await page
-      .getByText("Не больше 200 XP и 80 баллов по версии правил.", {
-        exact: false,
-      })
-      .waitFor();
+    const limits = "XP от 50 до 200, баллы от 15 до 80 по версии правил.";
+    await page.getByText(limits, { exact: false }).waitFor();
+    await page.getByLabel(/Базовый XP/).fill("49");
+    assert.equal(await send(page).isDisabled(), true);
+    await page.getByText(limits, { exact: false }).waitFor();
     await page.getByLabel(/Базовый XP/).fill("120");
     await page.getByLabel(/Базовые баллы/).fill("25");
     await page.getByLabel("Бонус (не более одного)").selectOption("quality");

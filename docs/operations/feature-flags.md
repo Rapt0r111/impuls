@@ -17,7 +17,7 @@
 | `ADMIN_CATALOG_ENABLED`                                                                                                                              | чтение условий и квот в админ-каталоге                                              |
 | `CATALOG_CREATION_ENABLED`, `CATALOG_PUBLICATION_ENABLED`, `CATALOG_SCHEDULING_ENABLED`, `CATALOG_CANCELLATION_ENABLED`, `QUOTA_PUBLICATION_ENABLED` | запись в админ-каталоге (каждая независимо, вместе с `ADMIN_CATALOG_ENABLED`)       |
 | `NOTIFICATION_STATUS_ENABLED`                                                                                                                        | экран состояния уведомлений                                                         |
-| `RANKING_ENABLED`                                                                                                                                    | месячный рейтинг; не включать до решения P-05                                       |
+| `RANKING_ENABLED`                                                                                                                                    | месячный рейтинг; для пилота включить (P-05, решение владельца 10.10.2026)          |
 
 ## Worker (отдельный процесс, не размещён)
 

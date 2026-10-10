@@ -75,9 +75,11 @@ function ReturnForm({
         : adjusted &&
             (!adjustment ||
               parsedBaseXp > adjustment.maxXp ||
-              parsedBasePoints > adjustment.maxPoints)
+              parsedBasePoints > adjustment.maxPoints ||
+              parsedBaseXp < adjustment.minXp ||
+              parsedBasePoints < adjustment.minPoints)
           ? adjustment
-            ? `Не больше ${adjustment.maxXp} XP и ${adjustment.maxPoints} баллов по версии правил.`
+            ? `XP от ${adjustment.minXp} до ${adjustment.maxXp}, баллы от ${adjustment.minPoints} до ${adjustment.maxPoints} по версии правил.`
             : "Версия правил не разрешает корректировку."
           : null;
   const totalXp = (parsedBaseXp ?? 0) + (bonus?.xp ?? 0);
@@ -330,8 +332,8 @@ function ReturnForm({
                 {adjustment && (
                   <>
                     <label htmlFor="review-base-xp">
-                      Базовый XP (фонд {item.task.fundXp}, не больше{" "}
-                      {adjustment.maxXp})
+                      Базовый XP (фонд {item.task.fundXp}, от {adjustment.minXp}{" "}
+                      до {adjustment.maxXp})
                     </label>
                     <input
                       id="review-base-xp"
@@ -343,8 +345,8 @@ function ReturnForm({
                       }}
                     />
                     <label htmlFor="review-base-points">
-                      Базовые баллы (фонд {item.task.fundPoints}, не больше{" "}
-                      {adjustment.maxPoints})
+                      Базовые баллы (фонд {item.task.fundPoints}, от{" "}
+                      {adjustment.minPoints} до {adjustment.maxPoints})
                     </label>
                     <input
                       id="review-base-points"
