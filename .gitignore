@@ -12,3 +12,7 @@ apps/app/.impeccable/review/
 /.local/
 
 .vercel
+
+# Local debug and scratch leftovers
+debug.log
+/scratch_*
