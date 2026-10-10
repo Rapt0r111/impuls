@@ -8,6 +8,7 @@ import { createServer } from "node:net";
 import { chromium } from "playwright";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { dropDatabase } from "./drop-database";
 import { expireOneSyntheticReservation as expire } from "../../packages/domain/src/rewards/automatic-expiry";
 import { mutateRedemption } from "../../packages/domain/src/rewards/write";
 import { decideRedemption } from "../../packages/domain/src/rewards/decisions";
@@ -203,7 +204,7 @@ const require = createRequire(import.meta.url),
         notifications.end(),
         db.end(),
       ]);
-      if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+      if (created) await dropDatabase(admin, name);
       await admin.end();
     });
     it("keeps NULL/future deadlines pending and a disabled service opens no connection", async () => {

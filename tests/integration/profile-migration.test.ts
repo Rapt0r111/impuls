@@ -1,3 +1,4 @@
+import { dropDatabase } from "./drop-database";
 import { createRequire } from "node:module";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
@@ -150,7 +151,7 @@ const url = process.env.TEST_DATABASE_URL,
   afterAll(async () => {
     await db.end();
     try {
-      if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+      if (created) await dropDatabase(admin, name);
     } finally {
       await admin.end();
     }

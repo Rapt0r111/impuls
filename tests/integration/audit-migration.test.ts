@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
+import { dropDatabase } from "./drop-database";
 
 const url = process.env.TEST_DATABASE_URL,
   require = createRequire(import.meta.url);
@@ -115,7 +116,7 @@ const url = process.env.TEST_DATABASE_URL,
   afterAll(async () => {
     await db.end();
     try {
-      if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+      if (created) await dropDatabase(admin, name);
     } finally {
       await admin.end();
     }

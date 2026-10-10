@@ -1,3 +1,4 @@
+import { dropDatabase } from "./drop-database";
 import { createRequire } from "node:module";
 import { readdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
@@ -113,7 +114,7 @@ const HOUR = "interval '1 hour'";
   afterAll(async () => {
     await Promise.all([worker.end(), app.end(), db.end()]);
     try {
-      if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+      if (created) await dropDatabase(admin, name);
     } finally {
       await admin.end();
     }

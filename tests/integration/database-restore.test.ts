@@ -1,3 +1,4 @@
+import { dropDatabase } from "./drop-database";
 import { randomBytes, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import {
@@ -519,7 +520,7 @@ async function snapshot(pool: Pool | PoolClient) {
           )
             throw new Error("Refusing unexpected database cleanup target");
           try {
-            await admin.query(`DROP DATABASE ${quote(name)} WITH (FORCE)`);
+            await dropDatabase(admin, name);
           } catch (error) {
             failures.push(error);
           }

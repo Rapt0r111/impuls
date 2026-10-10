@@ -1,3 +1,4 @@
+import { dropDatabase } from "./drop-database";
 import { createRequire } from "node:module";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
@@ -95,7 +96,7 @@ const require = createRequire(import.meta.url);
     afterAll(async () => {
       await Promise.all([app.end(), db.end()]);
       try {
-        if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+        if (created) await dropDatabase(admin, name);
       } finally {
         await admin.end();
       }
@@ -155,7 +156,7 @@ const require = createRequire(import.meta.url);
       expect(results.map((r) => r.kind).sort()).toEqual(["ok", "taken"]);
       const holders = (
         await db.query(
-          "SELECT count(*)::int n FROM impuls.users WHERE active AND lower(display_name COLLATE pg_unicode_fast)='общее имя'",
+          "SELECT count(*)::int n FROM impuls.users WHERE active AND lower(display_name COLLATE pg_c_utf8)='общее имя'",
         )
       ).rows[0].n;
       expect(holders).toBe(1);

@@ -1,3 +1,4 @@
+import { dropDatabase } from "./drop-database";
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { readdir } from "node:fs/promises";
@@ -175,7 +176,7 @@ const require = createRequire(import.meta.url),
         notifications.end(),
         db.end(),
       ]);
-      if (created) await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
+      if (created) await dropDatabase(admin, name);
       await admin.end();
     });
     it("reads an empty aggregate and the disabled service never opens a connection", async () => {

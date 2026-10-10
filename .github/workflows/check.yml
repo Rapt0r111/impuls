@@ -34,6 +34,12 @@ jobs:
         with:
           node-version: 24.21.0
       - run: bun install --frozen-lockfile
+      - name: Provision Supabase API roles (absent in plain PostgreSQL)
+        run: |
+          for role in anon authenticated service_role; do
+            PGPASSWORD=test-only psql -h 127.0.0.1 -U impuls -d impuls_test -v ON_ERROR_STOP=1 \
+              -c "CREATE ROLE $role NOLOGIN"
+          done
       - run: bun run db:migrate
       - run: bun run check
         env:
