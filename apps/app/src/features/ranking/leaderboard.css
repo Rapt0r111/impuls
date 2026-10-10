@@ -255,3 +255,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Колонки рейтинга: место 48 px, XP 76 px, имя занимает остаток строки. */
+.ranking-table .ranking-col-rank {
+  width: 48px;
+}
+.ranking-table .ranking-col-xp {
+  width: 76px;
+}

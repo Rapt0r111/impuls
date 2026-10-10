@@ -44,3 +44,9 @@
 - **Изменено:** `apps/app/src/features/rewards/reward-catalog.tsx`, `rewards.css` — блок баланса в золотой карточке как на макете (`project/Rewards.dc.html`); у позиции, на которую не хватает баллов, полоса прогресса и подпись «Не хватает N баллов». Логика заявок, квоты и правила не менялись.
 - **Проверено:** `typecheck`, `eslint apps tests`, `prettier --check`, `test:unit` — без ошибок; `test:reflow` — 150 сценариев, 0 сбоев; браузерные сценарии `rewards`, `reward-decisions`, `reward-fulfillment`, `leaderboard`, `profile`, `home`, `tasks-smoke` — прошли на production-сборке.
 - **Не проверено:** реальный Telegram; сценарии с PostgreSQL.
+
+## Дополнение: рейтинг (10.10.2026)
+
+- **Изменено:** `apps/app/src/features/ranking/leaderboard.tsx`, `leaderboard.css` — у таблицы заданы ширины колонок (`<colgroup>`: место 48 px, XP 76 px, имя — остаток). Раньше колонка места растягивалась на треть строки, а имя переносилось по буквам. Пьедестал и строка «Вы» из макета уже были и не менялись; данные и правила расчёта не менялись.
+- **Проверено:** `typecheck`, `eslint apps tests`, `prettier --check`, `test:unit` (181) — без ошибок; `test:reflow` — 150 сценариев, 0 сбоев; браузерные сценарии `leaderboard`, `rewards`, `profile`, `home`, `tasks-smoke`, `task-reviews` — прошли. Снимок при 390 px просмотрен вручную.
+- **Не проверено:** реальный Telegram; длинные реальные имена (в тестовых данных имя длиннее 40 символов, в реальных оно ограничено правилами профиля).
