@@ -53,6 +53,9 @@ jobs:
       - run: bun run test:restore
         env:
           PG_BIN: /usr/lib/postgresql/17/bin
+      - run: bun run test:backup
+        env:
+          PG_BIN: /usr/lib/postgresql/17/bin
       - run: bunx playwright install chromium --with-deps
       - name: Worker observation and POSIX stop rehearsal
         run: bun run test:worker-ops

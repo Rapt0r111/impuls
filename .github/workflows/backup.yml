@@ -1,0 +1,109 @@
+name: backup
+
+# P-06: one copy of the Production database a day (RPO 24 h). Every copy is
+# restored into an empty PostgreSQL 17.6 and checked before it is kept, then
+# encrypted to the owner's age key. Runbook: docs/operations/database-backup.md.
+on:
+  schedule:
+    - cron: "30 0 * * *" # 03:30 Europe/Moscow
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: impuls
+          POSTGRES_PASSWORD: check-only
+          POSTGRES_DB: impuls_check
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U impuls -d impuls_check"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://impuls:check-only@127.0.0.1:5432/impuls_check
+      PG_BIN: /usr/lib/postgresql/17/bin
+    steps:
+      - name: Require backup secrets
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          missing=0
+          for name in BACKUP_DATABASE_URL BACKUP_AGE_RECIPIENT; do
+            if [ -z "${!name}" ]; then echo "::error::Secret $name is not set"; missing=1; fi
+          done
+          exit $missing
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+      - run: bun install --frozen-lockfile
+      - name: Install PostgreSQL 17 client and age
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y postgresql-common age
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install --no-install-recommends -y postgresql-client-17
+      - name: Dump Production
+        id: dump
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          umask 077
+          "$PG_BIN/pg_dump" --dbname="$BACKUP_DATABASE_URL" --no-password \
+            --format=custom --schema=impuls --schema=impuls_meta \
+            --file="$RUNNER_TEMP/impuls.dump"
+      # A copy that fails its check is still kept (it may be the only one), and the run fails.
+      - name: Restore into an empty database and check it
+        id: check
+        continue-on-error: true
+        run: |
+          umask 077
+          node scripts/verify-backup.mjs --archive "$RUNNER_TEMP/impuls.dump" > "$RUNNER_TEMP/check.json"
+          cat "$RUNNER_TEMP/check.json"
+      - name: Encrypt the copy
+        if: steps.dump.outcome == 'success'
+        env:
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          umask 077
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          mkdir -p "$RUNNER_TEMP/out"
+          age --recipient "$BACKUP_AGE_RECIPIENT" \
+            --output "$RUNNER_TEMP/out/impuls-$stamp.dump.age" "$RUNNER_TEMP/impuls.dump"
+          if [ -s "$RUNNER_TEMP/check.json" ]; then
+            cp "$RUNNER_TEMP/check.json" "$RUNNER_TEMP/out/impuls-$stamp.check.json"
+          fi
+          rm -f "$RUNNER_TEMP/impuls.dump"
+      - uses: actions/upload-artifact@v4
+        if: steps.dump.outcome == 'success'
+        with:
+          name: impuls-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Remove the unencrypted copy
+        if: always()
+        run: rm -f "$RUNNER_TEMP/impuls.dump"
+      - name: Fail when the restored copy did not pass its check
+        if: steps.check.outcome != 'success'
+        run: |
+          echo "::error::The copy was kept but did not pass the restore check; see the check step and docs/operations/database-backup.md"
+          exit 1

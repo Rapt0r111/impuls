@@ -31,6 +31,7 @@
     "test:unit": "vitest run --passWithNoTests",
     "test:integration": "bun run build:worker && vitest run tests/integration",
     "test:restore": "node scripts/verify-database-restore.mjs",
+    "test:backup": "vitest run tests/verify-backup.test.ts tests/integration/backup-verify.test.ts",
     "test:notifications": "bun run build:worker && vitest run apps/worker/src/loop.test.ts packages/domain/src/notifications/simulation.test.ts tests/integration/notification-simulations.test.ts",
     "test:access": "vitest run tests/integration/access-management.test.ts tests/integration/member-management.test.ts",
     "test:task-slice": "node scripts/verify-task-slice.mjs",
