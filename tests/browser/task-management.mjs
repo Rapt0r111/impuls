@@ -10,6 +10,7 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { Pool } from "pg";
 import { leaveHome, mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const managerId = "11111111-1111-4111-8111-111111111111";
@@ -339,9 +340,7 @@ async function pageFixture(width, mode = "success") {
   await page.goto(origin, { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Постановка задач", exact: true })
-    .click();
+  await (await openSection(page, "Постановка задач")).click();
   if (
     mode !== "options-loading" &&
     mode !== "options-failed" &&
@@ -547,9 +546,7 @@ async function dbFlow() {
       await page
         .getByRole("heading", { name: "Доступ подтверждён", exact: true })
         .waitFor();
-      await page
-        .getByRole("button", { name: "Постановка задач", exact: true })
-        .click();
+      await (await openSection(page, "Постановка задач")).click();
       await page.getByLabel("Область", { exact: true }).selectOption(scope);
       await page
         .getByLabel("Версия правил", { exact: true })
@@ -770,9 +767,6 @@ try {
       await page
         .getByRole("button", { name: "Мои задачи", exact: true })
         .click();
-      await page
-        .getByRole("button", { name: "Постановка задач", exact: true })
-        .waitFor();
       assert.ok(
         dialogs.some((message) => message.includes("Текст ещё не отправлен")),
       );

@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
@@ -336,9 +337,7 @@ async function fixture(mode = "populated", width = 390, open = true) {
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (open && mode !== "no-permission")
-    await page
-      .getByRole("button", { name: "Журнал действий", exact: true })
-      .click();
+    await (await openSection(page, "Журнал действий")).click();
   return {
     page,
     context,
@@ -403,10 +402,12 @@ try {
   {
     const f = await fixture("all-permissions", 320);
     await ready(f);
-    const operations = f.page.locator(
-      ".workspace-nav-operations .workspace-tab",
-    );
-    // Журнал начислений (Баланс) входит в строку разделов для всех.
+    await f.page
+      .locator(".workspace-nav-personal")
+      .getByRole("button", { name: "Ещё", exact: true })
+      .click();
+    const operations = f.page.locator(".more-row");
+    // Журнал начислений (Баланс) входит в раздел «Ещё» для всех.
     assert.equal(await operations.count(), 4);
     const dimensions = await operations.evaluateAll((elements) =>
       elements.map((el) => {
@@ -418,9 +419,7 @@ try {
         };
       }),
     );
-    // Служебные разделы — одна прокручиваемая строка: чипы нажимаемы, а лента не
-    // расширяет страницу (открытый раздел может быть прокручен к краю).
-    assert.equal(new Set(dimensions.map((d) => d.height)).size, 1);
+    // Служебные разделы — строки списка «Ещё»: нажимаемы и не расширяют страницу.
     for (const d of dimensions) assert.ok(d.height >= 44);
     assert.ok(
       await f.page.evaluate(
@@ -606,6 +605,8 @@ try {
     assert.ok(f.calls.length > before);
     assert.ok(!f.calls.at(-1).cursor);
     await f.page.evaluate(() => window.__back());
+    await f.page.getByRole("heading", { name: "Ещё" }).waitFor();
+    await f.page.evaluate(() => window.__back());
     await f.page.getByRole("heading", { name: "Главная" }).waitFor();
     assert.equal(await f.page.locator(".audit-list").count(), 0);
     await close(f);
@@ -709,9 +710,7 @@ try {
   {
     const f = await fixture("no-permission", 320);
     assert.equal(
-      await f.page
-        .getByRole("button", { name: "Журнал действий", exact: true })
-        .count(),
+      await (await openSection(f.page, "Журнал действий")).count(),
       0,
     );
     await close(f);
@@ -739,7 +738,8 @@ try {
     await report.fill("Несданный текст для проверки перехода к аудиту.");
     f.page.once("dialog", (d) => d.dismiss());
     await f.page
-      .getByRole("button", { name: "Журнал действий", exact: true })
+      .locator(".workspace-nav-personal")
+      .getByRole("button", { name: "Ещё", exact: true })
       .click();
     assert.equal(
       await report.inputValue(),
@@ -747,9 +747,7 @@ try {
     );
     assert.equal(await f.page.locator(".audit-list").count(), 0);
     f.page.once("dialog", (d) => d.accept());
-    await f.page
-      .getByRole("button", { name: "Журнал действий", exact: true })
-      .click();
+    await (await openSection(f.page, "Журнал действий")).click();
     await ready(f);
     await close(f);
   }

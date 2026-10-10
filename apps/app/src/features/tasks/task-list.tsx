@@ -29,6 +29,18 @@ import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
 import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
+import { MoreMenu, type MoreTarget } from "@/features/more/more-menu";
+
+const moreTargets: MoreTarget[] = [
+  "profile",
+  "ledger",
+  "reviews",
+  "management",
+  "catalog-admin",
+  "access",
+  "audit",
+  "notifications",
+];
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -383,12 +395,6 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M9 8h6M9 12h6M9 16h3" />
     </>
   ),
-  ledger: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.6 2.5 1.6c0 2.2-5 1.2-5 3.6 0 1 1 1.6 2.5 1.6s2.5-.6 2.5-1.6" />
-    </>
-  ),
   rewards: (
     <>
       <rect x="3" y="8" width="18" height="4" rx="1" />
@@ -401,13 +407,17 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M12 13v4M8 20h8M10 17h4" />
     </>
   ),
-  profile: (
+  more: (
     <>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+      <circle cx="5.5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="18.5" cy="12" r="1.5" />
     </>
   ),
 };
+
+type WorkspaceView =
+  "home" | "tasks" | "ranking" | "rewards" | "more" | MoreTarget;
 
 function TaskWorkspace() {
   const {
@@ -417,31 +427,19 @@ function TaskWorkspace() {
     accessScopes,
     canReadNotificationStatus,
     canManageTasks,
-    canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
-  const [view, setView] = useState<
-    | "home"
-    | "tasks"
-    | "reviews"
-    | "ledger"
-    | "management"
-    | "ranking"
-    | "profile"
-    | "audit"
-    | "catalog-admin"
-    | "access"
-    | "notifications"
-    | "rewards"
-  >(canReview ? "reviews" : "home");
-  const rootView = canReview ? "reviews" : "home";
-  useTelegramBack(
-    view !== rootView,
-    () => {
-      if (confirmLeave()) setView(rootView);
-    },
-    10,
+  const [view, setView] = useState<WorkspaceView>(
+    canReview ? "reviews" : "home",
   );
+  const rootView: WorkspaceView = canReview ? "reviews" : "home";
+  const inMore = view === "more" || moreTargets.includes(view as MoreTarget);
+  // Назад из раздела «Ещё» ведёт в меню «Ещё», из самого меню — на стартовый экран.
+  const goBack = () => {
+    if (!confirmLeave()) return;
+    setView(view === "more" || !inMore ? rootView : "more");
+  };
+  useTelegramBack(view !== rootView, goBack, 10);
   // Раздел сообщает странице, какой экран открыт: «Главная» получает крупную шапку.
   useEffect(() => {
     document.documentElement.dataset.view = view;
@@ -449,100 +447,56 @@ function TaskWorkspace() {
       delete document.documentElement.dataset.view;
     };
   }, [view]);
-  // Лента служебных разделов прокручивается: открытый раздел должен быть виден в ней.
-  useEffect(() => {
-    document
-      .querySelector(
-        ".workspace-nav-operations .workspace-tab[aria-pressed=true]",
-      )
-      ?.scrollIntoView({ inline: "nearest", block: "nearest" });
-  }, [view]);
-  type Destination = {
-    id: typeof view;
-    label: string;
-    accessibleLabel: string;
-  };
-  const personal: Destination[] = [
-    { id: "home", label: "Главная", accessibleLabel: "Главная" },
-    { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
-    { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
-    { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
-    { id: "profile", label: "Профиль", accessibleLabel: "Мой профиль" },
-  ];
-  // Журнал начислений вне нижней панели (там пять разделов, как в прототипе).
-  const operations: Destination[] = [
-    { id: "ledger", label: "Баланс", accessibleLabel: "Баланс и журнал" },
-  ];
-  if (canReview)
-    operations.push({
-      id: "reviews",
-      label: "Проверка",
-      accessibleLabel: "Проверка отчётов",
-    });
-  if (canManageTasks)
-    operations.push({
-      id: "management",
-      label: canSetTasks ? "Постановка" : "История",
-      accessibleLabel: canSetTasks ? "Постановка задач" : "Задачи и история",
-    });
-  if (canInspectCatalog)
-    operations.push({
-      id: "catalog-admin",
-      label: "Конфигурация",
-      accessibleLabel: "Управление каталогом",
-    });
-  if (accessScopes?.length)
-    operations.push({
-      id: "access",
-      label: "Доступ",
-      accessibleLabel: "Управление доступом",
-    });
-  if (canReadAudit)
-    operations.push({
-      id: "audit",
-      label: "Журнал",
-      accessibleLabel: "Журнал действий",
-    });
-  if (canReadNotificationStatus)
-    operations.push({
-      id: "notifications",
-      label: "Уведомления",
-      accessibleLabel: "Состояние уведомлений",
-    });
-  const destination = (item: Destination) => (
-    <button
-      key={item.id}
-      type="button"
-      className="workspace-tab"
-      aria-label={item.accessibleLabel}
-      aria-pressed={view === item.id}
-      onClick={() => {
-        if (confirmLeave()) setView(item.id);
-      }}
-    >
-      {tabIcons[item.id] ? (
-        <span className="workspace-tab-pill" aria-hidden="true">
-          <svg className="workspace-tab-icon" viewBox="0 0 24 24">
-            {tabIcons[item.id]}
-          </svg>
-        </span>
-      ) : null}
-      <span>{item.label}</span>
-    </button>
-  );
+  const tabs: { id: WorkspaceView; label: string; accessibleLabel: string }[] =
+    [
+      { id: "home", label: "Главная", accessibleLabel: "Главная" },
+      { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
+      { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
+      { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
+      { id: "more", label: "Ещё", accessibleLabel: "Ещё" },
+    ];
+  const isCurrent = (id: WorkspaceView) =>
+    id === "more" ? inMore : view === id;
   return (
     <>
       <nav className="workspace-nav" aria-label="Рабочие разделы">
         <div className="workspace-nav-personal">
-          {personal.map(destination)}
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="workspace-tab"
+              aria-label={item.accessibleLabel}
+              aria-pressed={isCurrent(item.id)}
+              onClick={() => {
+                if (confirmLeave()) setView(item.id);
+              }}
+            >
+              <span className="workspace-tab-pill" aria-hidden="true">
+                <svg className="workspace-tab-icon" viewBox="0 0 24 24">
+                  {tabIcons[item.id]}
+                </svg>
+              </span>
+              <span>{item.label}</span>
+            </button>
+          ))}
         </div>
-        {operations.length ? (
-          <div className="workspace-nav-operations">
-            {operations.map(destination)}
-          </div>
-        ) : null}
       </nav>
-      {view === "rewards" ? (
+      {inMore && view !== "more" ? (
+        <button type="button" className="more-back" onClick={goBack}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          <span>Ещё</span>
+        </button>
+      ) : null}
+      {view === "more" ? (
+        <MoreMenu
+          onOpen={(to) => {
+            if (confirmLeave()) setView(to);
+          }}
+        />
+      ) : view === "rewards" ? (
         <RewardCatalog />
       ) : view === "catalog-admin" && canInspectCatalog ? (
         <CatalogAdmin />

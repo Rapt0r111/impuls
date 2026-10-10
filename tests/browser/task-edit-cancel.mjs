@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = process.env.TEST_SCREENSHOT_DIR ?? "test-results/task-edit-cancel";
@@ -216,12 +217,12 @@ async function fixture(width, mode = "success") {
     return route.fallback();
   });
   await page.goto(origin);
-  await page
-    .getByRole("button", {
-      name: mode === "view-only" ? "Задачи и история" : "Постановка задач",
-      exact: true,
-    })
-    .click();
+  await (
+    await openSection(
+      page,
+      mode === "view-only" ? "Задачи и история" : "Постановка задач",
+    )
+  ).click();
   await page.getByRole("heading", { name: task.title, exact: true }).waitFor();
   return { page, calls, errors };
 }

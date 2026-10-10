@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -203,9 +204,7 @@ async function fixture(width = 320, readOnly = false) {
       }),
   );
   await page.goto(origin);
-  await page
-    .getByRole("button", { name: "Управление каталогом", exact: true })
-    .click();
+  await (await openSection(page, "Управление каталогом")).click();
   await page.locator(".admin-catalog-items > li").waitFor();
   return {
     page,
@@ -494,9 +493,7 @@ try {
   for (const width of [320, 1280]) {
     const f = await fixture(width);
     try {
-      await f.page
-        .getByRole("button", { name: "Журнал действий", exact: true })
-        .click();
+      await (await openSection(f.page, "Журнал действий")).click();
       await f.page.locator(".audit-list > li").waitFor();
       assert.match(
         await f.page.locator(".audit-list").innerText(),

@@ -10,6 +10,7 @@ import { readRewardCatalog } from "../../packages/domain/src/rewards/read";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { catalogCreationResponseSchema } from "../../packages/contracts/src/catalog-creation";
 import { auditResponseSchema } from "../../packages/contracts/src/audit";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -578,9 +579,7 @@ const url = process.env.TEST_DATABASE_URL,
           ]);
           const page = await context.newPage();
           await page.goto(origin!);
-          await page
-            .getByRole("button", { name: "Управление каталогом", exact: true })
-            .click();
+          await (await openSection(page, "Управление каталогом")).click();
           await page.getByLabel("Область", { exact: true }).selectOption(scope);
           await page
             .getByRole("button", {

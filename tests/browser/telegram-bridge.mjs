@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { homeFallbackProfile, mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3101";
 const id = "11111111-1111-4111-8111-111111111111";
@@ -481,9 +482,7 @@ try {
       await reason.waitFor({ state: "detached" });
       assert.equal(await backVisible(f.page), false);
     } else if (role === "manager") {
-      await f.page
-        .getByRole("button", { name: "Постановка задач", exact: true })
-        .click();
+      await (await openSection(f.page, "Постановка задач")).click();
       await f.page
         .getByRole("button", { name: "Редактировать черновик", exact: true })
         .click();
@@ -504,14 +503,14 @@ try {
         1,
       );
       await nativeBack(f.page);
+      await f.page.getByRole("heading", { name: "Ещё", exact: true }).waitFor();
+      await nativeBack(f.page);
       await f.page
         .getByRole("heading", { name: "Главная", exact: true })
         .waitFor();
       assert.equal(await backVisible(f.page), false);
     } else {
-      await f.page
-        .getByRole("button", { name: "Баланс и журнал", exact: true })
-        .click();
+      await (await openSection(f.page, "Баланс и журнал")).click();
       await f.page
         .getByRole("button", { name: "Исправление начислений", exact: true })
         .click();
@@ -536,6 +535,8 @@ try {
           .getAttribute("aria-expanded"),
         "false",
       );
+      await nativeBack(f.page);
+      await f.page.getByRole("heading", { name: "Ещё", exact: true }).waitFor();
       await nativeBack(f.page);
       await f.page
         .getByRole("heading", { name: "Главная", exact: true })

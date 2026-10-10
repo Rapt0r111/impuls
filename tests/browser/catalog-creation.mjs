@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -215,9 +216,7 @@ async function fixture(width = 320, mode = "ready") {
       }),
   );
   await page.goto(origin);
-  await page
-    .getByRole("button", { name: "Управление каталогом", exact: true })
-    .click();
+  await (await openSection(page, "Управление каталогом")).click();
   await page.getByLabel("Область", { exact: true }).waitFor();
   return {
     page,
@@ -323,9 +322,7 @@ try {
       );
       await capture(f, `success-${width}`);
       if (width === 320 || width === 1280) {
-        await f.page
-          .getByRole("button", { name: "Журнал действий", exact: true })
-          .click();
+        await (await openSection(f.page, "Журнал действий")).click();
         await f.page
           .getByText(
             "Первоначальные выключенные условия, версия 1. Квота при создании не задаётся.",

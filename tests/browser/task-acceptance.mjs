@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const id = "11111111-1111-4111-8111-111111111111",
   sub = "22222222-2222-4222-8222-222222222222",
@@ -288,9 +289,7 @@ try {
       })
       .waitFor();
     assert.equal(calls.length, 1);
-    await page
-      .getByRole("button", { name: "Баланс и журнал", exact: true })
-      .click();
+    await (await openSection(page, "Баланс и журнал")).click();
     await page.getByText("100 XP", { exact: true }).waitFor();
     await page.getByText("+30 баллов", { exact: true }).waitFor();
     await page.screenshot({
@@ -406,9 +405,7 @@ try {
   }
   for (const mode of ["ledger-empty", "ledger-failed", "ledger-revoked"]) {
     const { page } = await fixture(320, mode);
-    await page
-      .getByRole("button", { name: "Баланс и журнал", exact: true })
-      .click();
+    await (await openSection(page, "Баланс и журнал")).click();
     if (mode === "ledger-empty")
       await page.getByText("Начислений пока нет.", { exact: false }).waitFor();
     else if (mode === "ledger-revoked")
@@ -509,9 +506,7 @@ try {
   }
   for (const mode of ["ledger-more", "ledger-refresh-failed"]) {
     const { page } = await fixture(320, mode);
-    await page
-      .getByRole("button", { name: "Баланс и журнал", exact: true })
-      .click();
+    await (await openSection(page, "Баланс и журнал")).click();
     await page.getByText("+100 XP", { exact: true }).waitFor();
     if (mode === "ledger-more") {
       await page
