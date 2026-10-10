@@ -256,10 +256,209 @@
   }
 }
 
-/* Колонки рейтинга: место 48 px, XP 76 px, имя занимает остаток строки. */
-.ranking-table .ranking-col-rank {
-  width: 48px;
+/* Рейтинг по макету: месяц со стрелками, пьедестал со столбцами, строки с
+   аватарами. Первые три строки таблицы остаются для скринридеров. */
+.ranking-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
-.ranking-table .ranking-col-xp {
-  width: 76px;
+.ranking-step {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-edge);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.07);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.ranking-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ranking-step svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ranking-month-field {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.ranking-month-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+.ranking-scope {
+  margin: 0 0 16px;
+}
+.ranking-scope-name {
+  margin: -8px 0 16px;
+  color: var(--color-muted);
+  font-size: 14px;
+  text-align: center;
+}
+.ranking-podium {
+  align-items: end;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+.ranking-podium li,
+.ranking-podium li.ranking-podium-first {
+  gap: 4px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  animation: none;
+}
+.ranking-podium-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+}
+.ranking-podium strong {
+  max-width: 100%;
+  font-size: 14px;
+}
+.ranking-podium b {
+  font-size: 18px;
+}
+.ranking-podium-bar {
+  display: grid;
+  width: 100%;
+  height: 74px;
+  place-items: start center;
+  padding-top: 8px;
+  border-radius: 16px 16px 6px 6px;
+  background: linear-gradient(
+    180deg,
+    rgb(220 232 235 / 0.3),
+    rgb(220 232 235 / 0.06)
+  );
+  color: #e6eff1;
+  font-size: 22px;
+  font-weight: 700;
+  transform-origin: 50% 100%;
+  animation: podium-grow 0.8s 0.15s var(--ease-out) both;
+}
+.ranking-podium-first .ranking-podium-bar {
+  height: 104px;
+  background: linear-gradient(
+    180deg,
+    rgb(246 208 131 / 0.5),
+    rgb(246 208 131 / 0.08)
+  );
+  color: var(--color-gold);
+}
+.ranking-podium li:last-child .ranking-podium-bar {
+  height: 56px;
+  background: linear-gradient(
+    180deg,
+    rgb(224 160 120 / 0.34),
+    rgb(224 160 120 / 0.06)
+  );
+  color: #f2c3a2;
+}
+.ranking-table tbody tr.ranking-top {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.ranking-table tbody th {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.ranking-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.09);
+  color: #dbe8ea;
+  font-size: 14px;
+  font-weight: 700;
+}
+.ranking-own-row .ranking-avatar {
+  background: linear-gradient(145deg, #2f6f66, #173f44);
+  color: #aef5e0;
+}
+.ranking-name {
+  min-width: 0;
+}
+.ranking-hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+/* Ячейка с именем остаётся ячейкой таблицы: раскладка — во вложенном блоке. */
+.ranking-table tbody th {
+  display: table-cell;
+}
+.ranking-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.ranking-month-field {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.ranking-month-field > span {
+  font-size: 14px;
+}
+
+/* Колонки считаются по содержимому: скрытые первые строки не должны сужать таблицу. */
+.ranking-table {
+  table-layout: auto;
+}
+.ranking-table th:first-child,
+.ranking-table td:first-child {
+  width: 52px;
+}
+.ranking-table th:last-child,
+.ranking-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+.ranking-table tbody td:last-child {
+  color: var(--color-ink);
+}
+.ranking-own-row td:last-child {
+  color: var(--color-mint);
+}
+.ranking-own-row td,
+.ranking-own-row th {
+  background: rgb(112 225 194 / 0.16);
 }

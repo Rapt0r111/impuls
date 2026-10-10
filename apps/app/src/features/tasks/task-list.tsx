@@ -29,18 +29,7 @@ import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
 import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
-import { MoreMenu, type MoreTarget } from "@/features/more/more-menu";
-
-const moreTargets: MoreTarget[] = [
-  "profile",
-  "ledger",
-  "reviews",
-  "management",
-  "catalog-admin",
-  "access",
-  "audit",
-  "notifications",
-];
+import { MoreScreen, type MoreDestination } from "@/features/more/more-screen";
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -116,52 +105,6 @@ function dateLabel(value: string): string {
   }).format(new Date(value));
 }
 
-function timeLabel(value: string): string {
-  return new Intl.DateTimeFormat("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-// «Сегодня до 18:00» или «до 24 окт. 2026 г., 12:00»: срок читается без расчёта в уме.
-function dueLabel(value: string): string {
-  const due = new Date(value),
-    now = new Date();
-  const sameDay =
-    due.getFullYear() === now.getFullYear() &&
-    due.getMonth() === now.getMonth() &&
-    due.getDate() === now.getDate();
-  return sameDay
-    ? `Сегодня до ${timeLabel(value)}`
-    : `до ${dateLabel(value)}, ${timeLabel(value)}`;
-}
-
-// Остаток времени до срока; после срока — просрочка. Считается при отрисовке,
-// поэтому в отчётах не появляется придуманной точности: единица не мельче минуты.
-function remainingLabel(value: string): string {
-  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60_000);
-  const absolute = Math.abs(minutes);
-  const days = Math.floor(absolute / 1440),
-    hours = Math.floor((absolute % 1440) / 60),
-    rest = absolute % 60;
-  const parts = days
-    ? [`${days} д`, hours ? `${hours} ч` : null]
-    : hours
-      ? [`${hours} ч`, rest ? `${rest} мин` : null]
-      : [`${rest} мин`];
-  const text = parts.filter(Boolean).join(" ");
-  return minutes < 0 ? `просрочено на ${text}` : `осталось ${text}`;
-}
-
-// Критерии приходят одним текстом; нумерация строится по непустым строкам.
-function criteriaLines(criteria: string): string[] {
-  const lines = criteria
-    .split(/\r?\n/)
-    .map((line) => line.replace(/^\s*[-•*\d.)\s]+/, "").trim())
-    .filter(Boolean);
-  return lines.length > 1 ? lines : [];
-}
-
 // Значок состояния задачи в карточке: форма отличается, а не только цвет.
 const statusIcons: Record<string, ReactNode> = {
   assigned: (
@@ -189,9 +132,72 @@ const statusIcons: Record<string, ReactNode> = {
   cancelled: <path d="M6 6l12 12M18 6 6 18" />,
 };
 
+// Три раздела списка по макету. Фильтрация выполняется по загруженным
+// страницам, поэтому число в разделе показывается только когда список полный.
+type Segment = "active" | "review" | "done";
+const segments: readonly (readonly [Segment, string])[] = [
+  ["active", "Активные"],
+  ["review", "Проверка"],
+  ["done", "Готово"],
+];
+const segmentOf = (status: TaskStatus): Segment =>
+  status === "in_review"
+    ? "review"
+    : status === "accepted" || status === "cancelled"
+      ? "done"
+      : "active";
+
+const timeLabel = (date: Date) =>
+  new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+const dayKey = (date: Date) =>
+  date.getFullYear() * 400 + date.getMonth() * 32 + date.getDate();
+
+// «Сегодня, 18:00», «Завтра, 12:00» или «24 октября»; для невыполненной задачи
+// с прошедшим сроком — «Просрочено · 8 октября».
+function dueInfo(value: string, status: TaskStatus) {
+  const due = new Date(value);
+  const now = new Date();
+  const open = segmentOf(status) === "active";
+  const diff = dayKey(due) - dayKey(now);
+  const long = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    ...(due.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
+  }).format(due);
+  if (open && due.getTime() < now.getTime())
+    return { text: `Просрочено · ${long}`, tone: "late" as const };
+  if (diff === 0)
+    return { text: `Сегодня, ${timeLabel(due)}`, tone: "today" as const };
+  if (diff === 1)
+    return { text: `Завтра, ${timeLabel(due)}`, tone: "soon" as const };
+  return { text: long, tone: "later" as const };
+}
+
+function DueIcon({ tone }: { tone: "late" | "today" | "soon" | "later" }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {tone === "today" || tone === "late" ? (
+        <>
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M12 7.5V12l3 2" />
+        </>
+      ) : (
+        <>
+          <rect x="4" y="5" width="16" height="15" rx="3" />
+          <path d="M4 10h16M9 3v4M15 3v4" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function TaskListContent() {
   const { confirmLeave, loseAccess } = useAuthorizedSession();
-  const [status, setStatus] = useState<StatusFilter>("all");
+  // Пока участник не выбрал раздел сам, открывается первый непустой.
+  const [chosen, setChosen] = useState<Segment | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useTelegramBack(
     selectedId !== null,
@@ -201,9 +207,9 @@ function TaskListContent() {
     30,
   );
   const tasks = useInfiniteQuery({
-    queryKey: ["assigned-tasks", status],
+    queryKey: ["assigned-tasks", "all"],
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) => readTasks(pageParam, status, signal),
+    queryFn: ({ pageParam, signal }) => readTasks(pageParam, "all", signal),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     retry: false,
   });
@@ -213,7 +219,15 @@ function TaskListContent() {
     enabled: selectedId !== null,
     retry: false,
   });
-  const items = tasks.data?.pages.flatMap((page) => page.items) ?? [];
+  const allItems = tasks.data?.pages.flatMap((page) => page.items) ?? [];
+  const segment: Segment =
+    chosen ??
+    segments.find(([value]) =>
+      allItems.some((task) => segmentOf(task.status) === value),
+    )?.[0] ??
+    "active";
+  const items = allItems.filter((task) => segmentOf(task.status) === segment);
+  const complete = !tasks.hasNextPage && !tasks.isPending;
   useEffect(() => {
     for (const error of [tasks.error, detail.error]) {
       if (
@@ -229,14 +243,16 @@ function TaskListContent() {
     (tasks.isError || tasks.isFetchNextPageError) &&
     tasks.error instanceof TaskRequestError &&
     (tasks.error.status === 401 || tasks.error.status === 403);
+  const selected = allItems.find((task) => task.id === selectedId);
 
-  const openTask = detail.data?.task;
-  if (selectedId)
+  if (selectedId) {
+    const due = selected ? dueInfo(selected.dueAt, selected.status) : null;
     return (
-      <section className="tasks-section" aria-labelledby="task-detail-title">
+      <section className="tasks-section task-screen" aria-label="Задача">
         <button
           type="button"
-          className="more-back task-back"
+          className="screen-back"
+          aria-label="Задачи: вернуться к списку"
           onClick={() => {
             if (confirmLeave()) setSelectedId(null);
           }}
@@ -244,131 +260,117 @@ function TaskListContent() {
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m14.5 6-6 6 6 6" />
           </svg>
-          <span>Задачи</span>
+          Задачи
         </button>
-        <section className="tasks-detail" aria-labelledby="task-detail-title">
-          {detail.isPending ? (
-            <>
-              <h2 id="task-detail-title">Задача</h2>
-              <p role="status">Загружаем детали…</p>
-            </>
-          ) : detail.isError && !openTask ? (
-            <>
-              <h2 id="task-detail-title">Задача</h2>
-              <div role="alert">
-                <p>{taskError(detail.error)}</p>
-                {!(
-                  detail.error instanceof TaskRequestError &&
-                  detail.error.status === 404
-                ) && (
-                  <button
-                    type="button"
-                    className="tasks-action"
-                    onClick={() => void detail.refetch()}
-                  >
-                    Повторить
-                  </button>
-                )}
-              </div>
-            </>
-          ) : openTask ? (
-            <>
-              <div className="task-detail-top">
+        {detail.isPending ? (
+          <p className="tasks-state" role="status">
+            Загружаем детали…
+          </p>
+        ) : detail.isError && !detail.data ? (
+          <div className="tasks-state" role="alert">
+            <p>{taskError(detail.error)}</p>
+            {!(
+              detail.error instanceof TaskRequestError &&
+              detail.error.status === 404
+            ) && (
+              <button
+                type="button"
+                className="tasks-action"
+                onClick={() => void detail.refetch()}
+              >
+                Повторить
+              </button>
+            )}
+          </div>
+        ) : detail.data ? (
+          <>
+            <header className="task-hero">
+              <div className="task-hero-meta">
                 <span
-                  className={`task-chip task-chip--status task-chip--${openTask.status}`}
+                  className={`task-chip task-chip--status task-chip--${detail.data.task.status}`}
                 >
-                  {statusNames[openTask.status]}
+                  {statusNames[detail.data.task.status]}
                 </span>
-                <span className="task-detail-due">
-                  {dueLabel(openTask.dueAt)}
-                </span>
+                {selected && due ? (
+                  <span className={`tasks-row-due tasks-row-due--${due.tone}`}>
+                    <DueIcon tone={due.tone} />
+                    {due.text}
+                  </span>
+                ) : null}
               </div>
-              <h2 id="task-detail-title">{openTask.title}</h2>
-              <p className="task-detail-remaining">
-                {remainingLabel(openTask.dueAt)}
-              </p>
-              <div className="task-detail-funds">
-                <span className="task-chip task-chip--xp">
-                  {openTask.fundXp} XP
-                </span>
-                <span className="task-chip task-chip--points">
-                  {openTask.fundPoints} баллов
-                </span>
-                <span
-                  className={`task-chip task-chip--priority task-chip--${openTask.priority}`}
-                >
-                  {priorityNames[openTask.priority]}
-                </span>
-              </div>
+              <h2>{detail.data.task.title}</h2>
+              {selected ? (
+                <div className="tasks-row-fund">
+                  <span className="task-chip task-chip--xp">
+                    {selected.fundXp} XP
+                  </span>
+                  <span className="task-chip task-chip--points">
+                    {selected.fundPoints} баллов
+                  </span>
+                </div>
+              ) : null}
+            </header>
+            <div className="tasks-detail">
               {detail.isError && (
                 <p role="alert">
                   {taskError(detail.error)} Последнее подтверждённое состояние:{" "}
-                  {dateLabel(openTask.updatedAt)}.
+                  {dateLabel(detail.data.task.updatedAt)}.
                 </p>
               )}
-              <section aria-labelledby="task-criteria-title">
-                <h3 id="task-criteria-title">Критерии задачи</h3>
-                {criteriaLines(openTask.criteria).length ? (
-                  <ol className="task-criteria">
-                    {criteriaLines(openTask.criteria).map((line, index) => (
-                      <li key={`${index}-${line}`}>
-                        <span aria-hidden="true">{index + 1}</span>
-                        {line}
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="tasks-detail-criteria">{openTask.criteria}</p>
-                )}
-              </section>
+              <h3 id="task-detail-title">Критерии задачи</h3>
+              <p className="tasks-detail-criteria">
+                {detail.data.task.criteria}
+              </p>
               <dl>
                 <div>
+                  <dt>Приоритет</dt>
+                  <dd>{priorityNames[detail.data.task.priority]}</dd>
+                </div>
+                <div>
                   <dt>Область</dt>
-                  <dd>{openTask.scope.name}</dd>
+                  <dd>{detail.data.task.scope.name}</dd>
                 </div>
                 <div>
                   <dt>Версия правил</dt>
-                  <dd>{openTask.ruleVersion}</dd>
+                  <dd>{detail.data.task.ruleVersion}</dd>
                 </div>
               </dl>
-              <TaskReport key={selectedId} task={openTask} />
+              <TaskReport key={selectedId} task={detail.data.task} />
               <TaskTimeline
                 key={`timeline-${selectedId}`}
                 taskId={selectedId}
               />
               <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
-            </>
-          ) : null}
-        </section>
+            </div>
+          </>
+        ) : null}
       </section>
     );
+  }
 
   return (
     <section className="tasks-section" aria-labelledby="tasks-title">
       <div className="tasks-heading">
-        <div>
-          <h2 id="tasks-title">Задачи</h2>
-          <p>Ваши текущие и завершённые назначения.</p>
-        </div>
+        <h2 id="tasks-title">Задачи</h2>
       </div>
-      <div className="tasks-seg" role="group" aria-label="Статус">
-        {[["all", "Все"], ...Object.entries(statusNames)].map(
-          ([value, label]) => (
+      <div className="tasks-seg" role="group" aria-label="Раздел списка">
+        {segments.map(([value, label]) => {
+          const count = allItems.filter(
+            (task) => segmentOf(task.status) === value,
+          ).length;
+          return (
             <button
               type="button"
               key={value}
               className="tasks-seg-item"
-              aria-pressed={status === value}
-              onClick={() => {
-                if (!confirmLeave()) return;
-                setStatus(value as StatusFilter);
-                setSelectedId(null);
-              }}
+              aria-pressed={segment === value}
+              onClick={() => setChosen(value)}
             >
               {label}
+              {complete && value !== "done" ? ` ${count}` : ""}
             </button>
-          ),
-        )}
+          );
+        })}
       </div>
 
       {tasks.isPending ? (
@@ -386,25 +388,28 @@ function TaskListContent() {
             Проверить вход
           </button>
         </div>
-      ) : tasks.isError && items.length === 0 ? (
+      ) : tasks.isError && allItems.length === 0 ? (
         <div className="tasks-state" role="alert">
           <p>{taskError(tasks.error)}</p>
           <button
             type="button"
             className="tasks-action"
-            onClick={() =>
-              accessError ? window.location.reload() : void tasks.refetch()
-            }
+            onClick={() => void tasks.refetch()}
           >
-            {accessError ? "Проверить вход" : "Повторить загрузку"}
+            Повторить загрузку
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="tasks-state">По выбранному статусу задач нет.</p>
+        <p className="tasks-state">
+          {complete
+            ? "По выбранному статусу задач нет."
+            : "Среди загруженных задач с этим статусом нет. Нажмите «Показать ещё»."}
+        </p>
       ) : (
-        <>
-          <ul className="tasks-list">
-            {items.map((task) => (
+        <ul className="tasks-list">
+          {items.map((task) => {
+            const due = dueInfo(task.dueAt, task.status);
+            return (
               <li key={task.id}>
                 <button
                   type="button"
@@ -428,8 +433,11 @@ function TaskListContent() {
                     >
                       {statusNames[task.status]}
                     </span>
-                    <span className="tasks-row-due">
-                      до {dateLabel(task.dueAt)}
+                    <span
+                      className={`tasks-row-due tasks-row-due--${due.tone}`}
+                    >
+                      <DueIcon tone={due.tone} />
+                      {due.text}
                     </span>
                   </span>
                   <span className="tasks-row-fund">
@@ -447,24 +455,24 @@ function TaskListContent() {
                   </span>
                 </button>
               </li>
-            ))}
-          </ul>
-          {tasks.hasNextPage && (
-            <button
-              type="button"
-              className="tasks-action tasks-more"
-              disabled={tasks.isFetchingNextPage}
-              onClick={() => void tasks.fetchNextPage()}
-            >
-              {tasks.isFetchingNextPage ? "Загружаем…" : "Показать ещё"}
-            </button>
-          )}
-          {tasks.isFetchNextPageError && (
-            <p className="tasks-state" role="alert">
-              {taskError(tasks.error)}
-            </p>
-          )}
-        </>
+            );
+          })}
+        </ul>
+      )}
+      {tasks.hasNextPage && (
+        <button
+          type="button"
+          className="tasks-action tasks-more"
+          disabled={tasks.isFetchingNextPage}
+          onClick={() => void tasks.fetchNextPage()}
+        >
+          {tasks.isFetchingNextPage ? "Загружаем…" : "Показать ещё"}
+        </button>
+      )}
+      {tasks.isFetchNextPageError && (
+        <p className="tasks-state" role="alert">
+          {taskError(tasks.error)}
+        </p>
       )}
     </section>
   );
@@ -482,6 +490,12 @@ const tabIcons: Record<string, ReactNode> = {
     <>
       <rect x="5" y="3" width="14" height="18" rx="2.5" />
       <path d="M9 8h6M9 12h6M9 16h3" />
+    </>
+  ),
+  ledger: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.6 2.5 1.6c0 2.2-5 1.2-5 3.6 0 1 1 1.6 2.5 1.6s2.5-.6 2.5-1.6" />
     </>
   ),
   rewards: (
@@ -506,7 +520,31 @@ const tabIcons: Record<string, ReactNode> = {
 };
 
 type WorkspaceView =
-  "home" | "tasks" | "ranking" | "rewards" | "more" | MoreTarget;
+  | "home"
+  | "tasks"
+  | "ranking"
+  | "rewards"
+  | "more"
+  | "profile"
+  | "ledger"
+  | "reviews"
+  | "management"
+  | "catalog-admin"
+  | "access"
+  | "audit"
+  | "notifications";
+// Разделы, которые открываются из «Ещё»: у них вкладка «Ещё» активна, а возврат ведёт туда.
+const moreViews: readonly WorkspaceView[] = [
+  "more",
+  "profile",
+  "ledger",
+  "reviews",
+  "management",
+  "catalog-admin",
+  "access",
+  "audit",
+  "notifications",
+];
 
 function TaskWorkspace() {
   const {
@@ -516,26 +554,21 @@ function TaskWorkspace() {
     accessScopes,
     canReadNotificationStatus,
     canManageTasks,
+    canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
-  const [view, setView] = useState<WorkspaceView>(
-    canReview ? "reviews" : "home",
-  );
+  // Проверяющий начинает с очереди; вкладка «Ещё» при этом подсвечена.
   const rootView: WorkspaceView = canReview ? "reviews" : "home";
-  const inMore = view === "more" || moreTargets.includes(view as MoreTarget);
-  // Назад из раздела «Ещё» ведёт в меню «Ещё», из самого меню — на стартовый экран.
-  const goBack = () => {
-    if (!confirmLeave()) return;
-    setView(view === "more" || !inMore ? rootView : "more");
+  const [view, setView] = useState<WorkspaceView>(rootView);
+  const inMore = moreViews.includes(view);
+  const go = (next: WorkspaceView) => {
+    if (confirmLeave()) setView(next);
   };
-  useTelegramBack(view !== rootView, goBack, 10);
-  // Раздел сообщает странице, какой экран открыт: «Главная» получает крупную шапку.
-  useEffect(() => {
-    document.documentElement.dataset.view = view;
-    return () => {
-      delete document.documentElement.dataset.view;
-    };
-  }, [view]);
+  useTelegramBack(
+    view !== rootView,
+    () => go(inMore && view !== "more" ? "more" : rootView),
+    10,
+  );
   const tabs: { id: WorkspaceView; label: string; accessibleLabel: string }[] =
     [
       { id: "home", label: "Главная", accessibleLabel: "Главная" },
@@ -544,8 +577,45 @@ function TaskWorkspace() {
       { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
       { id: "more", label: "Ещё", accessibleLabel: "Ещё" },
     ];
-  const isCurrent = (id: WorkspaceView) =>
-    id === "more" ? inMore : view === id;
+  const destinations: MoreDestination[] = [
+    { id: "ledger", label: "Баланс и журнал", group: "personal" },
+  ];
+  if (canReview)
+    destinations.push({
+      id: "reviews",
+      label: "Проверка отчётов",
+      group: "commander",
+    });
+  if (canManageTasks)
+    destinations.push({
+      id: "management",
+      label: canSetTasks ? "Постановка задач" : "Задачи и история",
+      group: "commander",
+    });
+  if (canInspectCatalog)
+    destinations.push({
+      id: "catalog-admin",
+      label: "Управление каталогом",
+      group: "commander",
+    });
+  if (accessScopes?.length)
+    destinations.push({
+      id: "access",
+      label: "Управление доступом",
+      group: "commander",
+    });
+  if (canReadAudit)
+    destinations.push({
+      id: "audit",
+      label: "Журнал действий",
+      group: "commander",
+    });
+  if (canReadNotificationStatus)
+    destinations.push({
+      id: "notifications",
+      label: "Состояние уведомлений",
+      group: "commander",
+    });
   return (
     <>
       <nav className="workspace-nav" aria-label="Рабочие разделы">
@@ -556,10 +626,8 @@ function TaskWorkspace() {
               type="button"
               className="workspace-tab"
               aria-label={item.accessibleLabel}
-              aria-pressed={isCurrent(item.id)}
-              onClick={() => {
-                if (confirmLeave()) setView(item.id);
-              }}
+              aria-pressed={item.id === "more" ? inMore : view === item.id}
+              onClick={() => go(item.id)}
             >
               <span className="workspace-tab-pill" aria-hidden="true">
                 <svg className="workspace-tab-icon" viewBox="0 0 24 24">
@@ -572,20 +640,19 @@ function TaskWorkspace() {
         </div>
       </nav>
       {inMore && view !== "more" ? (
-        <button type="button" className="more-back" onClick={goBack}>
+        <button
+          type="button"
+          className="screen-back"
+          aria-label="Назад в раздел «Ещё»"
+          onClick={() => go("more")}
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m14.5 6-6 6 6 6" />
           </svg>
-          <span>Ещё</span>
+          Ещё
         </button>
       ) : null}
-      {view === "more" ? (
-        <MoreMenu
-          onOpen={(to) => {
-            if (confirmLeave()) setView(to);
-          }}
-        />
-      ) : view === "rewards" ? (
+      {view === "rewards" ? (
         <RewardCatalog />
       ) : view === "catalog-admin" && canInspectCatalog ? (
         <CatalogAdmin />
@@ -607,6 +674,11 @@ function TaskWorkspace() {
         <AccountLedger />
       ) : view === "reviews" && canReview ? (
         <ReviewQueue />
+      ) : view === "more" ? (
+        <MoreScreen
+          destinations={destinations}
+          onOpen={(id) => go(id as WorkspaceView)}
+        />
       ) : (
         <TaskListContent />
       )}

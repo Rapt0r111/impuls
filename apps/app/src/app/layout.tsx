@@ -3,6 +3,7 @@ import Script from "next/script";
 import localFont from "next/font/local";
 import { AppSpeedInsights } from "@/shared/telemetry/speed-insights";
 import "./globals.css";
+import "./service.css";
 
 const manrope = localFont({
   src: [

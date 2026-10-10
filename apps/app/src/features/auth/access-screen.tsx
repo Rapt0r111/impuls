@@ -34,39 +34,6 @@ type AccessState =
       permissions: PermissionsResponse["permissions"] | null;
     };
 
-const actionNames: Record<
-  PermissionsResponse["permissions"][number]["action"],
-  string
-> = {
-  "task.view": "Просмотр задач и истории",
-  "task.create": "Создание задач",
-  "task.assign": "Назначение задач",
-  "task.edit": "Редактирование черновиков",
-  "task.cancel": "Отмена задач",
-  "task.review": "Проверка результатов",
-  "reward.decide": "Решение по заявкам",
-  "reward.fulfill": "Подтверждение выдачи",
-  "admin.access": "Управление доступом",
-  "admin.access.manage": "Выдача и отзыв прав",
-  "admin.members.manage": "Допуск и отзыв участников",
-  "admin.rules": "Управление правилами",
-  "admin.catalog": "Управление каталогом",
-  "admin.catalog.create": "Создание позиции каталога",
-  "admin.catalog.publish": "Публикация условий каталога",
-  "admin.catalog.schedule": "Отложенная публикация условий каталога",
-  "admin.catalog.schedule.cancel": "Отмена будущих условий каталога",
-  "admin.catalog.quota.publish": "Публикация периодов квоты",
-  "admin.audit": "Просмотр журнала действий",
-  "admin.notifications": "Просмотр симуляции уведомлений",
-  "ledger.correct": "Исправление журнала",
-};
-
-const scopeNames = {
-  rota: "Рота",
-  group: "Группа",
-  project: "Проект",
-} as const;
-
 const stateText = {
   checking: {
     title: "Проверяем доступ",
@@ -138,14 +105,6 @@ async function readCode(response: Response): Promise<string | null> {
     // A malformed response is handled as unavailable below.
   }
   return null;
-}
-
-// Приветствие считается на клиенте после входа, поэтому серверная разметка с ним не расходится.
-function greeting() {
-  const hour = new Date().getHours();
-  if (hour < 5) return "Доброй ночи";
-  if (hour < 12) return "Доброе утро";
-  return hour < 18 ? "Добрый день" : "Добрый вечер";
 }
 
 export function AccessScreen({ children }: { children?: ReactNode }) {
@@ -363,48 +322,11 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
             ) : null}
             {state.kind === "authorized" && (
               <>
-                <div className="access-profile">
-                  <div className="access-identity">
-                    <span className="access-avatar" aria-hidden="true">
-                      {state.data.user.displayName
-                        .trim()
-                        .charAt(0)
-                        .toUpperCase()}
-                    </span>
-                    <div>
-                      <span className="access-greeting">{greeting()}</span>
-                      <strong>{state.data.user.displayName}</strong>
-                    </div>
-                  </div>
-                  <details className="access-permissions">
-                    <summary>Полномочия</summary>
-                    {state.permissions === null ? (
-                      <p>
-                        Не удалось загрузить полномочия. Обновите проверку
-                        позже.
-                      </p>
-                    ) : state.permissions.length === 0 ? (
-                      <p>Назначенных полномочий нет.</p>
-                    ) : (
-                      <ul>
-                        {state.permissions.map((permission, index) => (
-                          <li
-                            key={`${permission.action}:${permission.scope.id}:${index}`}
-                          >
-                            <strong>{actionNames[permission.action]}</strong>
-                            <span>
-                              {scopeNames[permission.scope.kind]} ·{" "}
-                              {permission.scope.name}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </details>
-                </div>
                 <SessionContext.Provider
                   value={{
                     csrfToken: state.data.csrfToken,
+                    user: state.data.user,
+                    permissions: state.permissions,
                     canDecideRewards:
                       state.permissions?.some(
                         (permission) => permission.action === "reward.decide",

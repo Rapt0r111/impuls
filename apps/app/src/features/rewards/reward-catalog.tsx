@@ -525,7 +525,7 @@ export function RewardCatalog() {
               )}
               {first && (
                 <>
-                  <dl className="ledger-balances reward-balance">
+                  <dl className="ledger-balances">
                     <div>
                       <dt>Доступно</dt>
                       <dd>{number(first.balance.availablePoints)} баллов</dd>
@@ -562,64 +562,103 @@ export function RewardCatalog() {
                     </p>
                   ) : (
                     <ul className="tasks-list reward-list">
-                      {items.map((item) => (
-                        <li key={item.id}>
-                          <div className="reward-row">
-                            <div>
-                              <h3>{item.title}</h3>
-                              <p>{item.conditions}</p>
-                              <p>
-                                Квота до {date(item.quota.endsAt)} · свободно{" "}
-                                {item.quota.available}
-                              </p>
-                              {first.balance.availablePoints < item.price && (
-                                <p className="reward-short">
-                                  <progress
-                                    max={item.price}
-                                    value={first.balance.availablePoints}
-                                  />
-                                  Не хватает{" "}
-                                  {number(
-                                    item.price - first.balance.availablePoints,
-                                  )}{" "}
-                                  баллов
+                      {items.map((item) => {
+                        const short =
+                          item.price - first.balance.availablePoints;
+                        const pending = requests.find(
+                          (request) =>
+                            request.status === "pending" &&
+                            request.rewardId === item.rewardId,
+                        );
+                        return (
+                          <li key={item.id}>
+                            <div className="reward-row">
+                              <div className="reward-row-body">
+                                <div className="reward-row-head">
+                                  <h3>{item.title}</h3>
+                                  <strong className="reward-price">
+                                    {number(item.price)} баллов
+                                  </strong>
+                                </div>
+                                <p>{item.conditions}</p>
+                                <p>
+                                  Квота до {date(item.quota.endsAt)} · свободно{" "}
+                                  {item.quota.available}
                                 </p>
-                              )}
+                                {item.hasPendingRequest ? (
+                                  <span className="task-chip task-chip--in_review reward-state">
+                                    Ждёт решения командира
+                                  </span>
+                                ) : null}
+                                {!item.owned &&
+                                !item.hasPendingRequest &&
+                                item.quota.available > 0 &&
+                                short > 0 ? (
+                                  <div className="reward-meter">
+                                    <progress
+                                      max={item.price}
+                                      value={Math.max(
+                                        0,
+                                        first.balance.availablePoints,
+                                      )}
+                                      aria-label={`Накоплено ${number(first.balance.availablePoints)} из ${number(item.price)} баллов`}
+                                    />
+                                    <span>
+                                      Не хватает {number(short)} баллов
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="reward-row-action">
+                                <button
+                                  className="tasks-action"
+                                  type="button"
+                                  disabled={
+                                    unavailable ||
+                                    catalog.isFetching ||
+                                    item.hasPendingRequest ||
+                                    item.owned ||
+                                    item.quota.available === 0 ||
+                                    first.balance.availablePoints < item.price
+                                  }
+                                  onClick={() =>
+                                    choose({ action: "reserve", item })
+                                  }
+                                >
+                                  {item.owned
+                                    ? "Уже в коллекции"
+                                    : item.hasPendingRequest
+                                      ? "Заявка уже есть"
+                                      : item.quota.available === 0
+                                        ? "Нет свободных мест"
+                                        : short > 0
+                                          ? "Недостаточно баллов"
+                                          : "Оформить заявку"}
+                                </button>
+                                {pending ? (
+                                  <button
+                                    className="tasks-action reward-cancel"
+                                    type="button"
+                                    disabled={
+                                      mine.isError ||
+                                      mine.isFetching ||
+                                      mine.isFetchNextPageError
+                                    }
+                                    onClick={() =>
+                                      choose({
+                                        action: "cancel",
+                                        item: pending,
+                                      })
+                                    }
+                                  >
+                                    Отменить запрос
+                                  </button>
+                                ) : null}
+                              </div>
                             </div>
-                            <div className="reward-row-action">
-                              <strong className="reward-price">
-                                {number(item.price)} баллов
-                              </strong>
-                              <button
-                                className="tasks-action"
-                                type="button"
-                                disabled={
-                                  unavailable ||
-                                  catalog.isFetching ||
-                                  item.hasPendingRequest ||
-                                  item.owned ||
-                                  item.quota.available === 0 ||
-                                  first.balance.availablePoints < item.price
-                                }
-                                onClick={() =>
-                                  choose({ action: "reserve", item })
-                                }
-                              >
-                                {item.owned
-                                  ? "Уже в коллекции"
-                                  : item.hasPendingRequest
-                                    ? "Заявка уже есть"
-                                    : item.quota.available === 0
-                                      ? "Нет свободных мест"
-                                      : first.balance.availablePoints <
-                                          item.price
-                                        ? "Недостаточно баллов"
-                                        : "Оформить заявку"}
-                              </button>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                   {catalog.hasNextPage && (

@@ -15,7 +15,6 @@ import {
   ledgerCorrectionsResponseSchema,
 } from "../../packages/contracts/src/ledger-corrections";
 import { accountLedgerResponseSchema } from "../../packages/contracts/src/ledger";
-import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 (url ? describe : describe.skip)("F04 synthetic compensation", () => {
@@ -701,7 +700,10 @@ const url = process.env.TEST_DATABASE_URL;
         }),
       );
       await page.goto(origin);
-      await (await openSection(page, "Баланс и журнал")).click();
+      await page.getByRole("button", { name: "Ещё", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Баланс и журнал", exact: true })
+        .click();
       await page
         .getByRole("button", { name: "Исправление начислений", exact: true })
         .click();

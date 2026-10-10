@@ -14,7 +14,6 @@ import {
   notificationEventsResponseSchema,
   notificationEventsCursorSchema,
 } from "../../packages/contracts/src/notification-status";
-import { openSection } from "../browser/nav.mjs";
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
 (url ? describe : describe.skip)("F08 exact-scope simulation status", () => {
@@ -623,7 +622,10 @@ const url = process.env.TEST_DATABASE_URL,
             }),
         );
         await page.goto(origin!);
-        await (await openSection(page, "Состояние уведомлений")).click();
+        await page.getByRole("button", { name: "Ещё", exact: true }).click();
+        await page
+          .getByRole("button", { name: "Состояние уведомлений", exact: true })
+          .click();
         await page
           .getByRole("heading", { name: "Симуляция уведомлений" })
           .waitFor();

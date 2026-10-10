@@ -4,7 +4,6 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
-import { openSection } from "./nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
@@ -76,7 +75,10 @@ for (const width of [320, 360, 390]) {
     }),
   );
   await page.goto(origin);
-  await (await openSection(page, "Управление доступом")).click();
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Управление доступом", exact: true })
+    .click();
   await page.getByText("Реальный участник").first().waitFor();
   if (width === 320) {
     await page.getByLabel("Участник", { exact: true }).selectOption(memberId);
@@ -156,7 +158,10 @@ for (const width of [320, 360, 390]) {
        FROM impuls.users u WHERE u.telegram_id=$1`,
     );
     assert.deepEqual(removed, { active: false, memberships: 0, changes: 2 });
-    await (await openSection(page, "Журнал действий")).click();
+    await page.getByRole("button", { name: "Ещё", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Журнал действий", exact: true })
+      .click();
     await page
       .getByText("Выдано право «Назначение задач» участнику Реальный участник.")
       .waitFor();

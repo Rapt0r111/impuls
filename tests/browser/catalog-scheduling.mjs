@@ -3,7 +3,6 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
-import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -177,7 +176,10 @@ async function fixture(width = 320, mode = "ready") {
     },
   );
   await page.goto(origin);
-  await (await openSection(page, "Управление каталогом")).click();
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Управление каталогом", exact: true })
+    .click();
   await page.locator(".admin-catalog-items > li").waitFor();
   return {
     page,

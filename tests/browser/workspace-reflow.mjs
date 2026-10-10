@@ -3,7 +3,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
-import { openSection } from "./nav.mjs";
 
 // API/Telegram fixtures exercise layout only; no database or external writes.
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
@@ -353,11 +352,11 @@ async function inspect(page) {
       const rect = el.getBoundingClientRect();
       if (!rect.width || !rect.height) continue;
       const name = `${el.tagName.toLowerCase()}.${el.className}`;
-      // Фильтр статуса — строка с горизонтальной прокруткой: сама лента
+      // Служебные разделы и фильтр статуса — строки с горизонтальной прокруткой: сама лента
       // обязана помещаться в экран, а её чипы могут уходить за край.
       if (
         (rect.left < -1 || rect.right > innerWidth + 1) &&
-        !el.closest(".tasks-seg")
+        !el.closest(".workspace-nav-operations .workspace-tab, .tasks-seg")
       )
         outside.push(name);
       if (
@@ -402,20 +401,16 @@ try {
       for (const [name, label, ready] of views) {
         const f = await fixture(browser, width);
         try {
-          // Пять личных разделов — вкладки панели; остальные открываются из «Ещё».
-          const tabLabel = [
-            "Главная",
-            "Мои задачи",
-            "Рейтинг",
-            "Поощрения",
-          ].includes(label)
-            ? label
-            : "Ещё";
-          if (tabLabel === label)
+          const inMore = !["home", "tasks", "rewards", "ranking"].includes(
+            name,
+          );
+          if (inMore)
             await f.page
-              .getByRole("button", { name: label, exact: true })
+              .getByRole("button", { name: "Ещё", exact: true })
               .click();
-          else await (await openSection(f.page, label)).click();
+          await f.page
+            .getByRole("button", { name: label, exact: true })
+            .click();
           await f.page.locator(ready).first().waitFor();
           if (name === "audit") {
             await f.page
@@ -425,25 +420,17 @@ try {
               .waitFor();
           }
           if (mode !== "normal") await resizeText(f.page, mode);
-          await f.page
-            .locator(".workspace-nav-personal")
-            .getByRole("button", { name: tabLabel, exact: true })
-            .focus();
+          // Служебные разделы открываются из «Ещё»: с клавиатуры проверяем
+          // вкладку, которая держит раздел нажатой.
+          const tab = inMore ? "Ещё" : label;
+          await f.page.getByRole("button", { name: tab, exact: true }).focus();
           await f.page.keyboard.press("Enter");
           assert.equal(
             await f.page
-              .locator(".workspace-nav-personal")
-              .getByRole("button", { name: tabLabel, exact: true })
+              .getByRole("button", { name: tab, exact: true })
               .getAttribute("aria-pressed"),
             "true",
           );
-          if (tabLabel === "Ещё")
-            await f.page.locator(".more-row").first().waitFor();
-          if (tabLabel === "Ещё" && mode === "normal" && name === "audit")
-            await f.page.screenshot({
-              path: path.join(dir, `more-${width}.png`),
-              fullPage: true,
-            });
           const metrics = await inspect(f.page);
           results.push({
             name,
@@ -493,13 +480,26 @@ try {
               .locator(".task-report textarea")
               .fill("Синтетический несданный отчёт.");
           } else if (name === "review-detail") {
-            await (await openSection(page, "Проверка отчётов")).click();
+            await page
+              .getByRole("button", { name: "Ещё", exact: true })
+              .click();
+            await page
+              .getByRole("button", { name: "Проверка отчётов", exact: true })
+              .click();
             await page.locator(".tasks-row").first().click();
             await page
               .getByLabel("Причина возврата", { exact: true })
               .waitFor();
           } else {
-            await (await openSection(page, "Управление каталогом")).click();
+            await page
+              .getByRole("button", { name: "Ещё", exact: true })
+              .click();
+            await page
+              .getByRole("button", {
+                name: "Управление каталогом",
+                exact: true,
+              })
+              .click();
             await page
               .getByRole("button", {
                 name: "Отменить будущие условия",

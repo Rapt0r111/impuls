@@ -14,7 +14,6 @@ import { readTaskTimeline } from "../../packages/domain/src/tasks/timeline";
 import { readAssignedTaskHistory } from "../../packages/domain/src/tasks/history";
 import { taskTimelineResponseSchema } from "../../packages/contracts/src/task-timeline";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
-import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 const origin = process.env.TEST_APP_ORIGIN;
@@ -635,7 +634,10 @@ const origin = process.env.TEST_APP_ORIGIN;
               }),
           );
           await page.goto(origin!);
-          await (await openSection(page, "Задачи и история")).click();
+          await page.getByRole("button", { name: "Ещё", exact: true }).click();
+          await page
+            .getByRole("button", { name: "Задачи и история", exact: true })
+            .click();
           const row = page
             .locator(".task-mgmt__item")
             .filter({ has: page.getByText("Принята", { exact: true }) });

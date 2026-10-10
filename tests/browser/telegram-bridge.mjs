@@ -3,7 +3,6 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { homeFallbackProfile, mockHomeFallback } from "./home-fallback.mjs";
-import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3101";
 const id = "11111111-1111-4111-8111-111111111111";
@@ -422,7 +421,9 @@ try {
   for (const mode of ["legacy", "throwing"]) {
     const f = await fixture(320, mode);
     await openTask(f.page);
-    await f.page.getByRole("button", { name: "Задачи", exact: true }).click();
+    await f.page
+      .getByRole("button", { name: "Задачи: вернуться к списку", exact: true })
+      .click();
     await f.page
       .getByLabel("Отчёт о выполнении", { exact: true })
       .waitFor({ state: "detached" });
@@ -482,7 +483,10 @@ try {
       await reason.waitFor({ state: "detached" });
       assert.equal(await backVisible(f.page), false);
     } else if (role === "manager") {
-      await (await openSection(f.page, "Постановка задач")).click();
+      await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
+      await f.page
+        .getByRole("button", { name: "Постановка задач", exact: true })
+        .click();
       await f.page
         .getByRole("button", { name: "Редактировать черновик", exact: true })
         .click();
@@ -510,7 +514,10 @@ try {
         .waitFor();
       assert.equal(await backVisible(f.page), false);
     } else {
-      await (await openSection(f.page, "Баланс и журнал")).click();
+      await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
+      await f.page
+        .getByRole("button", { name: "Баланс и журнал", exact: true })
+        .click();
       await f.page
         .getByRole("button", { name: "Исправление начислений", exact: true })
         .click();

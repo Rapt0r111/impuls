@@ -1,7 +1,11 @@
+/* Раздел «Ещё»: профиль, личные данные и служебные разделы командира. */
 .more {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.more > .tasks-heading {
+  padding-bottom: 0;
 }
 .more-profile,
 .more-group {
@@ -20,7 +24,7 @@
   gap: 14px;
   width: 100%;
   min-height: 84px;
-  padding: 14px;
+  padding: 16px;
   border-color: rgb(112 225 194 / 0.3);
   background:
     linear-gradient(
@@ -29,128 +33,123 @@
       rgb(112 225 194 / 0.04) 60%
     ),
     var(--color-panel);
-  color: inherit;
+  color: var(--color-ink);
   font: inherit;
-  text-align: start;
+  text-align: left;
   cursor: pointer;
 }
-.more-avatar {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
+.more-profile .access-avatar {
   width: 52px;
   height: 52px;
-  border: 1px solid rgb(112 225 194 / 0.35);
   border-radius: 18px;
-  background: linear-gradient(145deg, #2f6f66, #173f44);
-  color: #aef5e0;
   font-size: 18px;
-  font-weight: 700;
 }
-.more-group {
-  margin: 0;
-  padding: 0 14px;
-  list-style: none;
+.more-profile-text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
 }
-.more-group-title {
-  margin: 6px 6px 0;
+.more-profile-text strong {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.more-profile-text span {
   color: var(--color-muted);
   font-size: 14px;
-  font-weight: 700;
+}
+.more-group {
+  padding: 0 16px;
 }
 .more-row {
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
-  min-height: 64px;
-  padding: 10px 0;
+  min-height: 56px;
+  padding: 0;
   border: 0;
+  border-top: 1px solid var(--color-edge);
   background: transparent;
-  color: inherit;
+  color: var(--color-ink);
   font: inherit;
-  text-align: start;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: left;
   cursor: pointer;
 }
-.more-group li + li {
-  border-top: 1px solid var(--color-edge);
-}
-.more-row:active {
-  background: rgb(255 255 255 / 0.05);
+.more-row:first-child {
+  border-top: 0;
 }
 .more-tile {
-  display: flex;
+  display: grid;
+  width: 36px;
+  height: 36px;
   flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
-  background: rgb(112 225 194 / 0.13);
+  place-items: center;
+  border-radius: 12px;
+  background: var(--color-mint-tint);
   color: #8cf0d3;
 }
 .more-tile svg,
 .more-chevron {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.more-tile svg {
   width: 22px;
   height: 22px;
-}
-.more-row-text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-  gap: 2px;
-}
-.more-row-text strong {
-  font-size: 16px;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-.more-row-text span {
-  color: var(--color-muted);
-  font-size: 14px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-.more-chevron {
   flex: none;
-  width: 20px;
-  height: 20px;
-  color: var(--color-muted);
-}
-.more-back {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  gap: 4px;
-  min-height: 44px;
-  padding: 0 14px 0 8px;
-  border: 0;
-  border-radius: 14px;
-  background: transparent;
-  color: var(--color-mint);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.more-back svg {
-  width: 20px;
-  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.more-back:active {
-  background: rgb(112 225 194 / 0.12);
+.more-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.more-chevron {
+  margin-inline-start: auto;
+  color: #8aa2a9;
+}
+.more-profile .more-chevron {
+  width: 20px;
+  height: 20px;
+}
+.more-heading {
+  margin: 8px 4px 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+.more-permissions {
+  border: 1px solid var(--color-edge);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.04);
+}
+.more-permissions summary {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 16px;
+  color: var(--color-muted);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.more-permissions p,
+.more-permissions ul {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: var(--color-muted);
+  list-style: none;
+}
+.more-permissions li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-edge);
+}
+.more-permissions li span {
+  color: var(--color-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
