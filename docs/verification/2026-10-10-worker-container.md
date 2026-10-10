@@ -28,6 +28,7 @@
 - Supabase MCP `deploy_edge_function`: `impuls-notifications` и `impuls-expiry`, версия 1, `ACTIVE`, `verify_jwt=false`; загружены `index.ts` и бандл `bun run build:edge` из коммита `672c82e`.
 - `execute_sql`: `create extension pg_cron`, `pg_net`; `cron.schedule` по `ops/supabase/worker-schedule.sql` → задания `impuls-notifications` (1) и `impuls-expiry` (2), `* * * * *`, active.
 - Первый запуск 15:30:00 UTC: оба задания `succeeded`; `net._http_response` — обе функции ответили 401 `{"error":"UNAUTHORIZED"}`. Ручной вызов без заголовка — тоже 401. Это ожидаемо: секретов и токена в Vault ещё нет, роли worker пока `rolcanlogin=false`. Значит, функции загружаются в Edge Runtime и расписание вызывает их.
+- 17:30 UTC: панель Supabase не принимает имена секретов с префиксом `SUPABASE_`, поэтому CA для функций читается из `WORKER_CA_CERT_B64` (коммит 83e505e); обе функции переопубликованы, версия 8, `verify_jwt=false`. Приложение в Vercel по-прежнему использует `SUPABASE_CA_CERT_B64`.
 - Ещё не проверено: проход под ролями worker через pooler (после шагов владельца), реальный Bot API.
 
 ## Не проверено
