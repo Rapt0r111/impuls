@@ -1,0 +1,29 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/worker/Dockerfile",
+    "watchPatterns": [
+      "apps/worker/**",
+      "packages/domain/**",
+      "packages/contracts/**",
+      "package.json",
+      "bun.lock",
+      "tsconfig.base.json",
+      ".dockerignore",
+      "ops/railway/expiry.json"
+    ]
+  },
+  "deploy": {
+    "startCommand": "node /app/index.mjs --expire-watch",
+    "multiRegionConfig": {
+      "europe-west4-drams3a": {
+        "numReplicas": 1
+      }
+    },
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5,
+    "drainingSeconds": "25",
+    "overlapSeconds": "0"
+  }
+}

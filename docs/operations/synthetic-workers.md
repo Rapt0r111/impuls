@@ -27,6 +27,29 @@
 
 Включаются отдельным флагом `TASK_REMINDERS_ENABLED=true` в окружении процесса уведомлений (поверх `SYNTHETIC_NOTIFICATIONS_ENABLED=true`); нужна миграция 000034. Worker ставит событие `task.due_soon` для назначенных задач, срок которых наступает в течение 24 часов (не более 50 за шаг, по одному на задачу); отдельного процесса и расписания нет. Окно — технический параметр, не согласованное правило. Откат: снять флаг; поставленные события доставляются или подавляются обычным путём.
 
+## Размещение на Railway (ADR-0032, предложено)
+
+Образ: `apps/worker/Dockerfile`, контекст — корень репозитория. Проверка сборки локально: `docker build -f apps/worker/Dockerfile -t impuls-worker .`. Два сервиса из одного репозитория, без публичного домена:
+
+| Сервис                 | Файл конфигурации (Settings → Config-as-code) | Команда                              | Роль БД                |
+| ---------------------- | --------------------------------------------- | ------------------------------------ | ---------------------- |
+| `impuls-notifications` | `/ops/railway/notifications.json`             | `node /app/index.mjs --watch`        | `impuls_worker`        |
+| `impuls-expiry`        | `/ops/railway/expiry.json`                    | `node /app/index.mjs --expire-watch` | `impuls_expiry_worker` |
+
+Порядок включения (выполняет владелец):
+
+1. В SQL Editor Supabase для каждой роли задать вход и длинный случайный пароль из букв и цифр, чтобы не кодировать его в URL (не сохранять в репозитории и чате):
+   ```sql
+   ALTER ROLE impuls_worker WITH LOGIN PASSWORD '<пароль 1>';
+   ALTER ROLE impuls_expiry_worker WITH LOGIN PASSWORD '<пароль 2>';
+   ```
+2. В Railway создать проект, подключить репозиторий, создать два сервиса из него с веткой `main` и указать файл конфигурации из таблицы.
+3. Переменные сервиса уведомлений: `WORKER_DATABASE_URL=postgresql://impuls_worker.<project-ref>:<пароль 1>@aws-0-eu-north-1.pooler.supabase.com:5432/postgres` (без `?sslmode`; хост и `project-ref` сверить в Supabase → Connect → Session pooler, порт 5432 — режим session), `SUPABASE_CA_CERT_B64` (то же значение, что у приложения), `SYNTHETIC_NOTIFICATIONS_ENABLED=true`. `TELEGRAM_DELIVERY_ENABLED`, `TELEGRAM_BOT_TOKEN` и `TASK_REMINDERS_ENABLED` — только после проверки симуляции.
+4. Переменные сервиса истечения: `WORKER_DATABASE_URL` с `impuls_expiry_worker.<project-ref>` и паролем 2, `SUPABASE_CA_CERT_B64`, `RESERVATION_EXPIRY_ENABLED=true`.
+5. Деплой; в журнале каждого сервиса ждать `watching`, затем `alive`. `WORKER_UNAVAILABLE` сразу после старта — неверный пароль, логин pooler, CA или роль; сервис остановится после 5 перезапусков.
+
+Остановка: снять флаг и перезапустить (выход `disabled`, без перезапуска) или удалить деплой. `drainingSeconds=25` даёт процессу время на drain; по умолчанию у Railway SIGKILL следует сразу. Применяется ли draining при ручной остановке, а не только при новом деплое, не проверено. Railway считает перезапуски без окна 300 с из systemd-шаблона.
+
 ## Предлагаемый supervisor
 
 Шаблоны предусматривают `Type=exec`, restart только при failure с паузой 5 s и лимитом 5 starts за 300 s; это технические настройки rehearsal, не SLA. После исчерпания starts оператор устраняет причину и отдельно разрешает restart. При false flag процесс пишет disabled/exit 0 и автоматически не перезапускается. `systemctl stop` не должен превращаться в повторное включение.
