@@ -28,6 +28,23 @@ export const acceptanceAwardSchema = z.object({
   mode: z.literal("synthetic"),
   xp: z.number().int().nonnegative(),
   points: z.number().int().nonnegative(),
+  // xp/points are the totals credited (base + bonus). Awards saved before the
+  // breakdown existed have none.
+  breakdown: z
+    .object({
+      baseXp: z.number().int().nonnegative(),
+      basePoints: z.number().int().nonnegative(),
+      bonus: z
+        .object({
+          code: z.string().min(1).max(40),
+          title: z.string().min(1).max(80),
+          xp: z.number().int().nonnegative(),
+          points: z.number().int().nonnegative(),
+        })
+        .nullable(),
+    })
+    .nullable()
+    .default(null),
   ruleVersion: z.number().int().positive(),
   seasonKey: z.string().regex(/^\d{4}-\d{2}$/),
   timeZone: z.string().min(1).max(80),

@@ -37,6 +37,14 @@ const item = {
     scope: { id, kind: "project", name: "Синтетическая область" },
   },
 };
+const bonusOptions = {
+  adjustment: { maxXp: 200, maxPoints: 80 },
+  bonuses: [
+    { code: "quality", title: "Качество", xp: 20, points: 10 },
+    { code: "innovation", title: "Инновация", xp: 40, points: 20 },
+  ],
+};
+const bonusModes = ["bonus", "bonus-rejected"];
 const award = {
   mode: "synthetic",
   xp: 100,
@@ -116,7 +124,9 @@ async function fixture(width, mode = "success") {
             acceptance:
               mode === "hidden"
                 ? { enabled: false, mode: null }
-                : item.acceptance,
+                : bonusModes.includes(mode)
+                  ? { ...item.acceptance, options: bonusOptions }
+                  : item.acceptance,
           },
         ],
         nextCursor: null,
@@ -167,11 +177,21 @@ async function fixture(width, mode = "success") {
         key: req.headers()["idempotency-key"],
         body: req.postDataJSON(),
       });
-      assert.deepEqual(calls.at(-1).body, {
-        action: "accept",
-        expectedVersion: 3,
-        reason,
-      });
+      assert.deepEqual(
+        calls.at(-1).body,
+        bonusModes.includes(mode)
+          ? {
+              action: "accept",
+              expectedVersion: 3,
+              reason,
+              baseXp: 120,
+              basePoints: 25,
+              bonusCode: "quality",
+            }
+          : { action: "accept", expectedVersion: 3, reason },
+      );
+      if (mode === "bonus-rejected" && calls.length === 1)
+        return fail(route, 422, "AWARD_INVALID");
       if (
         (mode === "rate-limited" && calls.length === 1) ||
         (mode === "lost-rate-limited" && calls.length === 2)
@@ -201,7 +221,23 @@ async function fixture(width, mode = "success") {
           createdAt: at,
         },
         task: { id: task, status: "accepted", version: 4 },
-        award,
+        award: bonusModes.includes(mode)
+          ? {
+              ...award,
+              xp: 140,
+              points: 35,
+              breakdown: {
+                baseXp: 120,
+                basePoints: 25,
+                bonus: {
+                  code: "quality",
+                  title: "Качество",
+                  xp: 20,
+                  points: 10,
+                },
+              },
+            }
+          : award,
       });
     },
   );
@@ -412,6 +448,62 @@ try {
     await page.keyboard.press("Enter");
     await page.getByText("Результат принят.", { exact: false }).waitFor();
     assert.equal(calls.length, 1);
+    await page.close();
+    count++;
+  }
+  for (const mode of bonusModes) {
+    const { page, calls, errors } = await fixture(320, mode);
+    await open(page);
+    const preview = page.getByRole("region", {
+      name: "Предварительное начисление",
+    });
+    assert.match(await preview.innerText(), /получит\s+100 XP\s+и\s+30 баллов/);
+    await page.getByLabel(/Базовый XP/).fill("201");
+    assert.equal(await send(page).isDisabled(), true);
+    await page
+      .getByText("Не больше 200 XP и 80 баллов по версии правил.", {
+        exact: false,
+      })
+      .waitFor();
+    await page.getByLabel(/Базовый XP/).fill("120");
+    await page.getByLabel(/Базовые баллы/).fill("25");
+    await page.getByLabel("Бонус (не более одного)").selectOption("quality");
+    assert.match(await preview.innerText(), /получит\s+140 XP\s+и\s+35 баллов/);
+    assert.match(
+      await preview.innerText(),
+      /бонус «Качество»: 20 XP и 10 баллов/,
+    );
+    assert.equal(await send(page).isDisabled(), true);
+    await page
+      .getByRole("checkbox", {
+        name: "Подтверждаю результат и указанное начисление",
+      })
+      .check();
+    await send(page).click();
+    if (mode === "bonus-rejected") {
+      await page
+        .getByText("Корректировка или бонус не разрешены версией правил", {
+          exact: false,
+        })
+        .waitFor();
+      // The form stays editable: a rejected choice is not a terminal state.
+      assert.equal(await page.getByLabel(/Базовый XP/).isDisabled(), false);
+      await page
+        .getByRole("checkbox", {
+          name: "Подтверждаю результат и указанное начисление",
+        })
+        .check();
+      await send(page).click();
+    }
+    await page
+      .getByText(
+        "Начислено 140 XP и 35 баллов (бонус «Качество»: 20 XP и 10 баллов)",
+        { exact: false },
+      )
+      .waitFor();
+    assert.equal(calls.length, mode === "bonus-rejected" ? 2 : 1);
+    assert.notEqual(calls[0].key, calls[1]?.key ?? "");
+    assert.deepEqual(errors, []);
     await page.close();
     count++;
   }

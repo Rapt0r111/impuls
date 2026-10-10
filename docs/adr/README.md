@@ -1,5 +1,7 @@
 # Архитектурные решения
 
+ADR-0030: [корректировка базовой награды и один бонус при приёмке](0030-acceptance-adjustment-and-bonus.md), F04 от 10.10.2026; варианты и пределы только из сохранённой версии правил, итог = база + бонус в прежних записях журнала, защита суммы в БД.
+
 ADR-0022: [отмена будущих синтетических условий](0022-synthetic-schedule-cancellation.md), append-only evidence, separate exact authority и сохранение номеров отменённых версий.
 
 ADR-0021: [отложенная публикация синтетических условий](0021-synthetic-catalog-scheduling.md), F07 от 05.10.2026; отдельные exact право/flag/endpoint, append одной будущей версии, server time после barrier, immutable audit/replay и сохранение старых заявок.

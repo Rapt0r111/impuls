@@ -6,14 +6,40 @@ export const reviewListQuerySchema = z.strictObject({
   cursor: taskIdSchema.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
+export const acceptanceBonusSchema = z.object({
+  code: z.string().regex(/^[a-z][a-z0-9_]{1,39}$/),
+  title: z.string().min(1).max(80),
+  xp: z.number().int().min(0).max(1_000_000),
+  points: z.number().int().min(0).max(1_000_000),
+});
+export const acceptanceOptionsSchema = z.object({
+  adjustment: z
+    .object({
+      maxXp: z.number().int().min(0).max(1_000_000),
+      maxPoints: z.number().int().min(0).max(1_000_000),
+    })
+    .nullable(),
+  bonuses: z.array(acceptanceBonusSchema).max(7),
+});
 export const reviewQueueItemSchema = z.object({
   submissionId: z.uuid(),
   text: z.string().min(1).max(4000),
   submittedAt: z.iso.datetime(),
   attemptNumber: z.number().int().positive(),
   acceptance: z
-    .object({ enabled: z.boolean(), mode: z.literal("synthetic").nullable() })
-    .default({ enabled: false, mode: null }),
+    .object({
+      enabled: z.boolean(),
+      mode: z.literal("synthetic").nullable(),
+      options: acceptanceOptionsSchema.default({
+        adjustment: null,
+        bonuses: [],
+      }),
+    })
+    .default({
+      enabled: false,
+      mode: null,
+      options: { adjustment: null, bonuses: [] },
+    }),
   author: z.object({ id: z.uuid(), displayName: z.string().min(1) }),
   task: assignedTaskSummarySchema.extend({
     criteria: z.string().min(1).max(2000),
@@ -51,6 +77,13 @@ export const taskAcceptanceRequestSchema = z.strictObject({
   action: z.literal("accept"),
   expectedVersion: z.number().int().positive(),
   reason: z.string().trim().min(1).max(2000),
+  // Omitted fields mean "pay the task fund unchanged, without a bonus".
+  baseXp: z.number().int().min(0).max(1_000_000).optional(),
+  basePoints: z.number().int().min(0).max(1_000_000).optional(),
+  bonusCode: z
+    .string()
+    .regex(/^[a-z][a-z0-9_]{1,39}$/)
+    .optional(),
 });
 export const taskReviewRequestSchema = z.discriminatedUnion("action", [
   taskReturnRequestSchema,

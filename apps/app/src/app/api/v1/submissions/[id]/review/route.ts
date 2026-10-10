@@ -75,6 +75,13 @@ export async function POST(
       expectedVersion: body.data.expectedVersion,
       reason: body.data.reason,
       idempotencyKey: headers.data.idempotencyKey,
+      ...(body.data.action === "accept"
+        ? {
+            baseXp: body.data.baseXp,
+            basePoints: body.data.basePoints,
+            bonusCode: body.data.bonusCode,
+          }
+        : {}),
     });
     if (result.kind === "unauthorized")
       return errorResponse(
@@ -128,6 +135,20 @@ export async function POST(
         422,
         "ECONOMY_RULES_INVALID",
         "Версия правил не разрешает начисления",
+        id,
+      );
+    if (result.kind === "award_invalid")
+      return errorResponse(
+        422,
+        "AWARD_INVALID",
+        {
+          adjustment_not_allowed:
+            "Версия правил не разрешает корректировать базовые значения",
+          adjustment_exceeds_limit:
+            "Значения превышают предел корректировки версии правил",
+          bonus_unknown: "Такого бонуса нет в версии правил задачи",
+          award_too_large: "Итоговое начисление слишком велико",
+        }[result.reason],
         id,
       );
     return jsonResponse(

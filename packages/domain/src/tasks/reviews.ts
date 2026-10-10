@@ -2,7 +2,13 @@ import { createHash, randomUUID } from "node:crypto";
 import type { Pool } from "pg";
 import { appendTaskEvent } from "./events";
 import type { AssignedTaskSummary, AssignedTaskDetail } from "./read";
-import { syntheticEconomyZone } from "../ledger/economy";
+import {
+  acceptanceOptions,
+  resolveAcceptanceAward,
+  syntheticEconomyZone,
+  type AcceptanceOptions,
+  type AwardRejection,
+} from "../ledger/economy";
 import { creditAcceptedTask, type AcceptanceAward } from "../ledger/credit";
 
 export type ReviewQueueItem = {
@@ -10,7 +16,11 @@ export type ReviewQueueItem = {
   text: string;
   submittedAt: string;
   attemptNumber: number;
-  acceptance: { enabled: boolean; mode: "synthetic" | null };
+  acceptance: {
+    enabled: boolean;
+    mode: "synthetic" | null;
+    options: AcceptanceOptions;
+  };
   author: { id: string; displayName: string };
   task: AssignedTaskSummary & Pick<AssignedTaskDetail, "criteria" | "scope">;
 };
@@ -90,16 +100,18 @@ export async function listReviewQueue(
       text: row.text,
       submittedAt: row.submitted_at.toISOString(),
       attemptNumber: row.attempt_number,
-      acceptance: {
-        enabled:
+      acceptance: (() => {
+        const enabled =
           options.allowSyntheticAccrual === true &&
-          syntheticEconomyZone(row.rule_definition) !== null,
-        mode:
-          options.allowSyntheticAccrual === true &&
-          syntheticEconomyZone(row.rule_definition) !== null
-            ? "synthetic"
-            : null,
-      },
+          syntheticEconomyZone(row.rule_definition) !== null;
+        return {
+          enabled,
+          mode: enabled ? ("synthetic" as const) : null,
+          options: enabled
+            ? acceptanceOptions(row.rule_definition)
+            : { adjustment: null, bonuses: [] },
+        };
+      })(),
       author: { id: row.author_id, displayName: row.display_name },
       task: {
         id: row.task_id,
@@ -132,6 +144,10 @@ export type TaskReturnInput = {
 export type TaskReviewInput = TaskReturnInput & {
   action: "return" | "accept";
   allowSyntheticAccrual?: boolean;
+  // Accept only: corrected base fund and one bonus from the task's rule version.
+  baseXp?: number | undefined;
+  basePoints?: number | undefined;
+  bonusCode?: string | undefined;
 };
 export type TaskReviewResponse = {
   review: Omit<TaskReturnResponse["review"], "decision"> & {
@@ -145,7 +161,8 @@ export type TaskReviewResult =
   | Exclude<TaskReturnResult, { kind: "ok" }>
   | { kind: "recipient_revoked" }
   | { kind: "economy_disabled" }
-  | { kind: "economy_rules_invalid" };
+  | { kind: "economy_rules_invalid" }
+  | { kind: "award_invalid"; reason: AwardRejection };
 export type TaskReturnResult =
   | { kind: "ok"; response: TaskReturnResponse }
   | { kind: "revoked" }
@@ -255,6 +272,22 @@ export async function reviewTaskSubmission(
       return await reject({ kind: "economy_disabled" });
     if (input.action === "accept" && !timeZone)
       return await reject({ kind: "economy_rules_invalid" });
+    // Fund, rule version and options are frozen once a task is assigned, so the same
+    // choice resolves the same way on a replay.
+    const award =
+      input.action === "accept"
+        ? resolveAcceptanceAward(
+            acceptanceOptions(current.rule_definition),
+            { xp: current.fund_xp, points: current.fund_points },
+            {
+              baseXp: input.baseXp,
+              basePoints: input.basePoints,
+              bonusCode: input.bonusCode,
+            },
+          )
+        : null;
+    if (award && !award.ok)
+      return await reject({ kind: "award_invalid", reason: award.reason });
     const operation = `submission.${input.action}`;
     const hash = createHash("sha256")
       .update(
@@ -262,6 +295,11 @@ export async function reviewTaskSubmission(
           submissionId: input.submissionId,
           expectedVersion: input.expectedVersion,
           reason: input.reason,
+          // Undefined (so absent) for a return or an unchanged fund: earlier saved
+          // intents keep their hash.
+          baseXp: input.action === "accept" ? input.baseXp : undefined,
+          basePoints: input.action === "accept" ? input.basePoints : undefined,
+          bonusCode: input.action === "accept" ? input.bonusCode : undefined,
         }),
       )
       .digest();
@@ -323,8 +361,9 @@ export async function reviewTaskSubmission(
     ).rows[0]!.at;
     const row = (
       await client.query<{ id: string; created_at: Date }>(
-        `INSERT INTO impuls.reviews (submission_id, reviewer_id, decision, reason, fund_xp, fund_points, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $7) RETURNING id, created_at`,
+        `INSERT INTO impuls.reviews (submission_id, reviewer_id, decision, reason, fund_xp, fund_points,
+        base_xp, base_points, bonus_code, bonus_title, bonus_xp, bonus_points, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13) RETURNING id, created_at`,
         [
           input.submissionId,
           input.actorId,
@@ -332,6 +371,12 @@ export async function reviewTaskSubmission(
           input.reason,
           input.action === "accept" ? current.fund_xp : null,
           input.action === "accept" ? current.fund_points : null,
+          award?.ok ? award.baseXp : null,
+          award?.ok ? award.basePoints : null,
+          award?.ok ? (award.bonus?.code ?? null) : null,
+          award?.ok ? (award.bonus?.title ?? null) : null,
+          award?.ok ? (award.bonus?.xp ?? 0) : null,
+          award?.ok ? (award.bonus?.points ?? 0) : null,
           at,
         ],
       )
@@ -340,8 +385,8 @@ export async function reviewTaskSubmission(
       "UPDATE impuls.tasks SET status = $2, version = version + 1, updated_at = $3 WHERE id = $1",
       [current.id, input.action === "accept" ? "accepted" : "needs_work", at],
     );
-    const award =
-      input.action === "accept"
+    const credited =
+      award?.ok === true
         ? await creditAcceptedTask(client, {
             reviewId: row.id,
             userId: current.user_id,
@@ -349,8 +394,11 @@ export async function reviewTaskSubmission(
             title: current.title,
             ruleSetId: current.rule_set_id,
             ruleVersion: current.rule_version,
-            xp: current.fund_xp,
-            points: current.fund_points,
+            xp: award.xp,
+            points: award.points,
+            baseXp: award.baseXp,
+            basePoints: award.basePoints,
+            bonus: award.bonus,
             at,
             timeZone: timeZone!,
           })
@@ -376,12 +424,17 @@ export async function reviewTaskSubmission(
           from: "in_review",
           to: input.action === "accept" ? "accepted" : "needs_work",
           version: current.version + 1,
-          ...(award
+          ...(credited
             ? {
-                xp: award.xp,
-                points: award.points,
-                ruleVersion: award.ruleVersion,
-                mode: award.mode,
+                xp: credited.xp,
+                points: credited.points,
+                baseXp: credited.breakdown?.baseXp,
+                basePoints: credited.breakdown?.basePoints,
+                bonusCode: credited.breakdown?.bonus?.code ?? null,
+                bonusXp: credited.breakdown?.bonus?.xp ?? 0,
+                bonusPoints: credited.breakdown?.bonus?.points ?? 0,
+                ruleVersion: credited.ruleVersion,
+                mode: credited.mode,
               }
             : {}),
         }),
@@ -411,7 +464,7 @@ export async function reviewTaskSubmission(
         status: input.action === "accept" ? "accepted" : "needs_work",
         version: current.version + 1,
       },
-      ...(award ? { award } : {}),
+      ...(credited ? { award: credited } : {}),
     };
     await client.query(
       `UPDATE impuls.idempotency_records SET response_status = 200, response_body = $4::jsonb
@@ -463,7 +516,8 @@ export async function returnTaskSubmission(
   });
   if (
     result.kind === "economy_disabled" ||
-    result.kind === "economy_rules_invalid"
+    result.kind === "economy_rules_invalid" ||
+    result.kind === "award_invalid"
   )
     throw new Error("Unexpected return economy gate");
   if (result.kind !== "ok") return result;

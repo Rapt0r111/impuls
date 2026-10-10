@@ -36,6 +36,11 @@ export type AcceptanceAward = {
   mode: "synthetic";
   xp: number;
   points: number;
+  breakdown: {
+    baseXp: number;
+    basePoints: number;
+    bonus: { code: string; title: string; xp: number; points: number } | null;
+  } | null;
   ruleVersion: number;
   seasonKey: string;
   timeZone: string;
@@ -54,6 +59,9 @@ export async function creditAcceptedTask(
     ruleVersion: number;
     xp: number;
     points: number;
+    baseXp: number;
+    basePoints: number;
+    bonus: { code: string; title: string; xp: number; points: number } | null;
     at: Date;
     timeZone: string;
   },
@@ -104,6 +112,11 @@ export async function creditAcceptedTask(
     mode: "synthetic",
     xp: input.xp,
     points: input.points,
+    breakdown: {
+      baseXp: input.baseXp,
+      basePoints: input.basePoints,
+      bonus: input.bonus,
+    },
     ruleVersion: input.ruleVersion,
     seasonKey,
     timeZone: input.timeZone,

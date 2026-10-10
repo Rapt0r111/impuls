@@ -39,8 +39,8 @@ const origin = process.env.TEST_APP_ORIGIN;
       );
       if (decision)
         await admin.query(
-          `INSERT INTO impuls.reviews (submission_id,reviewer_id,decision,reason,fund_xp,fund_points,created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,'2026-09-30T09:00:00Z')`,
+          `INSERT INTO impuls.reviews (submission_id,reviewer_id,decision,reason,fund_xp,fund_points,base_xp,base_points,bonus_xp,bonus_points,created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$5,$6,$7,$7,'2026-09-30T09:00:00Z')`,
           [
             id,
             reviewer,
@@ -48,6 +48,7 @@ const origin = process.env.TEST_APP_ORIGIN;
             `Independent reason ${number}`,
             decision === "accept" ? 19 : null,
             decision === "accept" ? 7 : null,
+            decision === "accept" ? 0 : null,
           ],
         );
       return id;

@@ -55,6 +55,33 @@ function ReturnForm({
   const [reason, setReason] = useState("");
   const [action, setAction] = useState<"return" | "accept">("return");
   const [confirmed, setConfirmed] = useState(false);
+  const { adjustment, bonuses } = item.acceptance.options;
+  const [baseXp, setBaseXp] = useState(String(item.task.fundXp));
+  const [basePoints, setBasePoints] = useState(String(item.task.fundPoints));
+  const [bonusCode, setBonusCode] = useState("");
+  const bonus = bonuses.find((b) => b.code === bonusCode) ?? null;
+  const parsedBaseXp = /^\d{1,7}$/.test(baseXp) ? Number(baseXp) : null;
+  const parsedBasePoints = /^\d{1,7}$/.test(basePoints)
+    ? Number(basePoints)
+    : null;
+  const adjusted =
+    parsedBaseXp !== item.task.fundXp ||
+    parsedBasePoints !== item.task.fundPoints;
+  const awardProblem =
+    action !== "accept"
+      ? null
+      : parsedBaseXp === null || parsedBasePoints === null
+        ? "Укажите целые неотрицательные значения."
+        : adjusted &&
+            (!adjustment ||
+              parsedBaseXp > adjustment.maxXp ||
+              parsedBasePoints > adjustment.maxPoints)
+          ? adjustment
+            ? `Не больше ${adjustment.maxXp} XP и ${adjustment.maxPoints} баллов по версии правил.`
+            : "Версия правил не разрешает корректировку."
+          : null;
+  const totalXp = (parsedBaseXp ?? 0) + (bonus?.xp ?? 0);
+  const totalPoints = (parsedBasePoints ?? 0) + (bonus?.points ?? 0);
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -72,16 +99,24 @@ function ReturnForm({
     heading.current?.scrollIntoView({ block: "start", behavior: "instant" });
   }, []);
   useEffect(() => {
-    reportDirty(Boolean(reason) || confirmed || pending || uncertain);
+    reportDirty(
+      Boolean(reason) ||
+        confirmed ||
+        pending ||
+        uncertain ||
+        adjusted ||
+        bonusCode !== "",
+    );
     return () => reportDirty(false);
-  }, [reason, confirmed, pending, uncertain, reportDirty]);
+  }, [reason, confirmed, pending, uncertain, adjusted, bonusCode, reportDirty]);
 
   async function send() {
     if (
       running.current ||
       blocked ||
       (!intent.current &&
-        (!reason.trim() || (action === "accept" && !confirmed)))
+        (!reason.trim() ||
+          (action === "accept" && (!confirmed || awardProblem !== null))))
     )
       return;
     running.current = true;
@@ -94,6 +129,10 @@ function ReturnForm({
         action,
         expectedVersion: item.task.version,
         reason: reason.trim(),
+        ...(action === "accept" && adjusted
+          ? { baseXp: parsedBaseXp, basePoints: parsedBasePoints }
+          : {}),
+        ...(action === "accept" && bonus ? { bonusCode: bonus.code } : {}),
       }),
     };
     intent.current = attempt;
@@ -133,7 +172,8 @@ function ReturnForm({
         ) {
           intent.current = null;
           setUncertain(false);
-          if (response.status !== 400) setBlocked(true);
+          if (response.status !== 400 && code !== "AWARD_INVALID")
+            setBlocked(true);
           setError(
             response.status === 409
               ? "Решение уже изменилось. Причина сохранена. Закройте форму и обновите очередь перед новым решением."
@@ -141,9 +181,11 @@ function ReturnForm({
                 ? "Синтетические начисления недоступны. Основание сохранено. Закройте форму и обновите очередь."
                 : code === "RECIPIENT_REVOKED"
                   ? "Доступ исполнителя отозван. Решение не сохранено."
-                  : response.status === 400
-                    ? "Укажите причину от 1 до 2000 символов."
-                    : "Отчёт или право проверки больше недоступны. Закройте форму и обновите очередь.",
+                  : code === "AWARD_INVALID"
+                    ? "Корректировка или бонус не разрешены версией правил. Измените выбор и подтвердите снова."
+                    : response.status === 400
+                      ? "Укажите причину от 1 до 2000 символов."
+                      : "Отчёт или право проверки больше недоступны. Закройте форму и обновите очередь.",
           );
           // Keep this form and its draft mounted until the reviewer closes it.
           return;
@@ -162,7 +204,11 @@ function ReturnForm({
       setBlocked(true);
       setSuccess(
         "award" in result
-          ? `Результат принят. Начислено ${result.award.xp} XP и ${result.award.points} баллов. Основание: ${result.review.reason}`
+          ? `Результат принят. Начислено ${result.award.xp} XP и ${result.award.points} баллов${
+              result.award.breakdown?.bonus
+                ? ` (бонус «${result.award.breakdown.bonus.title}»: ${result.award.breakdown.bonus.xp} XP и ${result.award.breakdown.bonus.points} баллов)`
+                : ""
+            }. Основание: ${result.review.reason}`
           : `Возврат сохранён. Исполнитель увидит причину: ${result.review.reason}`,
       );
       await client.invalidateQueries({ queryKey: ["assigned-tasks"] });
@@ -275,10 +321,78 @@ function ReturnForm({
             aria-label="Предварительное начисление"
           >
             <h4>Проверка перед приёмкой</h4>
+            {(adjustment || bonuses.length > 0) && (
+              <fieldset
+                className="review-award"
+                disabled={pending || uncertain || blocked}
+              >
+                <legend>Начисление</legend>
+                {adjustment && (
+                  <>
+                    <label htmlFor="review-base-xp">
+                      Базовый XP (фонд {item.task.fundXp}, не больше{" "}
+                      {adjustment.maxXp})
+                    </label>
+                    <input
+                      id="review-base-xp"
+                      inputMode="numeric"
+                      value={baseXp}
+                      onChange={(event) => {
+                        setBaseXp(event.target.value.trim());
+                        setConfirmed(false);
+                      }}
+                    />
+                    <label htmlFor="review-base-points">
+                      Базовые баллы (фонд {item.task.fundPoints}, не больше{" "}
+                      {adjustment.maxPoints})
+                    </label>
+                    <input
+                      id="review-base-points"
+                      inputMode="numeric"
+                      value={basePoints}
+                      onChange={(event) => {
+                        setBasePoints(event.target.value.trim());
+                        setConfirmed(false);
+                      }}
+                    />
+                  </>
+                )}
+                {bonuses.length > 0 && (
+                  <>
+                    <label htmlFor="review-bonus">
+                      Бонус (не более одного)
+                    </label>
+                    <select
+                      id="review-bonus"
+                      value={bonusCode}
+                      onChange={(event) => {
+                        setBonusCode(event.target.value);
+                        setConfirmed(false);
+                      }}
+                    >
+                      <option value="">Без бонуса</option>
+                      {bonuses.map((b) => (
+                        <option key={b.code} value={b.code}>
+                          {b.title} (+{b.xp} XP / +{b.points} баллов)
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </fieldset>
+            )}
+            {awardProblem && (
+              <p className="task-report-error" role="alert">
+                {awardProblem}
+              </p>
+            )}
             <p>
               {item.author.displayName} получит{" "}
-              <strong>{item.task.fundXp} XP</strong> и{" "}
-              <strong>{item.task.fundPoints} баллов</strong>.
+              <strong>{awardProblem ? "—" : `${totalXp} XP`}</strong> и{" "}
+              <strong>{awardProblem ? "—" : `${totalPoints} баллов`}</strong>.
+              {bonus && !awardProblem
+                ? ` Из них бонус «${bonus.title}»: ${bonus.xp} XP и ${bonus.points} баллов.`
+                : ""}
             </p>
             <p>
               Версия задачи {item.task.version} · правила{" "}
@@ -291,7 +405,9 @@ function ReturnForm({
                 disabled={pending || uncertain || blocked}
                 onChange={(event) => setConfirmed(event.target.checked)}
               />{" "}
-              Подтверждаю результат и указанный фонд
+              {bonus || adjusted
+                ? "Подтверждаю результат и указанное начисление"
+                : "Подтверждаю результат и указанный фонд"}
             </label>
           </section>
         )}
@@ -300,7 +416,9 @@ function ReturnForm({
         </label>
         <p id="review-help">
           {action === "accept"
-            ? "Укажите, чем подтверждено выполнение критериев. Фонд задаётся серверной версией задачи."
+            ? bonus || adjusted
+              ? "Объясните корректировку или бонус и чем подтверждено выполнение критериев."
+              : "Укажите, чем подтверждено выполнение критериев. Фонд задаётся серверной версией задачи."
             : "Что нужно исправить, чтобы выполнить критерии. Возврат не начисляет XP или баллы."}
         </p>
         <textarea
@@ -331,7 +449,9 @@ function ReturnForm({
             disabled={
               pending ||
               (!uncertain &&
-                (!reason.trim() || (action === "accept" && !confirmed)))
+                (!reason.trim() ||
+                  (action === "accept" &&
+                    (!confirmed || awardProblem !== null))))
             }
             type="submit"
           >
