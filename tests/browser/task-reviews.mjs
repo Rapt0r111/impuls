@@ -334,9 +334,7 @@ try {
       )
       .waitFor();
     await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
-    await page
-      .getByRole("heading", { name: "Назначенные задачи", exact: true })
-      .waitFor();
+    await page.getByRole("heading", { name: "Задачи", exact: true }).waitFor();
     assert.deepEqual(errors, []);
     await page.close();
     scenarios++;

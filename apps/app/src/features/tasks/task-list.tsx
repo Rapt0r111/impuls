@@ -116,6 +116,52 @@ function dateLabel(value: string): string {
   }).format(new Date(value));
 }
 
+function timeLabel(value: string): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+// «Сегодня до 18:00» или «до 24 окт. 2026 г., 12:00»: срок читается без расчёта в уме.
+function dueLabel(value: string): string {
+  const due = new Date(value),
+    now = new Date();
+  const sameDay =
+    due.getFullYear() === now.getFullYear() &&
+    due.getMonth() === now.getMonth() &&
+    due.getDate() === now.getDate();
+  return sameDay
+    ? `Сегодня до ${timeLabel(value)}`
+    : `до ${dateLabel(value)}, ${timeLabel(value)}`;
+}
+
+// Остаток времени до срока; после срока — просрочка. Считается при отрисовке,
+// поэтому в отчётах не появляется придуманной точности: единица не мельче минуты.
+function remainingLabel(value: string): string {
+  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60_000);
+  const absolute = Math.abs(minutes);
+  const days = Math.floor(absolute / 1440),
+    hours = Math.floor((absolute % 1440) / 60),
+    rest = absolute % 60;
+  const parts = days
+    ? [`${days} д`, hours ? `${hours} ч` : null]
+    : hours
+      ? [`${hours} ч`, rest ? `${rest} мин` : null]
+      : [`${rest} мин`];
+  const text = parts.filter(Boolean).join(" ");
+  return minutes < 0 ? `просрочено на ${text}` : `осталось ${text}`;
+}
+
+// Критерии приходят одним текстом; нумерация строится по непустым строкам.
+function criteriaLines(criteria: string): string[] {
+  const lines = criteria
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*[-•*\d.)\s]+/, "").trim())
+    .filter(Boolean);
+  return lines.length > 1 ? lines : [];
+}
+
 // Значок состояния задачи в карточке: форма отличается, а не только цвет.
 const statusIcons: Record<string, ReactNode> = {
   assigned: (
@@ -184,11 +230,124 @@ function TaskListContent() {
     tasks.error instanceof TaskRequestError &&
     (tasks.error.status === 401 || tasks.error.status === 403);
 
+  const openTask = detail.data?.task;
+  if (selectedId)
+    return (
+      <section className="tasks-section" aria-labelledby="task-detail-title">
+        <button
+          type="button"
+          className="more-back task-back"
+          onClick={() => {
+            if (confirmLeave()) setSelectedId(null);
+          }}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          <span>Задачи</span>
+        </button>
+        <section className="tasks-detail" aria-labelledby="task-detail-title">
+          {detail.isPending ? (
+            <>
+              <h2 id="task-detail-title">Задача</h2>
+              <p role="status">Загружаем детали…</p>
+            </>
+          ) : detail.isError && !openTask ? (
+            <>
+              <h2 id="task-detail-title">Задача</h2>
+              <div role="alert">
+                <p>{taskError(detail.error)}</p>
+                {!(
+                  detail.error instanceof TaskRequestError &&
+                  detail.error.status === 404
+                ) && (
+                  <button
+                    type="button"
+                    className="tasks-action"
+                    onClick={() => void detail.refetch()}
+                  >
+                    Повторить
+                  </button>
+                )}
+              </div>
+            </>
+          ) : openTask ? (
+            <>
+              <div className="task-detail-top">
+                <span
+                  className={`task-chip task-chip--status task-chip--${openTask.status}`}
+                >
+                  {statusNames[openTask.status]}
+                </span>
+                <span className="task-detail-due">
+                  {dueLabel(openTask.dueAt)}
+                </span>
+              </div>
+              <h2 id="task-detail-title">{openTask.title}</h2>
+              <p className="task-detail-remaining">
+                {remainingLabel(openTask.dueAt)}
+              </p>
+              <div className="task-detail-funds">
+                <span className="task-chip task-chip--xp">
+                  {openTask.fundXp} XP
+                </span>
+                <span className="task-chip task-chip--points">
+                  {openTask.fundPoints} баллов
+                </span>
+                <span
+                  className={`task-chip task-chip--priority task-chip--${openTask.priority}`}
+                >
+                  {priorityNames[openTask.priority]}
+                </span>
+              </div>
+              {detail.isError && (
+                <p role="alert">
+                  {taskError(detail.error)} Последнее подтверждённое состояние:{" "}
+                  {dateLabel(openTask.updatedAt)}.
+                </p>
+              )}
+              <section aria-labelledby="task-criteria-title">
+                <h3 id="task-criteria-title">Критерии задачи</h3>
+                {criteriaLines(openTask.criteria).length ? (
+                  <ol className="task-criteria">
+                    {criteriaLines(openTask.criteria).map((line, index) => (
+                      <li key={`${index}-${line}`}>
+                        <span aria-hidden="true">{index + 1}</span>
+                        {line}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="tasks-detail-criteria">{openTask.criteria}</p>
+                )}
+              </section>
+              <dl>
+                <div>
+                  <dt>Область</dt>
+                  <dd>{openTask.scope.name}</dd>
+                </div>
+                <div>
+                  <dt>Версия правил</dt>
+                  <dd>{openTask.ruleVersion}</dd>
+                </div>
+              </dl>
+              <TaskReport key={selectedId} task={openTask} />
+              <TaskTimeline
+                key={`timeline-${selectedId}`}
+                taskId={selectedId}
+              />
+              <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
+            </>
+          ) : null}
+        </section>
+      </section>
+    );
+
   return (
     <section className="tasks-section" aria-labelledby="tasks-title">
       <div className="tasks-heading">
         <div>
-          <h2 id="tasks-title">Назначенные задачи</h2>
+          <h2 id="tasks-title">Задачи</h2>
           <p>Ваши текущие и завершённые назначения.</p>
         </div>
       </div>
@@ -250,10 +409,8 @@ function TaskListContent() {
                 <button
                   type="button"
                   className="tasks-row"
-                  aria-expanded={selectedId === task.id}
                   onClick={() => {
-                    if (confirmLeave())
-                      setSelectedId(selectedId === task.id ? null : task.id);
+                    if (confirmLeave()) setSelectedId(task.id);
                   }}
                 >
                   <span
@@ -308,74 +465,6 @@ function TaskListContent() {
             </p>
           )}
         </>
-      )}
-
-      {selectedId && (
-        <section className="tasks-detail" aria-labelledby="task-detail-title">
-          <div className="tasks-detail-top">
-            <h3 id="task-detail-title">Критерии задачи</h3>
-            <button
-              type="button"
-              className="tasks-close"
-              onClick={() => {
-                if (confirmLeave()) setSelectedId(null);
-              }}
-            >
-              Закрыть
-            </button>
-          </div>
-          {detail.isPending ? (
-            <p role="status">Загружаем детали…</p>
-          ) : detail.isError && !detail.data ? (
-            <div role="alert">
-              <p>{taskError(detail.error)}</p>
-              {!(
-                detail.error instanceof TaskRequestError &&
-                detail.error.status === 404
-              ) && (
-                <button
-                  type="button"
-                  className="tasks-action"
-                  onClick={() => void detail.refetch()}
-                >
-                  Повторить
-                </button>
-              )}
-            </div>
-          ) : detail.data ? (
-            <>
-              {detail.isError && (
-                <p role="alert">
-                  {taskError(detail.error)} Последнее подтверждённое состояние:{" "}
-                  {dateLabel(detail.data.task.updatedAt)}.
-                </p>
-              )}
-              <p className="tasks-detail-criteria">
-                {detail.data.task.criteria}
-              </p>
-              <dl>
-                <div>
-                  <dt>Приоритет</dt>
-                  <dd>{priorityNames[detail.data.task.priority]}</dd>
-                </div>
-                <div>
-                  <dt>Область</dt>
-                  <dd>{detail.data.task.scope.name}</dd>
-                </div>
-                <div>
-                  <dt>Версия правил</dt>
-                  <dd>{detail.data.task.ruleVersion}</dd>
-                </div>
-              </dl>
-              <TaskReport key={selectedId} task={detail.data.task} />
-              <TaskTimeline
-                key={`timeline-${selectedId}`}
-                taskId={selectedId}
-              />
-              <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
-            </>
-          ) : null}
-        </section>
       )}
     </section>
   );

@@ -422,7 +422,7 @@ try {
   for (const mode of ["legacy", "throwing"]) {
     const f = await fixture(320, mode);
     await openTask(f.page);
-    await f.page.getByRole("button", { name: "Закрыть", exact: true }).click();
+    await f.page.getByRole("button", { name: "Задачи", exact: true }).click();
     await f.page
       .getByLabel("Отчёт о выполнении", { exact: true })
       .waitFor({ state: "detached" });

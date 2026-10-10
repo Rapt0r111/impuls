@@ -271,7 +271,7 @@ try {
       report,
     );
     page.once("dialog", (dialog) => dialog.dismiss());
-    await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+    await page.getByRole("button", { name: "Задачи", exact: true }).click();
     assert.equal(
       await page.getByLabel("Отчёт о выполнении", { exact: true }).inputValue(),
       report,
