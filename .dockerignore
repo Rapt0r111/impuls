@@ -1,0 +1,18 @@
+# Only the worker image is built from this context (apps/worker/Dockerfile).
+**/node_modules
+**/.next
+**/dist
+.git
+.env*
+!.env.example
+.vercel
+.local
+.impeccable
+**/.impeccable
+docs
+work
+output
+outputs
+tests
+db
+coverage
