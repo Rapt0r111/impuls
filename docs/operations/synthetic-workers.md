@@ -27,28 +27,34 @@
 
 Включаются отдельным флагом `TASK_REMINDERS_ENABLED=true` в окружении процесса уведомлений (поверх `SYNTHETIC_NOTIFICATIONS_ENABLED=true`); нужна миграция 000034. Worker ставит событие `task.due_soon` для назначенных задач, срок которых наступает в течение 24 часов (не более 50 за шаг, по одному на задачу); отдельного процесса и расписания нет. Окно — технический параметр, не согласованное правило. Откат: снять флаг; поставленные события доставляются или подавляются обычным путём.
 
-## Размещение на Railway (ADR-0032, предложено)
+## Supabase Edge Functions (ADR-0032, бесплатно)
 
-Образ: `apps/worker/Dockerfile`, контекст — корень репозитория. Проверка сборки локально: `docker build -f apps/worker/Dockerfile -t impuls-worker .`. Два сервиса из одного репозитория, без публичного домена:
+Две функции, `impuls-notifications` и `impuls-expiry`, раз в минуту вызываются pg_cron через pg_net и делают один проход, равный `--once`/`--expire-once`. Код: `apps/worker/src/edge.ts`, входы в `supabase/functions/*/index.ts`, бандл `bun run build:edge` (файлы `worker-edge.mjs` не хранятся в git).
 
-| Сервис                 | Файл конфигурации (Settings → Config-as-code) | Команда                              | Роль БД                |
-| ---------------------- | --------------------------------------------- | ------------------------------------ | ---------------------- |
-| `impuls-notifications` | `/ops/railway/notifications.json`             | `node /app/index.mjs --watch`        | `impuls_worker`        |
-| `impuls-expiry`        | `/ops/railway/expiry.json`                    | `node /app/index.mjs --expire-watch` | `impuls_expiry_worker` |
+Порядок включения:
 
-Порядок включения (выполняет владелец):
-
-1. В SQL Editor Supabase для каждой роли задать вход и длинный случайный пароль из букв и цифр, чтобы не кодировать его в URL (не сохранять в репозитории и чате):
+1. **Владелец**, SQL Editor Supabase. Три длинных случайных значения из букв и цифр (чтобы не кодировать их в URL); не сохранять в репозитории и чате:
    ```sql
    ALTER ROLE impuls_worker WITH LOGIN PASSWORD '<пароль 1>';
    ALTER ROLE impuls_expiry_worker WITH LOGIN PASSWORD '<пароль 2>';
+   SELECT vault.create_secret('<токен вызова, не короче 32 символов>', 'impuls_worker_trigger');
    ```
-2. В Railway создать проект, подключить репозиторий, создать два сервиса из него с веткой `main` и указать файл конфигурации из таблицы.
-3. Переменные сервиса уведомлений: `WORKER_DATABASE_URL=postgresql://impuls_worker.<project-ref>:<пароль 1>@aws-0-eu-north-1.pooler.supabase.com:5432/postgres` (без `?sslmode`; хост и `project-ref` сверить в Supabase → Connect → Session pooler, порт 5432 — режим session), `SUPABASE_CA_CERT_B64` (то же значение, что у приложения), `SYNTHETIC_NOTIFICATIONS_ENABLED=true`. `TELEGRAM_DELIVERY_ENABLED`, `TELEGRAM_BOT_TOKEN` и `TASK_REMINDERS_ENABLED` — только после проверки симуляции.
-4. Переменные сервиса истечения: `WORKER_DATABASE_URL` с `impuls_expiry_worker.<project-ref>` и паролем 2, `SUPABASE_CA_CERT_B64`, `RESERVATION_EXPIRY_ENABLED=true`.
-5. Деплой; в журнале каждого сервиса ждать `watching`, затем `alive`. `WORKER_UNAVAILABLE` сразу после старта — неверный пароль, логин pooler, CA или роль; сервис остановится после 5 перезапусков.
+2. **Владелец**, Edge Functions → Secrets:
+   - `NOTIFICATION_WORKER_DATABASE_URL=postgresql://impuls_worker.<project-ref>:<пароль 1>@<host>:5432/postgres`;
+   - `EXPIRY_WORKER_DATABASE_URL=postgresql://impuls_expiry_worker.<project-ref>:<пароль 2>@<host>:5432/postgres`;
+   - `<host>` — из Supabase → Connect → Session pooler, без `?sslmode`;
+   - `SUPABASE_CA_CERT_B64` — то же значение, что у приложения в Vercel;
+   - `WORKER_TRIGGER_SECRET` — токен из шага 1;
+   - `SYNTHETIC_NOTIFICATIONS_ENABLED=true`, `RESERVATION_EXPIRY_ENABLED=true`.
+3. Опубликовать обе функции с `verify_jwt=false` (вызов проверяется токеном): собрать `bun run build:edge` и загрузить `index.ts` и `worker-edge.mjs` каждой функции через Supabase CLI (`--no-verify-jwt`) или Supabase MCP.
+4. Выполнить `ops/supabase/worker-schedule.sql`, подставив `<project-ref>`.
+5. Через минуту проверить журнал функций (Edge Functions → Logs): `{"mode":"simulation","results":{...}}` и `{"mode":"reservation_expiry","results":{...}}`. Ответы pg_net — в `net._http_response`. 401 — токен в Vault и в секрете различается; 503 `WORKER_UNAVAILABLE` — пароль, логин pooler, CA или роль.
 
-Остановка: снять флаг и перезапустить (выход `disabled`, без перезапуска) или удалить деплой. `drainingSeconds=25` даёт процессу время на drain; по умолчанию у Railway SIGKILL следует сразу. Применяется ли draining при ручной остановке, а не только при новом деплое, не проверено. Railway считает перезапуски без окна 300 с из systemd-шаблона.
+Реальная доставка: добавить секреты `TELEGRAM_BOT_TOKEN` и `TELEGRAM_DELIVERY_ENABLED=true`, затем `TASK_REMINDERS_ENABLED=true` (смысл — разделы выше). Новые значения секретов функция видит со следующего вызова. Если Bot API отвечает 401/404, каждый вызов вернёт 503 и сожжёт попытку одного события: сразу снять `TELEGRAM_DELIVERY_ENABLED`.
+
+Остановка: `select cron.unschedule('impuls-notifications'); select cron.unschedule('impuls-expiry');` или флаг `false` (ответ `disabled`). Полный откат — дополнительно `ALTER ROLE … NOLOGIN`.
+
+Запасной путь без Supabase Edge Functions: образ `apps/worker/Dockerfile` (`docker build -f apps/worker/Dockerfile -t impuls-worker .`, режим передаётся аргументом `--watch` или `--expire-watch`) либо systemd ниже.
 
 ## Предлагаемый supervisor
 

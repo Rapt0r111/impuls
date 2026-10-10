@@ -16,6 +16,7 @@
     "build": "bun run build:app && bun run build:worker",
     "build:app": "bun run --cwd apps/app build",
     "build:worker": "bun run --cwd apps/worker build",
+    "build:edge": "node scripts/build-edge-worker.mjs",
     "start": "bun run --cwd apps/app start",
     "worker:simulate": "bun run --cwd apps/worker start --once",
     "worker:watch": "bun run --cwd apps/worker start --watch",
