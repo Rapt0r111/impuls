@@ -42,15 +42,21 @@ const up = (pgm) => {
       RAISE EXCEPTION 'Profile name history is immutable' USING ERRCODE='23514';
     END $$;
 
-    -- A member has left when the account is switched off and every membership has ended,
-    -- by removal or by its term. The departure is the moment the last membership ended.
-    -- An account that never had a membership (the owner) or still holds an open-ended one
-    -- is not a departure.
+    -- A member has left when every membership has ended, by removal or by its term. Removal
+    -- switches the account off; a term that runs out does not, so a still-enabled account
+    -- has also left only once none of its role bindings is open-ended or still running.
+    -- The departure is the moment the last of these ended. An account that never had a
+    -- membership (the owner) or still holds an open-ended one is not a departure.
     CREATE FUNCTION impuls.member_departures() RETURNS TABLE(user_id uuid, departed_at timestamptz)
       LANGUAGE sql STABLE SET search_path=pg_catalog AS $$
-      SELECT u.id, max(LEAST(m.revoked_at, m.valid_until))
+      SELECT u.id, GREATEST(max(LEAST(m.revoked_at, m.valid_until)),
+        CASE WHEN u.active THEN (SELECT max(LEAST(b.revoked_at, b.valid_until))
+          FROM impuls.role_bindings b WHERE b.user_id = u.id) END)
       FROM impuls.users u JOIN impuls.task_scope_members m ON m.user_id = u.id
-      WHERE NOT u.active AND u.erased_at IS NULL
+      WHERE u.erased_at IS NULL
+        AND (NOT u.active OR NOT EXISTS (
+          SELECT 1 FROM impuls.role_bindings b
+          WHERE b.user_id = u.id AND b.revoked_at IS NULL AND b.valid_until IS NULL))
       GROUP BY u.id
       HAVING bool_and(m.revoked_at IS NOT NULL OR m.valid_until IS NOT NULL)
     $$;
@@ -79,13 +85,14 @@ const up = (pgm) => {
         WHERE d.departed_at <= clock_timestamp() - interval '90 days'
         ORDER BY d.departed_at, d.user_id LIMIT p_limit
       LOOP
-        PERFORM 1 FROM impuls.users u WHERE u.id = candidate AND NOT u.active AND u.erased_at IS NULL
+        PERFORM 1 FROM impuls.users u WHERE u.id = candidate AND u.erased_at IS NULL
           FOR UPDATE SKIP LOCKED;
         CONTINUE WHEN NOT FOUND;
         SELECT d.departed_at INTO departed FROM impuls.member_departures() d WHERE d.user_id = candidate;
         CONTINUE WHEN departed IS NULL OR departed > clock_timestamp() - interval '90 days';
         at := clock_timestamp();
-        UPDATE impuls.users SET telegram_id = NULL, display_name = 'Удалённый участник',
+        -- A member whose term ran out is still switched on; switching off closes the sessions.
+        UPDATE impuls.users SET telegram_id = NULL, display_name = 'Удалённый участник', active = false,
           erased_at = at, version = version + 1, updated_at = at
         WHERE id = candidate;
         DELETE FROM impuls.sessions s WHERE s.user_id = candidate;

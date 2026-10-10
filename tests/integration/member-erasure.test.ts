@@ -82,6 +82,20 @@ const placeholder = "Удалённый участник";
         ],
       );
     }
+    // A 'task.review' binding of `userId` that ended `days` ago (null = open-ended).
+    async function binding(userId: string, endedDaysAgo: number | null) {
+      const own = (
+        await db.query<{ id: string }>(
+          "INSERT INTO impuls.access_scopes(kind,name) VALUES('group',$1) RETURNING id",
+          [`Область ${randomUUID()}`],
+        )
+      ).rows[0]!.id;
+      await db.query(
+        `INSERT INTO impuls.role_bindings(user_id,action,scope_id,valid_from,valid_until,granted_by,reason)
+         VALUES($1,'task.review',$2,now()-interval '400 days',now()-make_interval(days=>$3::int),$1,'test')`,
+        [userId, own, endedDaysAgo],
+      );
+    }
     const user = async (id: string) =>
       (
         await db.query(
@@ -210,9 +224,10 @@ const placeholder = "Удалённый участник";
       ).toBe(0);
     });
 
-    it("keeps members who left 89 days ago, are still active, still hold a membership or never had one", async () => {
+    it("keeps members who left 89 days ago, still hold an open-ended role, still hold a membership or never had one", async () => {
       const recent = await member([{ revokedDaysAgo: 89 }]);
       const active = await member([{ revokedDaysAgo: 120 }], true);
+      await binding(active.id, null);
       const stillIn = await member([{ revokedDaysAgo: 120 }, {}]);
       const owner = await member([]);
       const result = await run(true);
@@ -242,6 +257,27 @@ const placeholder = "Удалённый участник";
         )
       ).rows[0];
       expect(departed.old).toBe(true);
+    });
+
+    it("erases a member whose term ran out without removal and switches the account off", async () => {
+      const expired = await member([{ endedByTermDaysAgo: 95 }], true);
+      const roleEndedRecently = await member(
+        [{ endedByTermDaysAgo: 120 }],
+        true,
+      );
+      await binding(roleEndedRecently.id, 30);
+      const result = await run(true);
+      const erased = result.erased.map((e) => e.userId);
+      expect(erased).toContain(expired.id);
+      expect(erased).not.toContain(roleEndedRecently.id);
+      expect(await user(expired.id)).toMatchObject({
+        telegram_id: null,
+        display_name: placeholder,
+        active: false,
+      });
+      expect((await user(roleEndedRecently.id)).telegram_id).toBe(
+        roleEndedRecently.telegram,
+      );
     });
 
     it("is idempotent and an erased account cannot come back; the person returns as a new account", async () => {
