@@ -108,7 +108,10 @@ export async function listReviewQueue(
           enabled,
           mode: enabled ? ("synthetic" as const) : null,
           options: enabled
-            ? acceptanceOptions(row.rule_definition)
+            ? acceptanceOptions(row.rule_definition, {
+                xp: row.fund_xp,
+                points: row.fund_points,
+              })
             : { adjustment: null, bonuses: [] },
         };
       })(),
@@ -277,7 +280,10 @@ export async function reviewTaskSubmission(
     const award =
       input.action === "accept"
         ? resolveAcceptanceAward(
-            acceptanceOptions(current.rule_definition),
+            acceptanceOptions(current.rule_definition, {
+              xp: current.fund_xp,
+              points: current.fund_points,
+            }),
             { xp: current.fund_xp, points: current.fund_points },
             {
               baseXp: input.baseXp,

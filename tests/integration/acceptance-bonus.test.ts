@@ -34,6 +34,7 @@ const options = {
     const scope = randomUUID();
     const withOptions = randomUUID();
     const withoutOptions = randomUUID();
+    const pilotShares = randomUUID();
     const tasks: string[] = [];
     let expectedXp = 0;
     let expectedPoints = 0;
@@ -65,6 +66,21 @@ const options = {
             mode: "synthetic",
             timeZone: "Europe/Moscow",
             acceptance: { enabled: true },
+          },
+        ],
+        [
+          pilotShares,
+          {
+            mode: "synthetic",
+            timeZone: "Europe/Moscow",
+            acceptance: {
+              enabled: true,
+              adjustment: { minPercent: 50 },
+              bonuses: [
+                { code: "plus_10", title: "Бонус +10 %", percent: 10 },
+                { code: "plus_25", title: "Бонус +25 %", percent: 25 },
+              ],
+            },
           },
         ],
       ] as const)
@@ -178,7 +194,7 @@ const options = {
         ]);
         await admin.query(
           "DELETE FROM impuls.rule_sets WHERE id=ANY($1::uuid[])",
-          [[withOptions, withoutOptions]],
+          [[withOptions, withoutOptions, pilotShares]],
         );
         await admin.query("DELETE FROM impuls.sessions WHERE user_id=$1", [
           reviewer,
@@ -367,6 +383,78 @@ const options = {
           reviews: 0,
         });
       }
+      expect(await balance()).toEqual({
+        xp: expectedXp,
+        points: expectedPoints,
+      });
+    });
+
+    it("resolves the pilot shares of the fund for the queue, the decision and the ledger", async () => {
+      // Owner decision P-04 (10.10.2026, ADR-0031). Fund 100/30: minimum base 50/15,
+      // +25 % = 25/7 (7.5 points rounded down). Expected values computed by hand.
+      const f = await fixture(pilotShares, 100, 30);
+      const queue = await listReviewQueue(runtime, reviewer, {
+        allowSyntheticAccrual: true,
+        limit: 50,
+      });
+      expect(
+        queue.items.find((i) => i.task.id === f.id)!.acceptance.options,
+      ).toEqual({
+        adjustment: { minXp: 50, minPoints: 15, maxXp: 100, maxPoints: 30 },
+        bonuses: [
+          { code: "plus_10", title: "Бонус +10 %", xp: 10, points: 3 },
+          { code: "plus_25", title: "Бонус +25 %", xp: 25, points: 7 },
+        ],
+      });
+      for (const [extra, reason] of [
+        [{ baseXp: 49 }, "adjustment_below_limit"],
+        [{ basePoints: 14 }, "adjustment_below_limit"],
+        [{ baseXp: 101 }, "adjustment_exceeds_limit"],
+        [{ bonusCode: "quality" }, "bonus_unknown"],
+      ] as const) {
+        expect(
+          await reviewTaskSubmission(runtime, {
+            ...f.input,
+            idempotencyKey: randomUUID(),
+            ...extra,
+          }),
+        ).toEqual({ kind: "award_invalid", reason });
+        expect(await untouched(f.id)).toEqual({
+          status: "in_review",
+          entries: 0,
+          reviews: 0,
+        });
+      }
+      const result = await reviewTaskSubmission(runtime, {
+        ...f.input,
+        baseXp: 50,
+        basePoints: 15,
+        bonusCode: "plus_25",
+      });
+      expect(result.kind).toBe("ok");
+      if (result.kind !== "ok") return;
+      expectedXp += 75;
+      expectedPoints += 22;
+      expect(result.response.award).toMatchObject({
+        xp: 75,
+        points: 22,
+        breakdown: {
+          baseXp: 50,
+          basePoints: 15,
+          bonus: { code: "plus_25", title: "Бонус +25 %", xp: 25, points: 7 },
+        },
+      });
+      expect(
+        (
+          await admin.query(
+            "SELECT currency, amount FROM impuls.ledger_entries WHERE task_id=$1 ORDER BY currency",
+            [f.id],
+          )
+        ).rows,
+      ).toEqual([
+        { currency: "points", amount: 22 },
+        { currency: "xp", amount: 75 },
+      ]);
       expect(await balance()).toEqual({
         xp: expectedXp,
         points: expectedPoints,

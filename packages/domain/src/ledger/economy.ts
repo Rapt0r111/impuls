@@ -28,9 +28,15 @@ export type AcceptanceBonus = {
   points: number;
 };
 export type AcceptanceOptions = {
-  adjustment: { maxXp: number; maxPoints: number } | null;
+  adjustment: {
+    minXp: number;
+    minPoints: number;
+    maxXp: number;
+    maxPoints: number;
+  } | null;
   bonuses: AcceptanceBonus[];
 };
+type Fund = { xp: number; points: number };
 const OPTION_LIMIT = 1_000_000;
 const MAX_LEDGER_AMOUNT = 2_147_483_647;
 const isAmount = (value: unknown): value is number =>
@@ -38,10 +44,27 @@ const isAmount = (value: unknown): value is number =>
   Number.isInteger(value) &&
   value >= 0 &&
   value <= OPTION_LIMIT;
+const isPercent = (value: unknown, min: number): value is number =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= min &&
+  value <= 100;
+// Integer shares of the task fund: a floor never pays more than the stated percent,
+// a ceiling never lets the base drop below it.
+const share = (amount: number, percent: number, round: "floor" | "ceil") =>
+  round === "floor"
+    ? Math.floor((amount * percent) / 100)
+    : Math.ceil((amount * percent) / 100);
 
 // What a reviewer may change at acceptance comes only from the saved rule version. A
 // missing or malformed entry disables that option instead of falling back to a default.
-export function acceptanceOptions(definition: unknown): AcceptanceOptions {
+// Two forms (ADR-0030, ADR-0031): absolute amounts (`maxXp`/`maxPoints`, bonus
+// `xp`/`points`) or shares of the task fund (`minPercent`, bonus `percent`). Shares are
+// resolved against the frozen fund of the task, so the reviewer sees exact numbers.
+export function acceptanceOptions(
+  definition: unknown,
+  fund: Fund,
+): AcceptanceOptions {
   const none: AcceptanceOptions = { adjustment: null, bonuses: [] };
   if (typeof definition !== "object" || definition === null) return none;
   const acceptance = (definition as Record<string, unknown>).acceptance;
@@ -51,15 +74,35 @@ export function acceptanceOptions(definition: unknown): AcceptanceOptions {
     typeof adjustment === "object" && adjustment !== null
       ? (adjustment as Record<string, unknown>)
       : null;
+  const absolute =
+    limits && isAmount(limits.maxXp) && isAmount(limits.maxPoints);
+  const relative = limits && isPercent(limits.minPercent, 0);
   const result: AcceptanceOptions = {
     adjustment:
-      limits && isAmount(limits.maxXp) && isAmount(limits.maxPoints)
-        ? { maxXp: limits.maxXp, maxPoints: limits.maxPoints }
-        : null,
+      absolute && !("minPercent" in limits)
+        ? {
+            minXp: 0,
+            minPoints: 0,
+            maxXp: limits.maxXp as number,
+            maxPoints: limits.maxPoints as number,
+          }
+        : relative && !("maxXp" in limits) && !("maxPoints" in limits)
+          ? {
+              minXp: share(fund.xp, limits.minPercent as number, "ceil"),
+              minPoints: share(
+                fund.points,
+                limits.minPercent as number,
+                "ceil",
+              ),
+              maxXp: fund.xp,
+              maxPoints: fund.points,
+            }
+          : null,
     bonuses: [],
   };
   if (!Array.isArray(bonuses) || bonuses.length > 7) return result;
   const parsed: AcceptanceBonus[] = [];
+  const seen = new Set<string>();
   for (const item of bonuses) {
     const entry =
       typeof item === "object" && item !== null
@@ -72,18 +115,30 @@ export function acceptanceOptions(definition: unknown): AcceptanceOptions {
       typeof entry.title !== "string" ||
       entry.title.length < 1 ||
       entry.title.length > 80 ||
-      !isAmount(entry.xp) ||
-      !isAmount(entry.points) ||
-      entry.xp + entry.points === 0 ||
-      parsed.some((b) => b.code === entry.code)
+      seen.has(entry.code)
     )
       return result;
-    parsed.push({
-      code: entry.code,
-      title: entry.title,
-      xp: entry.xp,
-      points: entry.points,
-    });
+    seen.add(entry.code);
+    let xp: number;
+    let points: number;
+    if ("percent" in entry) {
+      if ("xp" in entry || "points" in entry || !isPercent(entry.percent, 1))
+        return result;
+      xp = share(fund.xp, entry.percent, "floor");
+      points = share(fund.points, entry.percent, "floor");
+      // A share of a tiny fund can round to nothing: that task simply has no such bonus.
+      if (xp + points === 0) continue;
+    } else {
+      if (
+        !isAmount(entry.xp) ||
+        !isAmount(entry.points) ||
+        entry.xp + entry.points === 0
+      )
+        return result;
+      xp = entry.xp;
+      points = entry.points;
+    }
+    parsed.push({ code: entry.code, title: entry.title, xp, points });
   }
   return { ...result, bonuses: parsed };
 }
@@ -103,6 +158,7 @@ export type ResolvedAward = {
 export type AwardRejection =
   | "adjustment_not_allowed"
   | "adjustment_exceeds_limit"
+  | "adjustment_below_limit"
   | "bonus_unknown"
   | "award_too_large";
 
@@ -121,6 +177,11 @@ export function resolveAcceptanceAward(
       basePoints > options.adjustment.maxPoints
     )
       return { ok: false, reason: "adjustment_exceeds_limit" };
+    if (
+      baseXp < options.adjustment.minXp ||
+      basePoints < options.adjustment.minPoints
+    )
+      return { ok: false, reason: "adjustment_below_limit" };
   }
   let bonus: AcceptanceBonus | null = null;
   if (selection.bonusCode != null) {
