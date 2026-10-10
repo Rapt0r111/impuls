@@ -29,10 +29,11 @@
 - `execute_sql`: `create extension pg_cron`, `pg_net`; `cron.schedule` по `ops/supabase/worker-schedule.sql` → задания `impuls-notifications` (1) и `impuls-expiry` (2), `* * * * *`, active.
 - Первый запуск 15:30:00 UTC: оба задания `succeeded`; `net._http_response` — обе функции ответили 401 `{"error":"UNAUTHORIZED"}`. Ручной вызов без заголовка — тоже 401. Это ожидаемо: секретов и токена в Vault ещё нет, роли worker пока `rolcanlogin=false`. Значит, функции загружаются в Edge Runtime и расписание вызывает их.
 - 17:30 UTC: панель Supabase не принимает имена секретов с префиксом `SUPABASE_`, поэтому CA для функций читается из `WORKER_CA_CERT_B64` (коммит 83e505e); обе функции переопубликованы, версия 8, `verify_jwt=false`. Приложение в Vercel по-прежнему использует `SUPABASE_CA_CERT_B64`.
-- Ещё не проверено: проход под ролями worker через pooler (после шагов владельца), реальный Bot API.
+- После шагов владельца (секреты и пароли заданы им самим): `net._http_response` за 17:32–17:36 UTC — `impuls-notifications` отвечает 200 `{"mode":"simulation","results":{}}` с 17:32, `impuls-expiry` — 200 `{"mode":"reservation_expiry","results":{}}` с 17:36 (до этого 503 из-за адреса подключения, исправлен владельцем). Роли `impuls_worker` и `impuls_expiry_worker` имеют `rolcanlogin=true`, секрет Vault `impuls_worker_trigger` существует. Очередь событий пуста, поэтому обработка реального события на Production не проверена.
+- Ещё не проверено: обработка реального события на Production, реальный Bot API.
 
 ## Не проверено
 
-- Полный проход в облаке: подключение через pooler Production под ролями worker и обработка событий. На Production роли пока `NOLOGIN` (`2026-10-08-production-app-release.md`); атрибуты ролей Production в этой работе не читались.
+- Обработка реального события на Production (подключение через pooler под обеими ролями подтверждено ответами 200).
 - Реальный Bot API с настоящим токеном, получение на Android/iOS.
 - Квота бесплатных вызовов Edge Functions не сверялась с панелью Usage.
