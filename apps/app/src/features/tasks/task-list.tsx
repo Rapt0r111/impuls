@@ -400,7 +400,11 @@ function TaskListContent() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="tasks-state">По выбранному статусу задач нет.</p>
+        <p className="tasks-state">
+          {complete
+            ? "По выбранному статусу задач нет."
+            : "Среди загруженных задач с этим статусом нет. Нажмите «Показать ещё»."}
+        </p>
       ) : (
         <ul className="tasks-list">
           {items.map((task) => {
