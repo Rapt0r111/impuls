@@ -29,6 +29,18 @@ import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
 import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
+import { MoreMenu, type MoreTarget } from "@/features/more/more-menu";
+
+const moreTargets: MoreTarget[] = [
+  "profile",
+  "ledger",
+  "reviews",
+  "management",
+  "catalog-admin",
+  "access",
+  "audit",
+  "notifications",
+];
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -104,6 +116,52 @@ function dateLabel(value: string): string {
   }).format(new Date(value));
 }
 
+function timeLabel(value: string): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+// «Сегодня до 18:00» или «до 24 окт. 2026 г., 12:00»: срок читается без расчёта в уме.
+function dueLabel(value: string): string {
+  const due = new Date(value),
+    now = new Date();
+  const sameDay =
+    due.getFullYear() === now.getFullYear() &&
+    due.getMonth() === now.getMonth() &&
+    due.getDate() === now.getDate();
+  return sameDay
+    ? `Сегодня до ${timeLabel(value)}`
+    : `до ${dateLabel(value)}, ${timeLabel(value)}`;
+}
+
+// Остаток времени до срока; после срока — просрочка. Считается при отрисовке,
+// поэтому в отчётах не появляется придуманной точности: единица не мельче минуты.
+function remainingLabel(value: string): string {
+  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60_000);
+  const absolute = Math.abs(minutes);
+  const days = Math.floor(absolute / 1440),
+    hours = Math.floor((absolute % 1440) / 60),
+    rest = absolute % 60;
+  const parts = days
+    ? [`${days} д`, hours ? `${hours} ч` : null]
+    : hours
+      ? [`${hours} ч`, rest ? `${rest} мин` : null]
+      : [`${rest} мин`];
+  const text = parts.filter(Boolean).join(" ");
+  return minutes < 0 ? `просрочено на ${text}` : `осталось ${text}`;
+}
+
+// Критерии приходят одним текстом; нумерация строится по непустым строкам.
+function criteriaLines(criteria: string): string[] {
+  const lines = criteria
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*[-•*\d.)\s]+/, "").trim())
+    .filter(Boolean);
+  return lines.length > 1 ? lines : [];
+}
+
 // Значок состояния задачи в карточке: форма отличается, а не только цвет.
 const statusIcons: Record<string, ReactNode> = {
   assigned: (
@@ -172,11 +230,124 @@ function TaskListContent() {
     tasks.error instanceof TaskRequestError &&
     (tasks.error.status === 401 || tasks.error.status === 403);
 
+  const openTask = detail.data?.task;
+  if (selectedId)
+    return (
+      <section className="tasks-section" aria-labelledby="task-detail-title">
+        <button
+          type="button"
+          className="more-back task-back"
+          onClick={() => {
+            if (confirmLeave()) setSelectedId(null);
+          }}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          <span>Задачи</span>
+        </button>
+        <section className="tasks-detail" aria-labelledby="task-detail-title">
+          {detail.isPending ? (
+            <>
+              <h2 id="task-detail-title">Задача</h2>
+              <p role="status">Загружаем детали…</p>
+            </>
+          ) : detail.isError && !openTask ? (
+            <>
+              <h2 id="task-detail-title">Задача</h2>
+              <div role="alert">
+                <p>{taskError(detail.error)}</p>
+                {!(
+                  detail.error instanceof TaskRequestError &&
+                  detail.error.status === 404
+                ) && (
+                  <button
+                    type="button"
+                    className="tasks-action"
+                    onClick={() => void detail.refetch()}
+                  >
+                    Повторить
+                  </button>
+                )}
+              </div>
+            </>
+          ) : openTask ? (
+            <>
+              <div className="task-detail-top">
+                <span
+                  className={`task-chip task-chip--status task-chip--${openTask.status}`}
+                >
+                  {statusNames[openTask.status]}
+                </span>
+                <span className="task-detail-due">
+                  {dueLabel(openTask.dueAt)}
+                </span>
+              </div>
+              <h2 id="task-detail-title">{openTask.title}</h2>
+              <p className="task-detail-remaining">
+                {remainingLabel(openTask.dueAt)}
+              </p>
+              <div className="task-detail-funds">
+                <span className="task-chip task-chip--xp">
+                  {openTask.fundXp} XP
+                </span>
+                <span className="task-chip task-chip--points">
+                  {openTask.fundPoints} баллов
+                </span>
+                <span
+                  className={`task-chip task-chip--priority task-chip--${openTask.priority}`}
+                >
+                  {priorityNames[openTask.priority]}
+                </span>
+              </div>
+              {detail.isError && (
+                <p role="alert">
+                  {taskError(detail.error)} Последнее подтверждённое состояние:{" "}
+                  {dateLabel(openTask.updatedAt)}.
+                </p>
+              )}
+              <section aria-labelledby="task-criteria-title">
+                <h3 id="task-criteria-title">Критерии задачи</h3>
+                {criteriaLines(openTask.criteria).length ? (
+                  <ol className="task-criteria">
+                    {criteriaLines(openTask.criteria).map((line, index) => (
+                      <li key={`${index}-${line}`}>
+                        <span aria-hidden="true">{index + 1}</span>
+                        {line}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="tasks-detail-criteria">{openTask.criteria}</p>
+                )}
+              </section>
+              <dl>
+                <div>
+                  <dt>Область</dt>
+                  <dd>{openTask.scope.name}</dd>
+                </div>
+                <div>
+                  <dt>Версия правил</dt>
+                  <dd>{openTask.ruleVersion}</dd>
+                </div>
+              </dl>
+              <TaskReport key={selectedId} task={openTask} />
+              <TaskTimeline
+                key={`timeline-${selectedId}`}
+                taskId={selectedId}
+              />
+              <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
+            </>
+          ) : null}
+        </section>
+      </section>
+    );
+
   return (
     <section className="tasks-section" aria-labelledby="tasks-title">
       <div className="tasks-heading">
         <div>
-          <h2 id="tasks-title">Назначенные задачи</h2>
+          <h2 id="tasks-title">Задачи</h2>
           <p>Ваши текущие и завершённые назначения.</p>
         </div>
       </div>
@@ -238,10 +409,8 @@ function TaskListContent() {
                 <button
                   type="button"
                   className="tasks-row"
-                  aria-expanded={selectedId === task.id}
                   onClick={() => {
-                    if (confirmLeave())
-                      setSelectedId(selectedId === task.id ? null : task.id);
+                    if (confirmLeave()) setSelectedId(task.id);
                   }}
                 >
                   <span
@@ -297,74 +466,6 @@ function TaskListContent() {
           )}
         </>
       )}
-
-      {selectedId && (
-        <section className="tasks-detail" aria-labelledby="task-detail-title">
-          <div className="tasks-detail-top">
-            <h3 id="task-detail-title">Критерии задачи</h3>
-            <button
-              type="button"
-              className="tasks-close"
-              onClick={() => {
-                if (confirmLeave()) setSelectedId(null);
-              }}
-            >
-              Закрыть
-            </button>
-          </div>
-          {detail.isPending ? (
-            <p role="status">Загружаем детали…</p>
-          ) : detail.isError && !detail.data ? (
-            <div role="alert">
-              <p>{taskError(detail.error)}</p>
-              {!(
-                detail.error instanceof TaskRequestError &&
-                detail.error.status === 404
-              ) && (
-                <button
-                  type="button"
-                  className="tasks-action"
-                  onClick={() => void detail.refetch()}
-                >
-                  Повторить
-                </button>
-              )}
-            </div>
-          ) : detail.data ? (
-            <>
-              {detail.isError && (
-                <p role="alert">
-                  {taskError(detail.error)} Последнее подтверждённое состояние:{" "}
-                  {dateLabel(detail.data.task.updatedAt)}.
-                </p>
-              )}
-              <p className="tasks-detail-criteria">
-                {detail.data.task.criteria}
-              </p>
-              <dl>
-                <div>
-                  <dt>Приоритет</dt>
-                  <dd>{priorityNames[detail.data.task.priority]}</dd>
-                </div>
-                <div>
-                  <dt>Область</dt>
-                  <dd>{detail.data.task.scope.name}</dd>
-                </div>
-                <div>
-                  <dt>Версия правил</dt>
-                  <dd>{detail.data.task.ruleVersion}</dd>
-                </div>
-              </dl>
-              <TaskReport key={selectedId} task={detail.data.task} />
-              <TaskTimeline
-                key={`timeline-${selectedId}`}
-                taskId={selectedId}
-              />
-              <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
-            </>
-          ) : null}
-        </section>
-      )}
     </section>
   );
 }
@@ -383,12 +484,6 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M9 8h6M9 12h6M9 16h3" />
     </>
   ),
-  ledger: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.6 2.5 1.6c0 2.2-5 1.2-5 3.6 0 1 1 1.6 2.5 1.6s2.5-.6 2.5-1.6" />
-    </>
-  ),
   rewards: (
     <>
       <rect x="3" y="8" width="18" height="4" rx="1" />
@@ -401,13 +496,17 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M12 13v4M8 20h8M10 17h4" />
     </>
   ),
-  profile: (
+  more: (
     <>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+      <circle cx="5.5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="18.5" cy="12" r="1.5" />
     </>
   ),
 };
+
+type WorkspaceView =
+  "home" | "tasks" | "ranking" | "rewards" | "more" | MoreTarget;
 
 function TaskWorkspace() {
   const {
@@ -417,31 +516,19 @@ function TaskWorkspace() {
     accessScopes,
     canReadNotificationStatus,
     canManageTasks,
-    canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
-  const [view, setView] = useState<
-    | "home"
-    | "tasks"
-    | "reviews"
-    | "ledger"
-    | "management"
-    | "ranking"
-    | "profile"
-    | "audit"
-    | "catalog-admin"
-    | "access"
-    | "notifications"
-    | "rewards"
-  >(canReview ? "reviews" : "home");
-  const rootView = canReview ? "reviews" : "home";
-  useTelegramBack(
-    view !== rootView,
-    () => {
-      if (confirmLeave()) setView(rootView);
-    },
-    10,
+  const [view, setView] = useState<WorkspaceView>(
+    canReview ? "reviews" : "home",
   );
+  const rootView: WorkspaceView = canReview ? "reviews" : "home";
+  const inMore = view === "more" || moreTargets.includes(view as MoreTarget);
+  // Назад из раздела «Ещё» ведёт в меню «Ещё», из самого меню — на стартовый экран.
+  const goBack = () => {
+    if (!confirmLeave()) return;
+    setView(view === "more" || !inMore ? rootView : "more");
+  };
+  useTelegramBack(view !== rootView, goBack, 10);
   // Раздел сообщает странице, какой экран открыт: «Главная» получает крупную шапку.
   useEffect(() => {
     document.documentElement.dataset.view = view;
@@ -449,100 +536,56 @@ function TaskWorkspace() {
       delete document.documentElement.dataset.view;
     };
   }, [view]);
-  // Лента служебных разделов прокручивается: открытый раздел должен быть виден в ней.
-  useEffect(() => {
-    document
-      .querySelector(
-        ".workspace-nav-operations .workspace-tab[aria-pressed=true]",
-      )
-      ?.scrollIntoView({ inline: "nearest", block: "nearest" });
-  }, [view]);
-  type Destination = {
-    id: typeof view;
-    label: string;
-    accessibleLabel: string;
-  };
-  const personal: Destination[] = [
-    { id: "home", label: "Главная", accessibleLabel: "Главная" },
-    { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
-    { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
-    { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
-    { id: "profile", label: "Профиль", accessibleLabel: "Мой профиль" },
-  ];
-  // Журнал начислений вне нижней панели (там пять разделов, как в прототипе).
-  const operations: Destination[] = [
-    { id: "ledger", label: "Баланс", accessibleLabel: "Баланс и журнал" },
-  ];
-  if (canReview)
-    operations.push({
-      id: "reviews",
-      label: "Проверка",
-      accessibleLabel: "Проверка отчётов",
-    });
-  if (canManageTasks)
-    operations.push({
-      id: "management",
-      label: canSetTasks ? "Постановка" : "История",
-      accessibleLabel: canSetTasks ? "Постановка задач" : "Задачи и история",
-    });
-  if (canInspectCatalog)
-    operations.push({
-      id: "catalog-admin",
-      label: "Конфигурация",
-      accessibleLabel: "Управление каталогом",
-    });
-  if (accessScopes?.length)
-    operations.push({
-      id: "access",
-      label: "Доступ",
-      accessibleLabel: "Управление доступом",
-    });
-  if (canReadAudit)
-    operations.push({
-      id: "audit",
-      label: "Журнал",
-      accessibleLabel: "Журнал действий",
-    });
-  if (canReadNotificationStatus)
-    operations.push({
-      id: "notifications",
-      label: "Уведомления",
-      accessibleLabel: "Состояние уведомлений",
-    });
-  const destination = (item: Destination) => (
-    <button
-      key={item.id}
-      type="button"
-      className="workspace-tab"
-      aria-label={item.accessibleLabel}
-      aria-pressed={view === item.id}
-      onClick={() => {
-        if (confirmLeave()) setView(item.id);
-      }}
-    >
-      {tabIcons[item.id] ? (
-        <span className="workspace-tab-pill" aria-hidden="true">
-          <svg className="workspace-tab-icon" viewBox="0 0 24 24">
-            {tabIcons[item.id]}
-          </svg>
-        </span>
-      ) : null}
-      <span>{item.label}</span>
-    </button>
-  );
+  const tabs: { id: WorkspaceView; label: string; accessibleLabel: string }[] =
+    [
+      { id: "home", label: "Главная", accessibleLabel: "Главная" },
+      { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
+      { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
+      { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
+      { id: "more", label: "Ещё", accessibleLabel: "Ещё" },
+    ];
+  const isCurrent = (id: WorkspaceView) =>
+    id === "more" ? inMore : view === id;
   return (
     <>
       <nav className="workspace-nav" aria-label="Рабочие разделы">
         <div className="workspace-nav-personal">
-          {personal.map(destination)}
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="workspace-tab"
+              aria-label={item.accessibleLabel}
+              aria-pressed={isCurrent(item.id)}
+              onClick={() => {
+                if (confirmLeave()) setView(item.id);
+              }}
+            >
+              <span className="workspace-tab-pill" aria-hidden="true">
+                <svg className="workspace-tab-icon" viewBox="0 0 24 24">
+                  {tabIcons[item.id]}
+                </svg>
+              </span>
+              <span>{item.label}</span>
+            </button>
+          ))}
         </div>
-        {operations.length ? (
-          <div className="workspace-nav-operations">
-            {operations.map(destination)}
-          </div>
-        ) : null}
       </nav>
-      {view === "rewards" ? (
+      {inMore && view !== "more" ? (
+        <button type="button" className="more-back" onClick={goBack}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          <span>Ещё</span>
+        </button>
+      ) : null}
+      {view === "more" ? (
+        <MoreMenu
+          onOpen={(to) => {
+            if (confirmLeave()) setView(to);
+          }}
+        />
+      ) : view === "rewards" ? (
         <RewardCatalog />
       ) : view === "catalog-admin" && canInspectCatalog ? (
         <CatalogAdmin />

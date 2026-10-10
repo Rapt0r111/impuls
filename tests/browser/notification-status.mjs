@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
   process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -278,9 +279,7 @@ async function fixture(mode = "ready", width = 320) {
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (mode !== "no-permission")
-    await page
-      .getByRole("button", { name: "Состояние уведомлений", exact: true })
-      .click();
+    await (await openSection(page, "Состояние уведомлений")).click();
   return {
     page,
     context,
@@ -504,9 +503,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Состояние уведомлений", exact: true })
-      .click();
+    await (await openSection(f.page, "Состояние уведомлений")).click();
     await f.page.locator(".notification-section [role=alert]").waitFor();
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     await close(f);
@@ -546,9 +543,7 @@ try {
       await f.page
         .getByRole("button", { name: "Мои задачи", exact: true })
         .click();
-      await f.page
-        .getByRole("button", { name: "Состояние уведомлений", exact: true })
-        .click();
+      await (await openSection(f.page, "Состояние уведомлений")).click();
       await f.page.locator(".notification-section [role=alert]").waitFor();
       assert.equal(await f.page.locator(".notification-events").count(), 0);
     }
@@ -685,7 +680,11 @@ try {
   {
     const f = await fixture("all-permissions");
     await ready(f);
-    const buttons = f.page.locator(".workspace-nav-operations button");
+    await f.page
+      .locator(".workspace-nav-personal")
+      .getByRole("button", { name: "Ещё", exact: true })
+      .click();
+    const buttons = f.page.locator(".more-row");
     assert.equal(await buttons.count(), 5);
     const sizes = await buttons.evaluateAll((els) =>
       els.map((el) => {
@@ -693,8 +692,8 @@ try {
         return { width: r.width, height: r.height, top: r.top };
       }),
     );
-    // Пять разделов стоят в одной прокручиваемой строке.
-    assert.equal(new Set(sizes.map((s) => s.top)).size, 1);
+    // Пять разделов — строки списка «Ещё» одной ширины.
+    assert.equal(new Set(sizes.map((s) => Math.round(s.width))).size, 1);
     for (const s of sizes) assert.ok(s.height >= 44);
     await capture(f, "status-all-permissions-320.png");
     await close(f);
@@ -702,9 +701,7 @@ try {
   {
     const f = await fixture("no-permission");
     assert.equal(
-      await f.page
-        .getByRole("button", { name: "Состояние уведомлений", exact: true })
-        .count(),
+      await (await openSection(f.page, "Состояние уведомлений")).count(),
       0,
     );
     assert.equal(f.calls.length, 0);
@@ -772,9 +769,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Состояние уведомлений", exact: true })
-      .click();
+    await (await openSection(f.page, "Состояние уведомлений")).click();
     await f.page.locator(".notification-section").getByRole("alert").waitFor();
     assert.equal(
       await f.page
@@ -837,6 +832,8 @@ try {
       await f.page.getByLabel("Область", { exact: true }).inputValue(),
       other,
     );
+    await f.page.evaluate(() => window.__back?.());
+    await f.page.getByRole("heading", { name: "Ещё" }).waitFor();
     await f.page.evaluate(() => window.__back?.());
     await f.page.getByRole("heading", { name: "Главная" }).waitFor();
     await close(f);
@@ -985,9 +982,7 @@ try {
       await f.page
         .getByRole("button", { name: "Мои задачи", exact: true })
         .click();
-      await f.page
-        .getByRole("button", { name: "Состояние уведомлений", exact: true })
-        .click();
+      await (await openSection(f.page, "Состояние уведомлений")).click();
       await f.page
         .locator(".notification-section")
         .getByRole("alert")
@@ -1026,9 +1021,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Состояние уведомлений", exact: true })
-      .click();
+    await (await openSection(f.page, "Состояние уведомлений")).click();
     await f.page.locator(".notification-section").getByRole("alert").waitFor();
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     await close(f);
@@ -1058,9 +1051,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Состояние уведомлений", exact: true })
-      .click();
+    await (await openSection(f.page, "Состояние уведомлений")).click();
     await f.page.locator(".notification-section").getByRole("alert").waitFor();
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     await close(f);

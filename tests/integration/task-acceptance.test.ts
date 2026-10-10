@@ -14,6 +14,7 @@ import {
 } from "../../packages/contracts/src/ledger";
 import { taskAcceptanceResponseSchema } from "../../packages/contracts/src/reviews";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 (url ? describe : describe.skip)(
@@ -763,9 +764,7 @@ const url = process.env.TEST_DATABASE_URL;
               }),
           );
           await p.goto(origin);
-          await p
-            .getByRole("button", { name: "Баланс и журнал", exact: true })
-            .click();
+          await (await openSection(p, "Баланс и журнал")).click();
           await p.getByText(`${creditedXp} XP`, { exact: true }).waitFor();
           await p
             .getByText(`Synthetic acceptance task ${f.id}`, { exact: true })

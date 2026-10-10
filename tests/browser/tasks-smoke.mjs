@@ -94,7 +94,9 @@ async function main() {
       await page
         .getByRole("button", { name: "Мои задачи", exact: true })
         .click();
-      await page.getByRole("heading", { name: "Назначенные задачи" }).waitFor();
+      await page
+        .getByRole("heading", { name: "Задачи", exact: true })
+        .waitFor();
       await page.getByText(task.title).click();
       await page.getByText("Подтвердить результат", { exact: false }).waitFor();
       const overflow = await page.evaluate(

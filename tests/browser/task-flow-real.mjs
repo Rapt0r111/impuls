@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
 import { leaveHome } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
@@ -131,9 +132,7 @@ const taskState = async () =>
 {
   const s = await open(0),
     p = s.page;
-  await p
-    .getByRole("button", { name: "Постановка задач", exact: true })
-    .click();
+  await (await openSection(p, "Постановка задач")).click();
   await p.getByLabel("Область", { exact: true }).selectOption(scope);
   await p.getByLabel("Версия правил", { exact: true }).selectOption(rules);
   await p.getByLabel("Название", { exact: true }).fill(title);
@@ -211,7 +210,7 @@ const taskState = async () =>
 {
   const s = await open(1),
     p = s.page;
-  await p.getByRole("button", { name: "Баланс и журнал", exact: true }).click();
+  await (await openSection(p, "Баланс и журнал")).click();
   await p.getByText("+17 XP", { exact: true }).waitFor();
   await p.getByText("+9 баллов", { exact: true }).waitFor();
   const b = (

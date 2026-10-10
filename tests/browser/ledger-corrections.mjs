@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const id = "11111111-1111-4111-8111-111111111111",
@@ -216,9 +217,7 @@ async function fixture(width = 390, mode = "success") {
   );
   page.on("dialog", (dialog) => dialog.dismiss());
   await page.goto(origin);
-  await page
-    .getByRole("button", { name: "Баланс и журнал", exact: true })
-    .click();
+  await (await openSection(page, "Баланс и журнал")).click();
   const open = async () => {
     await page
       .getByRole("button", { name: "Исправление начислений", exact: true })

@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -292,9 +293,7 @@ async function fixture(mode = "ready", width = 320) {
   await page.getByRole("heading", { name: "Доступ подтверждён" }).waitFor();
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   if (mode !== "no-permission")
-    await page
-      .getByRole("button", { name: "Управление каталогом", exact: true })
-      .click();
+    await (await openSection(page, "Управление каталогом")).click();
   return {
     page,
     context,
@@ -523,9 +522,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Управление каталогом", exact: true })
-      .click();
+    await (await openSection(f.page, "Управление каталогом")).click();
     await openQuotas(f);
     await quotaPanel(f).getByRole("alert").waitFor();
     assert.equal(
@@ -657,9 +654,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Управление каталогом", exact: true })
-      .click();
+    await (await openSection(f.page, "Управление каталогом")).click();
     await openHistory(f);
     await historyPanel(f).getByRole("alert").waitFor();
     assert.equal(
@@ -759,9 +754,7 @@ try {
   {
     const f = await fixture("no-permission");
     assert.equal(
-      await f.page
-        .getByRole("button", { name: "Управление каталогом", exact: true })
-        .count(),
+      await (await openSection(f.page, "Управление каталогом")).count(),
       0,
     );
     await close(f);
@@ -804,9 +797,7 @@ try {
     await f.page
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await f.page
-      .getByRole("button", { name: "Управление каталогом", exact: true })
-      .click();
+    await (await openSection(f.page, "Управление каталогом")).click();
     await f.page.locator(".admin-catalog-section").getByRole("alert").waitFor();
     assert.equal(await f.page.locator(".admin-catalog-items > li").count(), 0);
     await close(f);
@@ -838,6 +829,8 @@ try {
       .waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".admin-catalog-items > li").count(), 0);
+    await f.page.evaluate(() => window.__back?.());
+    await f.page.getByRole("heading", { name: "Ещё" }).waitFor();
     await f.page.evaluate(() => window.__back?.());
     await f.page.getByRole("heading", { name: "Главная" }).waitFor();
     await close(f);

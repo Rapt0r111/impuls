@@ -229,6 +229,12 @@ export function Leaderboard() {
                   </ol>
                 )}
                 <table className="ranking-table">
+                  {/* Ширины колонок заданы явно: место не растягивается, имя переносится. */}
+                  <colgroup>
+                    <col className="ranking-col-rank" />
+                    <col />
+                    <col className="ranking-col-xp" />
+                  </colgroup>
                   <caption className="ranking-note">
                     Места при равном XP совпадают. Нулевые результаты видны
                     только вам.

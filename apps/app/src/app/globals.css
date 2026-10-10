@@ -351,17 +351,15 @@ body::after {
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
-html:not([data-view="home"]) .access-identity .access-avatar,
-html:not([data-view="home"]) .access-greeting {
+/* Имя и приветствие — только на «Главной»: на остальных разделах первым идёт
+   заголовок экрана, а имя и уровень открываются в «Ещё». Кнопка «Полномочия»
+   остаётся на каждом экране и прижимается к правому краю. */
+html:not([data-view="home"]) .access-profile .access-identity {
   display: none;
 }
-html:not([data-view="home"])
-  .access-content--authorized
-  .access-identity
-  strong {
-  color: var(--color-muted);
-  font-size: 15px;
-  font-weight: 700;
+html:not([data-view="home"]) .access-profile {
+  justify-content: flex-end;
+  margin-top: 0;
 }
 /* «Полномочия»: кнопка-значок; подпись остаётся текстом summary для скринридеров. */
 .access-content--authorized .access-permissions summary {
@@ -548,44 +546,6 @@ html:not([data-view="home"])
   .workspace-tab-pill {
   background: rgb(112 225 194 / 0.17);
   animation: pop 0.55s var(--ease-pop) both;
-}
-/* Служебные разделы — чипы с переносом строк. */
-.workspace-nav-operations {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  margin-inline: -20px;
-  padding: 2px 32px 2px 20px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-padding-inline: 20px;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
-}
-.workspace-nav-operations::-webkit-scrollbar {
-  display: none;
-}
-.workspace-nav-operations .workspace-tab {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  white-space: nowrap;
-  font-size: 14px;
-  font-weight: 700;
-  min-height: 44px;
-  padding: 8px 16px;
-  border: 1px solid var(--color-edge);
-  border-radius: 14px;
-  background: rgb(255 255 255 / 0.06);
-}
-.workspace-nav-operations .workspace-tab-icon,
-.workspace-nav-operations .workspace-tab-pill {
-  display: none;
-}
-.workspace-nav-operations .workspace-tab[aria-pressed="true"] {
-  border-color: transparent;
-  color: #03241b;
-  background: linear-gradient(135deg, #8af4d6, var(--color-mint-deep));
 }
 .workspace-tab {
   min-width: 0;
@@ -1006,6 +966,72 @@ html:not([data-view="home"])
   margin-top: 12px;
 }
 
+/* Задача открывается отдельным экраном: сверху кнопка возврата «Задачи»,
+   затем состояние и срок, название, остаток времени, фонд и критерии. */
+.task-back {
+  margin-bottom: 4px;
+}
+.task-detail-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.task-detail-due {
+  color: var(--color-gold);
+  font-size: 15px;
+  font-weight: 700;
+}
+.tasks-detail h2 {
+  margin: 10px 0 0;
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.task-detail-remaining {
+  margin: 6px 0 0;
+  font-size: 15px;
+}
+.task-detail-funds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.task-criteria {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.task-criteria li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-edge);
+  color: var(--color-ink);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.task-criteria li > span {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgb(112 225 194 / 0.14);
+  color: #8cf0d3;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .tasks-detail {
   margin-top: 18px;
   padding: 18px 16px;
@@ -1026,8 +1052,8 @@ html:not([data-view="home"])
 }
 
 .tasks-detail h3 {
-  margin: 0;
-  font-size: 17px;
+  margin: 18px 0 0;
+  font-size: 18px;
 }
 
 .review-detail-heading {

@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
   process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -159,7 +160,7 @@ async function fixture(mode = "populated", width = 390) {
     },
   );
   await page.goto(origin);
-  await page.getByRole("button", { name: "Мой профиль", exact: true }).click();
+  await (await openSection(page, "Мой профиль")).click();
   return {
     page,
     context,

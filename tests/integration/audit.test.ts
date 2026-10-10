@@ -18,6 +18,7 @@ import {
   auditQuerySchema,
   auditResponseSchema,
 } from "../../packages/contracts/src/audit";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -507,9 +508,7 @@ const url = process.env.TEST_DATABASE_URL,
           }),
         );
         await page.goto(origin!);
-        await page
-          .getByRole("button", { name: "Журнал действий", exact: true })
-          .click();
+        await (await openSection(page, "Журнал действий")).click();
         await page
           .getByRole("heading", { name: "Журнал действий", exact: true })
           .waitFor();

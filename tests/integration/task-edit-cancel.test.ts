@@ -22,6 +22,7 @@ import {
 } from "../../packages/contracts/src/index";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { chromium } from "playwright";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 (url ? describe : describe.skip)("F03 draft editing and cancellation", () => {
@@ -783,9 +784,7 @@ const url = process.env.TEST_DATABASE_URL;
               `${String(error)}; visible screen: ${await page.locator("main").innerText()}`,
             );
           });
-        await page
-          .getByRole("button", { name: "Постановка задач", exact: true })
-          .click();
+        await (await openSection(page, "Постановка задач")).click();
         await page
           .getByRole("heading", {
             name: "Задачи в доступных областях",

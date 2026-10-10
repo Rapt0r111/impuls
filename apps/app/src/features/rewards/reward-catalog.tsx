@@ -525,7 +525,7 @@ export function RewardCatalog() {
               )}
               {first && (
                 <>
-                  <dl className="ledger-balances">
+                  <dl className="ledger-balances reward-balance">
                     <div>
                       <dt>Доступно</dt>
                       <dd>{number(first.balance.availablePoints)} баллов</dd>
@@ -572,6 +572,19 @@ export function RewardCatalog() {
                                 Квота до {date(item.quota.endsAt)} · свободно{" "}
                                 {item.quota.available}
                               </p>
+                              {first.balance.availablePoints < item.price && (
+                                <p className="reward-short">
+                                  <progress
+                                    max={item.price}
+                                    value={first.balance.availablePoints}
+                                  />
+                                  Не хватает{" "}
+                                  {number(
+                                    item.price - first.balance.availablePoints,
+                                  )}{" "}
+                                  баллов
+                                </p>
+                              )}
                             </div>
                             <div className="reward-row-action">
                               <strong className="reward-price">
