@@ -9,6 +9,7 @@ import { mutateRedemption } from "../../packages/domain/src/rewards/write";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { quotaPublicationResponseSchema } from "../../packages/contracts/src/quota-publication";
 import { auditResponseSchema } from "../../packages/contracts/src/audit";
+import { openSection } from "../browser/nav.mjs";
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
 (url ? describe : describe.skip)(

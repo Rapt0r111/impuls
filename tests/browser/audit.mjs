@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
@@ -713,9 +714,7 @@ try {
     const f = await fixture("no-permission", 320);
     await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
     assert.equal(
-      await f.page
-        .getByRole("button", { name: "Журнал действий", exact: true })
-        .count(),
+      await (await openSection(f.page, "Журнал действий")).count(),
       0,
     );
     await close(f);

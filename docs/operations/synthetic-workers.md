@@ -27,6 +27,35 @@
 
 Включаются отдельным флагом `TASK_REMINDERS_ENABLED=true` в окружении процесса уведомлений (поверх `SYNTHETIC_NOTIFICATIONS_ENABLED=true`); нужна миграция 000034. Worker ставит событие `task.due_soon` для назначенных задач, срок которых наступает в течение 24 часов (не более 50 за шаг, по одному на задачу); отдельного процесса и расписания нет. Окно — технический параметр, не согласованное правило. Откат: снять флаг; поставленные события доставляются или подавляются обычным путём.
 
+## Supabase Edge Functions (ADR-0032, бесплатно)
+
+Две функции, `impuls-notifications` и `impuls-expiry`, раз в минуту вызываются pg_cron через pg_net и делают один проход, равный `--once`/`--expire-once`. Код: `apps/worker/src/edge.ts`, входы в `supabase/functions/*/index.ts`, бандл `bun run build:edge` (файлы `worker-edge.mjs` не хранятся в git).
+
+Порядок включения:
+
+1. **Владелец**, SQL Editor Supabase. Три длинных случайных значения из букв и цифр (чтобы не кодировать их в URL); не сохранять в репозитории и чате:
+   ```sql
+   ALTER ROLE impuls_worker WITH LOGIN PASSWORD '<пароль 1>';
+   ALTER ROLE impuls_expiry_worker WITH LOGIN PASSWORD '<пароль 2>';
+   SELECT vault.create_secret('<токен вызова, не короче 32 символов>', 'impuls_worker_trigger');
+   ```
+2. **Владелец**, Edge Functions → Secrets:
+   - `NOTIFICATION_WORKER_DATABASE_URL=postgresql://impuls_worker.<project-ref>:<пароль 1>@<host>:5432/postgres`;
+   - `EXPIRY_WORKER_DATABASE_URL=postgresql://impuls_expiry_worker.<project-ref>:<пароль 2>@<host>:5432/postgres`;
+   - `<host>` — из Supabase → Connect → Session pooler, без `?sslmode`;
+   - `WORKER_CA_CERT_B64` — тот же сертификат, что `SUPABASE_CA_CERT_B64` у приложения в Vercel (имена секретов Edge Functions не могут начинаться с `SUPABASE_`);
+   - `WORKER_TRIGGER_SECRET` — токен из шага 1;
+   - `SYNTHETIC_NOTIFICATIONS_ENABLED=true`, `RESERVATION_EXPIRY_ENABLED=true`.
+3. Опубликовать обе функции с `verify_jwt=false` (вызов проверяется токеном): собрать `bun run build:edge` и загрузить `index.ts` и `worker-edge.mjs` каждой функции через Supabase CLI (`--no-verify-jwt`) или Supabase MCP.
+4. Выполнить `ops/supabase/worker-schedule.sql`, подставив `<project-ref>`.
+5. Через минуту проверить журнал функций (Edge Functions → Logs): `{"mode":"simulation","results":{...}}` и `{"mode":"reservation_expiry","results":{...}}`. Ответы pg_net — в `net._http_response`. 401 — токен в Vault и в секрете различается; 503 `WORKER_UNAVAILABLE` — пароль, логин pooler, CA или роль.
+
+Реальная доставка: добавить секреты `TELEGRAM_BOT_TOKEN` и `TELEGRAM_DELIVERY_ENABLED=true`, затем `TASK_REMINDERS_ENABLED=true` (смысл — разделы выше). Новые значения секретов функция видит со следующего вызова. Если Bot API отвечает 401/404, каждый вызов вернёт 503 и сожжёт попытку одного события: сразу снять `TELEGRAM_DELIVERY_ENABLED`.
+
+Остановка: `select cron.unschedule('impuls-notifications'); select cron.unschedule('impuls-expiry');` или флаг `false` (ответ `disabled`). Полный откат — дополнительно `ALTER ROLE … NOLOGIN`.
+
+Запасной путь без Supabase Edge Functions: образ `apps/worker/Dockerfile` (`docker build -f apps/worker/Dockerfile -t impuls-worker .`, режим передаётся аргументом `--watch` или `--expire-watch`) либо systemd ниже.
+
 ## Предлагаемый supervisor
 
 Шаблоны предусматривают `Type=exec`, restart только при failure с паузой 5 s и лимитом 5 starts за 300 s; это технические настройки rehearsal, не SLA. После исчерпания starts оператор устраняет причину и отдельно разрешает restart. При false flag процесс пишет disabled/exit 0 и автоматически не перезапускается. `systemctl stop` не должен превращаться в повторное включение.

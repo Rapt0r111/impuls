@@ -15,6 +15,7 @@ import {
   ledgerCorrectionsResponseSchema,
 } from "../../packages/contracts/src/ledger-corrections";
 import { accountLedgerResponseSchema } from "../../packages/contracts/src/ledger";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 (url ? describe : describe.skip)("F04 synthetic compensation", () => {

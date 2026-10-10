@@ -22,6 +22,7 @@ import {
 } from "../../packages/contracts/src/index";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { chromium } from "playwright";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 (url ? describe : describe.skip)("F03 draft editing and cancellation", () => {

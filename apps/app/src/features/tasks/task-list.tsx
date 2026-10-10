@@ -105,6 +105,52 @@ function dateLabel(value: string): string {
   }).format(new Date(value));
 }
 
+function timeLabel(value: string): string {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+// «Сегодня до 18:00» или «до 24 окт. 2026 г., 12:00»: срок читается без расчёта в уме.
+function dueLabel(value: string): string {
+  const due = new Date(value),
+    now = new Date();
+  const sameDay =
+    due.getFullYear() === now.getFullYear() &&
+    due.getMonth() === now.getMonth() &&
+    due.getDate() === now.getDate();
+  return sameDay
+    ? `Сегодня до ${timeLabel(value)}`
+    : `до ${dateLabel(value)}, ${timeLabel(value)}`;
+}
+
+// Остаток времени до срока; после срока — просрочка. Считается при отрисовке,
+// поэтому в отчётах не появляется придуманной точности: единица не мельче минуты.
+function remainingLabel(value: string): string {
+  const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60_000);
+  const absolute = Math.abs(minutes);
+  const days = Math.floor(absolute / 1440),
+    hours = Math.floor((absolute % 1440) / 60),
+    rest = absolute % 60;
+  const parts = days
+    ? [`${days} д`, hours ? `${hours} ч` : null]
+    : hours
+      ? [`${hours} ч`, rest ? `${rest} мин` : null]
+      : [`${rest} мин`];
+  const text = parts.filter(Boolean).join(" ");
+  return minutes < 0 ? `просрочено на ${text}` : `осталось ${text}`;
+}
+
+// Критерии приходят одним текстом; нумерация строится по непустым строкам.
+function criteriaLines(criteria: string): string[] {
+  const lines = criteria
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*[-•*\d.)\s]+/, "").trim())
+    .filter(Boolean);
+  return lines.length > 1 ? lines : [];
+}
+
 // Значок состояния задачи в карточке: форма отличается, а не только цвет.
 const statusIcons: Record<string, ReactNode> = {
   assigned: (
@@ -488,12 +534,6 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M9 8h6M9 12h6M9 16h3" />
     </>
   ),
-  ledger: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v10M9.5 9.5c0-1 1-1.5 2.5-1.5s2.5.6 2.5 1.6c0 2.2-5 1.2-5 3.6 0 1 1 1.6 2.5 1.6s2.5-.6 2.5-1.6" />
-    </>
-  ),
   rewards: (
     <>
       <rect x="3" y="8" width="18" height="4" rx="1" />
@@ -550,7 +590,6 @@ function TaskWorkspace() {
     accessScopes,
     canReadNotificationStatus,
     canManageTasks,
-    canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
   // Проверяющий начинает с очереди; вкладка «Ещё» при этом подсвечена.

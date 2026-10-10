@@ -9,14 +9,17 @@ export const reviewListQuerySchema = z.strictObject({
 export const acceptanceBonusSchema = z.object({
   code: z.string().regex(/^[a-z][a-z0-9_]{1,39}$/),
   title: z.string().min(1).max(80),
-  xp: z.number().int().min(0).max(1_000_000),
-  points: z.number().int().min(0).max(1_000_000),
+  xp: z.number().int().min(0).max(2_147_483_647),
+  points: z.number().int().min(0).max(2_147_483_647),
 });
 export const acceptanceOptionsSchema = z.object({
   adjustment: z
     .object({
-      maxXp: z.number().int().min(0).max(1_000_000),
-      maxPoints: z.number().int().min(0).max(1_000_000),
+      // Absent in responses saved before ADR-0031: the lower bound was then always 0.
+      minXp: z.number().int().min(0).max(2_147_483_647).default(0),
+      minPoints: z.number().int().min(0).max(2_147_483_647).default(0),
+      maxXp: z.number().int().min(0).max(2_147_483_647),
+      maxPoints: z.number().int().min(0).max(2_147_483_647),
     })
     .nullable(),
   bonuses: z.array(acceptanceBonusSchema).max(7),

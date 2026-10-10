@@ -19,14 +19,14 @@ describe("acceptance adjustment and bonus options", () => {
   };
   const fund = { xp: 100, points: 30 };
   const bonusesOf = (bonuses: unknown) =>
-    acceptanceOptions({ acceptance: { enabled: true, bonuses } }).bonuses;
+    acceptanceOptions({ acceptance: { enabled: true, bonuses } }, fund).bonuses;
   it("reads only what the saved version states and fails closed otherwise", () => {
-    expect(acceptanceOptions(rules)).toEqual({
-      adjustment: { maxXp: 200, maxPoints: 80 },
+    expect(acceptanceOptions(rules, fund)).toEqual({
+      adjustment: { minXp: 0, minPoints: 0, maxXp: 200, maxPoints: 80 },
       bonuses: rules.acceptance.bonuses,
     });
     for (const broken of [null, {}, { acceptance: null }, { acceptance: {} }])
-      expect(acceptanceOptions(broken)).toEqual({
+      expect(acceptanceOptions(broken, fund)).toEqual({
         adjustment: null,
         bonuses: [],
       });
@@ -57,7 +57,9 @@ describe("acceptance adjustment and bonus options", () => {
     ).toEqual([]);
   });
   it("pays exactly the fund when nothing is chosen", () => {
-    expect(resolveAcceptanceAward(acceptanceOptions({}), fund, {})).toEqual({
+    expect(
+      resolveAcceptanceAward(acceptanceOptions({}, fund), fund, {}),
+    ).toEqual({
       ok: true,
       baseXp: 100,
       basePoints: 30,
@@ -68,7 +70,7 @@ describe("acceptance adjustment and bonus options", () => {
   });
   it("adds one bonus to the corrected base as independent xp and points", () => {
     expect(
-      resolveAcceptanceAward(acceptanceOptions(rules), fund, {
+      resolveAcceptanceAward(acceptanceOptions(rules, fund), fund, {
         baseXp: 120,
         basePoints: 25,
         bonusCode: "quality",
@@ -76,12 +78,12 @@ describe("acceptance adjustment and bonus options", () => {
     ).toMatchObject({ ok: true, xp: 140, points: 35 });
   });
   it("rejects an unknown bonus, an unlisted adjustment and an over-limit base", () => {
-    const options = acceptanceOptions(rules);
+    const options = acceptanceOptions(rules, fund);
     expect(
       resolveAcceptanceAward(options, fund, { bonusCode: "nope" }),
     ).toEqual({ ok: false, reason: "bonus_unknown" });
     expect(
-      resolveAcceptanceAward(acceptanceOptions({}), fund, { baseXp: 90 }),
+      resolveAcceptanceAward(acceptanceOptions({}, fund), fund, { baseXp: 90 }),
     ).toEqual({ ok: false, reason: "adjustment_not_allowed" });
     expect(resolveAcceptanceAward(options, fund, { baseXp: 201 })).toEqual({
       ok: false,
@@ -95,7 +97,7 @@ describe("acceptance adjustment and bonus options", () => {
   it("lets an unchanged fund through even above the adjustment ceiling", () => {
     expect(
       resolveAcceptanceAward(
-        acceptanceOptions(rules),
+        acceptanceOptions(rules, fund),
         { xp: 500, points: 30 },
         { baseXp: 500 },
       ),
@@ -104,11 +106,106 @@ describe("acceptance adjustment and bonus options", () => {
   it("refuses a total that would overflow the ledger column", () => {
     expect(
       resolveAcceptanceAward(
-        acceptanceOptions(rules),
+        acceptanceOptions(rules, fund),
         { xp: 2_147_483_640, points: 0 },
         { bonusCode: "quality" },
       ),
     ).toEqual({ ok: false, reason: "award_too_large" });
+  });
+});
+
+describe("acceptance options as shares of the task fund (ADR-0031)", () => {
+  // Rules version 2 for the pilot (P-04, owner decision 10.10.2026): the base may be
+  // lowered to 50 % of the fund, one bonus of +10 % or +25 % of the fund.
+  const v2 = {
+    acceptance: {
+      enabled: true,
+      adjustment: { minPercent: 50 },
+      bonuses: [
+        { code: "plus_10", title: "Бонус +10 %", percent: 10 },
+        { code: "plus_25", title: "Бонус +25 %", percent: 25 },
+      ],
+    },
+  };
+  it("resolves the shares against the frozen fund with integer rounding", () => {
+    // Independent expectations: 50 % of 100/30 = 50/15; 10 % = 10/3; 25 % = 25/7.5 -> 7.
+    expect(acceptanceOptions(v2, { xp: 100, points: 30 })).toEqual({
+      adjustment: { minXp: 50, minPoints: 15, maxXp: 100, maxPoints: 30 },
+      bonuses: [
+        { code: "plus_10", title: "Бонус +10 %", xp: 10, points: 3 },
+        { code: "plus_25", title: "Бонус +25 %", xp: 25, points: 7 },
+      ],
+    });
+    // Odd fund: the minimum is rounded up, bonuses down (never more than stated).
+    expect(acceptanceOptions(v2, { xp: 15, points: 5 })).toEqual({
+      adjustment: { minXp: 8, minPoints: 3, maxXp: 15, maxPoints: 5 },
+      bonuses: [
+        { code: "plus_10", title: "Бонус +10 %", xp: 1, points: 0 },
+        { code: "plus_25", title: "Бонус +25 %", xp: 3, points: 1 },
+      ],
+    });
+  });
+  it("drops a bonus that rounds to nothing on a tiny fund, keeping the others", () => {
+    expect(acceptanceOptions(v2, { xp: 5, points: 3 }).bonuses).toEqual([
+      { code: "plus_25", title: "Бонус +25 %", xp: 1, points: 0 },
+    ]);
+    expect(acceptanceOptions(v2, { xp: 0, points: 0 })).toEqual({
+      adjustment: { minXp: 0, minPoints: 0, maxXp: 0, maxPoints: 0 },
+      bonuses: [],
+    });
+  });
+  it("lowers the base within the share, never raises it, and adds one bonus", () => {
+    const fund = { xp: 100, points: 30 };
+    const options = acceptanceOptions(v2, fund);
+    expect(
+      resolveAcceptanceAward(options, fund, {
+        baseXp: 50,
+        basePoints: 15,
+        bonusCode: "plus_25",
+      }),
+    ).toMatchObject({ ok: true, xp: 75, points: 22 });
+    expect(
+      resolveAcceptanceAward(options, fund, { bonusCode: "plus_10" }),
+    ).toMatchObject({ ok: true, baseXp: 100, xp: 110, points: 33 });
+    expect(resolveAcceptanceAward(options, fund, { baseXp: 49 })).toEqual({
+      ok: false,
+      reason: "adjustment_below_limit",
+    });
+    expect(resolveAcceptanceAward(options, fund, { basePoints: 14 })).toEqual({
+      ok: false,
+      reason: "adjustment_below_limit",
+    });
+    expect(resolveAcceptanceAward(options, fund, { baseXp: 101 })).toEqual({
+      ok: false,
+      reason: "adjustment_exceeds_limit",
+    });
+  });
+  it("fails closed on a malformed or mixed definition", () => {
+    const fund = { xp: 100, points: 30 };
+    const adjustmentOf = (adjustment: unknown) =>
+      acceptanceOptions({ acceptance: { enabled: true, adjustment } }, fund)
+        .adjustment;
+    for (const broken of [
+      { minPercent: 101 },
+      { minPercent: -1 },
+      { minPercent: 50.5 },
+      { minPercent: "50" },
+      { minPercent: 50, maxXp: 200, maxPoints: 80 },
+    ])
+      expect(adjustmentOf(broken)).toBeNull();
+    const bonusesOf = (bonuses: unknown) =>
+      acceptanceOptions({ acceptance: { enabled: true, bonuses } }, fund)
+        .bonuses;
+    for (const broken of [
+      [{ code: "p0", title: "x", percent: 0 }],
+      [{ code: "p1", title: "x", percent: 101 }],
+      [{ code: "p2", title: "x", percent: 10, xp: 5, points: 0 }],
+      [
+        { code: "same", title: "a", percent: 10 },
+        { code: "same", title: "b", percent: 25 },
+      ],
+    ])
+      expect(bonusesOf(broken)).toEqual([]);
   });
 });
 

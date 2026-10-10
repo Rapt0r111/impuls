@@ -10,6 +10,7 @@ import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { Pool } from "pg";
 import { leaveHome, mockHomeFallback } from "./home-fallback.mjs";
+import { openSection } from "./nav.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const managerId = "11111111-1111-4111-8111-111111111111";

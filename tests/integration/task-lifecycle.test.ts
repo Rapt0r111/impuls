@@ -14,6 +14,7 @@ import { readTaskTimeline } from "../../packages/domain/src/tasks/timeline";
 import { readAssignedTaskHistory } from "../../packages/domain/src/tasks/history";
 import { taskTimelineResponseSchema } from "../../packages/contracts/src/task-timeline";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
+import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 const origin = process.env.TEST_APP_ORIGIN;
