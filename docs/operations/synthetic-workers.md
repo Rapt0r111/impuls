@@ -43,7 +43,7 @@
    - `NOTIFICATION_WORKER_DATABASE_URL=postgresql://impuls_worker.<project-ref>:<пароль 1>@<host>:5432/postgres`;
    - `EXPIRY_WORKER_DATABASE_URL=postgresql://impuls_expiry_worker.<project-ref>:<пароль 2>@<host>:5432/postgres`;
    - `<host>` — из Supabase → Connect → Session pooler, без `?sslmode`;
-   - `SUPABASE_CA_CERT_B64` — то же значение, что у приложения в Vercel;
+   - `WORKER_CA_CERT_B64` — тот же сертификат, что `SUPABASE_CA_CERT_B64` у приложения в Vercel (имена секретов Edge Functions не могут начинаться с `SUPABASE_`);
    - `WORKER_TRIGGER_SECRET` — токен из шага 1;
    - `SYNTHETIC_NOTIFICATIONS_ENABLED=true`, `RESERVATION_EXPIRY_ENABLED=true`.
 3. Опубликовать обе функции с `verify_jwt=false` (вызов проверяется токеном): собрать `bun run build:edge` и загрузить `index.ts` и `worker-edge.mjs` каждой функции через Supabase CLI (`--no-verify-jwt`) или Supabase MCP.

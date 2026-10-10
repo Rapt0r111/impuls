@@ -54,7 +54,7 @@ export function createTickHandler(
             ? "EXPIRY_WORKER_DATABASE_URL"
             : "NOTIFICATION_WORKER_DATABASE_URL",
         ),
-        env("SUPABASE_CA_CERT_B64"),
+        env("WORKER_CA_CERT_B64"),
       );
       const role = (
         await pool.query<{ current_user: string }>("SELECT current_user")

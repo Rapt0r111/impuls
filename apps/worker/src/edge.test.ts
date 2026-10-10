@@ -58,12 +58,12 @@ describe("scheduled worker tick", () => {
       {
         ...base,
         NOTIFICATION_WORKER_DATABASE_URL: `${url}?sslmode=require`,
-        SUPABASE_CA_CERT_B64: "Y2E=",
+        WORKER_CA_CERT_B64: "Y2E=",
       },
       {
         ...base,
         NOTIFICATION_WORKER_DATABASE_URL: url,
-        SUPABASE_CA_CERT_B64: "Y2E=",
+        WORKER_CA_CERT_B64: "Y2E=",
         TELEGRAM_DELIVERY_ENABLED: "true",
         TELEGRAM_BOT_TOKEN: "bad",
       },

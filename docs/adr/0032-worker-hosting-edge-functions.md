@@ -24,7 +24,7 @@ ADR-0001 оставил worker F08 вне Vercel Functions. ADR-0020 и [runbook
 4. **Расписание.** `pg_cron` раз в минуту вызывает обе функции через `pg_net` (`ops/supabase/worker-schedule.sql`). Это не миграция: в локальной БД и CI нет pg_cron, pg_net и Vault.
 5. **Аутентификация вызова.** `verify_jwt=false`, вместо JWT — заголовок `Authorization: Bearer <WORKER_TRIGGER_SECRET>` (не короче 32 символов, сравнение за постоянное время). Тот же токен лежит в Vault (`impuls_worker_trigger`), откуда его берёт pg_cron. Без секрета функция отвечает 401 и ничего не делает.
 6. **Флаги и ответы** те же, что у Node: `SYNTHETIC_NOTIFICATIONS_ENABLED`, `TELEGRAM_DELIVERY_ENABLED` + `TELEGRAM_BOT_TOKEN`, `TASK_REMINDERS_ENABLED`, `RESERVATION_EXPIRY_ENABLED`. Выключено — 200 `disabled` без обращения к БД. Любая ошибка — 503 `WORKER_UNAVAILABLE` без исключения, URL или токена в ответе и журнале.
-7. **БД и TLS.** Supabase session pooler (`:5432`, логин `<роль>.<project-ref>`), проверка сертификата по `SUPABASE_CA_CERT_B64`, без `ssl*` параметров в URL. Пароли ролей задаёт владелец (`ALTER ROLE … LOGIN PASSWORD`), в репозиторий и чат они не попадают.
+7. **БД и TLS.** Supabase session pooler (`:5432`, логин `<роль>.<project-ref>`), проверка сертификата по CA из секрета `WORKER_CA_CERT_B64` (имена секретов Edge Functions не могут начинаться с `SUPABASE_`), без `ssl*` параметров в URL. Пароли ролей задаёт владелец (`ALTER ROLE … LOGIN PASSWORD`), в репозиторий и чат они не попадают.
 
 ## Последствия
 
