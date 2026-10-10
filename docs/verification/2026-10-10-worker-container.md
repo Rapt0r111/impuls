@@ -23,9 +23,15 @@
 - Образ `apps/worker/Dockerfile` (Docker 29.8.2): сборка; Node v24.21.0 под `uid=1000(node)`; в `node_modules` только `pg` и зависимости; на PostgreSQL 17.6 `--watch`/`--expire-watch` → `watching`, `alive`, `docker stop` → `stopped`, exit 0; неверная роль, нет CA, выключенный флаг — ожидаемые отказы. В песочнице для `bun install` в стадиях сборки добавлялся CA прокси исполнителя; финальный слой не менялся.
 - `bun run check` — exit 0: format, lint, typecheck, `test:unit` (34 файла и 181 тест прошли, 55 файлов и 448 тестов пропущены без `TEST_DATABASE_URL`), сборка app и worker. Локально Node v22.22.0, а не 24.21.0 из `engines`; CI использует целевую версию.
 
+## Выпуск на Production 10.10.2026 (с разрешения владельца в треде, 15:27 UTC)
+
+- Supabase MCP `deploy_edge_function`: `impuls-notifications` и `impuls-expiry`, версия 1, `ACTIVE`, `verify_jwt=false`; загружены `index.ts` и бандл `bun run build:edge` из коммита `672c82e`.
+- `execute_sql`: `create extension pg_cron`, `pg_net`; `cron.schedule` по `ops/supabase/worker-schedule.sql` → задания `impuls-notifications` (1) и `impuls-expiry` (2), `* * * * *`, active.
+- Первый запуск 15:30:00 UTC: оба задания `succeeded`; `net._http_response` — обе функции ответили 401 `{"error":"UNAUTHORIZED"}`. Ручной вызов без заголовка — тоже 401. Это ожидаемо: секретов и токена в Vault ещё нет, роли worker пока `rolcanlogin=false`. Значит, функции загружаются в Edge Runtime и расписание вызывает их.
+- Ещё не проверено: проход под ролями worker через pooler (после шагов владельца), реальный Bot API.
+
 ## Не проверено
 
-- Supabase Edge Runtime в облаке (локально — Deno CLI 2.9.6, а не Edge Runtime), pg_cron и pg_net на Production, вызов через pooler Production под ролями worker. На Production роли пока `NOLOGIN` (`2026-10-08-production-app-release.md`); атрибуты ролей Production в этой работе не читались.
-- Публикация функций на Production не выполнена: автоматический режим исполнителя требует явного разрешения владельца.
+- Полный проход в облаке: подключение через pooler Production под ролями worker и обработка событий. На Production роли пока `NOLOGIN` (`2026-10-08-production-app-release.md`); атрибуты ролей Production в этой работе не читались.
 - Реальный Bot API с настоящим токеном, получение на Android/iOS.
 - Квота бесплатных вызовов Edge Functions не сверялась с панелью Usage.
