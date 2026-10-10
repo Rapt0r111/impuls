@@ -22,3 +22,11 @@
 - Код не отправлен в `origin`, деплой не выполнялся. Совместимость старого приложения с 000038 обеспечена триггером `reviews_default_award` (проверено локально на 17.6, на Production не прогонялось).
 - Security advisors после миграций не запускались. P-01…P-06, Android/iOS, удалённый CI — открыты.
 - Откат схемы не предусмотрен (`down` запрещён); исправление — только новой миграцией.
+
+## Состояние после выкладки кода (10.10.2026, повторная сверка)
+
+- Git: `main` = `origin/main` = `89c67a1`; рабочее дерево чистое (вне репозитория только `tmp/`).
+- GitHub Actions `check`, прогон `38046199582` на `89c67a1`: успешно, включая `test:restore` и `test:worker-ops` на PostgreSQL 17.6; предыдущие 22 из 37 прогонов были красными. Причины — в `2026-10-10-pg17-ci-fixes.md`; последняя (предупреждение Node в строгом сравнении stderr) исправлена в `89c67a1`.
+- Vercel: Production `impuls-pul5v2v6c` — Ready (23 с), алиас `https://impuls-eta.vercel.app` указывает на него; `vercel logs --level error --since 1h` — записей нет; в Production заданы 16 флагов приложения, `APP_ORIGIN`, `CSRF_SECRET`, `DATABASE_URL`, `SUPABASE_CA_CERT_B64`, `TELEGRAM_BOT_TOKEN` (по именам из `vercel env ls`).
+- Supabase `enicnfevahcuiqvwmhgp`: `pgmigrations` — 38 записей, как файлов в `db/migrations`; список миграций Supabase заканчивается `impuls_acceptance_bonus`. Advisors: прежние замечания (`impuls_meta.pgmigrations` и `impuls.profile_name_changes` с RLS без политик — INFO, намеренно; `public.rls_auto_enable()` доступна `anon`/`authenticated` — WARN, не изменялась).
+- Не проверено: работа формы приёмки с бонусом на Production (нет версии правил с опциями), вход с устройства Telegram, worker (не размещён).
