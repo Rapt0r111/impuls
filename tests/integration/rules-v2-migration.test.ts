@@ -3,7 +3,10 @@ import path from "node:path";
 import { randomInt, randomUUID } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { acceptanceOptions } from "../../packages/domain/src/ledger/economy";
+import {
+  acceptanceOptions,
+  syntheticEconomyZone,
+} from "../../packages/domain/src/ledger/economy";
 
 const url = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
@@ -103,14 +106,42 @@ const migrationSql = () => {
       });
     });
 
-    it("publishes nothing without a synthetic version that enables acceptance", async () => {
+    it("without a source version publishes only the owner's decisions, authored by admin.rules", async () => {
+      // Production on 10.10.2026: no rule version at all. Other test files may have
+      // committed versions and grants; hide them inside the rolled-back transaction.
+      const scope = randomUUID();
       const rows = await replay(async (client) => {
+        await client.query(
+          'UPDATE impuls.rule_sets SET definition = definition || \'{"mode":"hidden-by-test"}\'::jsonb',
+        );
         await client.query(
           "INSERT INTO impuls.rule_sets (version_number,definition,effective_from,created_by) VALUES ($1,$2,now(),$3)",
           [source, { ...v1, acceptance: { enabled: false } }, author],
         );
+        await client.query(
+          "INSERT INTO impuls.access_scopes (id,kind,name) VALUES ($1,'project','Synthetic rules scope')",
+          [scope],
+        );
+        await client.query(
+          "INSERT INTO impuls.role_bindings (user_id,action,scope_id,granted_by,reason,valid_from) VALUES ($1,'admin.rules',$2,$1,'Synthetic test','2000-01-01')",
+          [author, scope],
+        );
       });
-      expect(rows).toEqual([]);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.version_number).toBe(source + 1);
+      expect(rows[0]!.definition).toEqual({
+        mode: "synthetic",
+        timeZone: "Europe/Moscow",
+        acceptance: {
+          enabled: true,
+          adjustment: { minPercent: 50 },
+          bonuses: [
+            { code: "plus_10", title: "Бонус +10 %", percent: 10 },
+            { code: "plus_25", title: "Бонус +25 %", percent: 25 },
+          ],
+        },
+      });
+      expect(syntheticEconomyZone(rows[0]!.definition)).toBe("Europe/Moscow");
     });
   },
 );
