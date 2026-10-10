@@ -38,3 +38,9 @@
 - Фильтр статусов оставлен лентой из семи состояний. Группировка макета («Активные / Проверка / Готово») потребовала бы запроса по нескольким статусам: `GET /api/v1/tasks` принимает только один (`assignedTaskStatusSchema`, `apps/app/src/app/api/v1/tasks/route.ts:17`). Это решение владельца и отдельный срез.
 
 **Проверено повторно:** `typecheck`, `eslint apps tests`, `format:check`, `test:unit` (181 тест) — без ошибок; `test:reflow` — 150 сценариев, 0 сбоев; все 25 браузерных сценариев на production-сборке прошли (включая `task-submissions`, `telegram-bridge`, `task-reviews`, `task-acceptance`, `task-history`, `task-timeline`). Снимок экрана при 390 px просмотрен вручную. Не проверено: то же, что выше — реальный Telegram и сценарии с PostgreSQL.
+
+## Дополнение: поощрения (10.10.2026)
+
+- **Изменено:** `apps/app/src/features/rewards/reward-catalog.tsx`, `rewards.css` — блок баланса в золотой карточке как на макете (`project/Rewards.dc.html`); у позиции, на которую не хватает баллов, полоса прогресса и подпись «Не хватает N баллов». Логика заявок, квоты и правила не менялись.
+- **Проверено:** `typecheck`, `eslint apps tests`, `prettier --check`, `test:unit` — без ошибок; `test:reflow` — 150 сценариев, 0 сбоев; браузерные сценарии `rewards`, `reward-decisions`, `reward-fulfillment`, `leaderboard`, `profile`, `home`, `tasks-smoke` — прошли на production-сборке.
+- **Не проверено:** реальный Telegram; сценарии с PostgreSQL.
