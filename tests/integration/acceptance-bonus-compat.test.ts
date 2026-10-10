@@ -8,14 +8,20 @@ const url = process.env.TEST_DATABASE_URL;
   () => {
     const admin = new Pool({ connectionString: url });
     const user = randomUUID();
+    const reviewer = randomUUID();
     const scope = randomUUID();
     const rules = randomUUID();
     const task = randomUUID();
     let submission = "";
     beforeAll(async () => {
       await admin.query(
-        "INSERT INTO impuls.users (id,telegram_id,display_name,active) VALUES ($1,$2,'Synthetic compat user',true)",
-        [user, randomInt(8_000_000_000_000, 9_000_000_000_000)],
+        "INSERT INTO impuls.users (id,telegram_id,display_name,active) VALUES ($1,$2,'Synthetic compat user',true),($3,$4,'Synthetic compat reviewer',true)",
+        [
+          user,
+          randomInt(8_000_000_000_000, 9_000_000_000_000),
+          reviewer,
+          randomInt(8_000_000_000_000, 9_000_000_000_000),
+        ],
       );
       await admin.query(
         "INSERT INTO impuls.access_scopes (id,kind,name) VALUES ($1,'project','Synthetic compat scope')",
@@ -57,7 +63,9 @@ const url = process.env.TEST_DATABASE_URL;
         await admin.query("DELETE FROM impuls.access_scopes WHERE id=$1", [
           scope,
         ]);
-        await admin.query("DELETE FROM impuls.users WHERE id=$1", [user]);
+        await admin.query("DELETE FROM impuls.users WHERE id=ANY($1)", [
+          [user, reviewer],
+        ]);
       } finally {
         await admin.end();
       }
@@ -66,7 +74,7 @@ const url = process.env.TEST_DATABASE_URL;
       const review = (
         await admin.query(
           "INSERT INTO impuls.reviews (submission_id,reviewer_id,decision,reason,fund_xp,fund_points) VALUES ($1,$2,'accept','Previous app version',31,13) RETURNING base_xp,base_points,bonus_code,bonus_xp,bonus_points",
-          [submission, user],
+          [submission, reviewer],
         )
       ).rows[0];
       expect(review).toEqual({
