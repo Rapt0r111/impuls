@@ -6,7 +6,6 @@ import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
 import { leaveHome } from "./home-fallback.mjs";
-import { openSection } from "./nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",

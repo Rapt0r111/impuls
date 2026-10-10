@@ -7,7 +7,6 @@ import {
   notificationAttemptsCursorSchema,
   notificationAttemptsResponseSchema,
 } from "../../packages/contracts/src/notification-attempts";
-import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;

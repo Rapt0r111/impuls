@@ -525,7 +525,7 @@ export function RewardCatalog() {
               )}
               {first && (
                 <>
-                  <dl className="ledger-balances reward-balance">
+                  <dl className="ledger-balances">
                     <div>
                       <dt>Доступно</dt>
                       <dd>{number(first.balance.availablePoints)} баллов</dd>

@@ -3,7 +3,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
-import { openSection } from "./nav.mjs";
 
 // API/Telegram fixtures exercise layout only; no database or external writes.
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
@@ -353,11 +352,11 @@ async function inspect(page) {
       const rect = el.getBoundingClientRect();
       if (!rect.width || !rect.height) continue;
       const name = `${el.tagName.toLowerCase()}.${el.className}`;
-      // Фильтр статуса — строка с горизонтальной прокруткой: сама лента
+      // Служебные разделы и фильтр статуса — строки с горизонтальной прокруткой: сама лента
       // обязана помещаться в экран, а её чипы могут уходить за край.
       if (
         (rect.left < -1 || rect.right > innerWidth + 1) &&
-        !el.closest(".tasks-seg")
+        !el.closest(".workspace-nav-operations .workspace-tab, .tasks-seg")
       )
         outside.push(name);
       if (
@@ -432,13 +431,6 @@ try {
               .getAttribute("aria-pressed"),
             "true",
           );
-          if (tabLabel === "Ещё")
-            await f.page.locator(".more-row").first().waitFor();
-          if (tabLabel === "Ещё" && mode === "normal" && name === "audit")
-            await f.page.screenshot({
-              path: path.join(dir, `more-${width}.png`),
-              fullPage: true,
-            });
           const metrics = await inspect(f.page);
           results.push({
             name,

@@ -6,7 +6,6 @@ import { readParticipantProfile } from "../../packages/domain/src/profile/read";
 import { reviewTaskSubmission } from "../../packages/domain/src/tasks/reviews";
 import { reverseAcceptance } from "../../packages/domain/src/ledger/corrections";
 import { participantProfileResponseSchema } from "../../packages/contracts/src/profile";
-import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;

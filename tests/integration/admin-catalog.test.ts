@@ -13,7 +13,6 @@ import {
   adminCatalogQuotasCursorSchema,
   adminCatalogQuotasResponseSchema,
 } from "../../packages/contracts/src/admin-catalog";
-import { openSection } from "../browser/nav.mjs";
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
 (url ? describe : describe.skip)("F07 scoped catalog inspection", () => {

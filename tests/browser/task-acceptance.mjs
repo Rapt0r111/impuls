@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
-import { openSection } from "./nav.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const id = "11111111-1111-4111-8111-111111111111",
   sub = "22222222-2222-4222-8222-222222222222",

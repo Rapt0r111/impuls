@@ -14,7 +14,6 @@ import {
 } from "../../packages/contracts/src/ledger";
 import { taskAcceptanceResponseSchema } from "../../packages/contracts/src/reviews";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
-import { openSection } from "../browser/nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL;
 (url ? describe : describe.skip)(

@@ -4,7 +4,6 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
-import { openSection } from "./nav.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
