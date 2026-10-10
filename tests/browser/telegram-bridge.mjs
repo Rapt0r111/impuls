@@ -421,7 +421,9 @@ try {
   for (const mode of ["legacy", "throwing"]) {
     const f = await fixture(320, mode);
     await openTask(f.page);
-    await f.page.getByRole("button", { name: "Закрыть", exact: true }).click();
+    await f.page
+      .getByRole("button", { name: "Задачи: вернуться к списку", exact: true })
+      .click();
     await f.page
       .getByLabel("Отчёт о выполнении", { exact: true })
       .waitFor({ state: "detached" });
@@ -481,6 +483,7 @@ try {
       await reason.waitFor({ state: "detached" });
       assert.equal(await backVisible(f.page), false);
     } else if (role === "manager") {
+      await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
       await f.page
         .getByRole("button", { name: "Постановка задач", exact: true })
         .click();
@@ -504,11 +507,14 @@ try {
         1,
       );
       await nativeBack(f.page);
+      await f.page.getByRole("heading", { name: "Ещё", exact: true }).waitFor();
+      await nativeBack(f.page);
       await f.page
         .getByRole("heading", { name: "Главная", exact: true })
         .waitFor();
       assert.equal(await backVisible(f.page), false);
     } else {
+      await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
       await f.page
         .getByRole("button", { name: "Баланс и журнал", exact: true })
         .click();
@@ -536,6 +542,8 @@ try {
           .getAttribute("aria-expanded"),
         "false",
       );
+      await nativeBack(f.page);
+      await f.page.getByRole("heading", { name: "Ещё", exact: true }).waitFor();
       await nativeBack(f.page);
       await f.page
         .getByRole("heading", { name: "Главная", exact: true })

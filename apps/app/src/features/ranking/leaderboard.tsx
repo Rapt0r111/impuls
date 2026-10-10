@@ -50,6 +50,12 @@ const initials = (name: string) => {
       : (words[0] ?? "").slice(0, 2);
   return letters.toUpperCase();
 };
+// Соседний месяц для кнопок-стрелок: «2026-10» → «2026-09».
+const shiftSeason = (value: string, delta: number) => {
+  const [year = 1970, month = 1] = value.split("-").map(Number);
+  const next = new Date(Date.UTC(year, month - 1 + delta, 1));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
+};
 const number = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
 const date = (s: string) =>
   new Intl.DateTimeFormat("ru-RU", {
@@ -81,6 +87,15 @@ export function Leaderboard() {
   }, [accessError, error, loseAccess]);
   const first = !accessError && !hidden ? query.data?.pages[0] : undefined;
   const items = first ? query.data!.pages.flatMap((page) => page.items) : [];
+  // Самый поздний месяц — текущий по Москве: будущие месяцы выбрать нельзя.
+  const latest = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date());
+  const mine = items.findIndex((item) => item.isSelf);
+  const ahead = mine > 0 ? items[mine - 1] : undefined;
+  const gap = ahead ? ahead.xp - (items[mine]?.xp ?? ahead.xp) : 0;
   const changed = error instanceof RankingError && error.status === 409;
   const disabled =
     error instanceof RankingError && error.code === "RANKING_DISABLED";
@@ -92,7 +107,7 @@ export function Leaderboard() {
     >
       <div className="tasks-heading">
         <div>
-          <h2 id="ranking-title">Рейтинг месяца</h2>
+          <h2 id="ranking-title">Рейтинг</h2>
           <p>Синтетический режим · подтверждённый XP вашей области.</p>
         </div>
         <button
@@ -105,45 +120,78 @@ export function Leaderboard() {
         </button>
       </div>
       {first && (
-        <div className="ranking-filters">
-          <label className="tasks-filter">
-            <span id="ranking-scope-label">Область</span>
-            <select
-              aria-labelledby="ranking-scope-label"
-              value={scope || first.scope?.id || ""}
-              onChange={(event) => {
-                setScope(event.target.value);
-                setSeason(season || first.season);
+        <>
+          <div className="ranking-month">
+            <button
+              type="button"
+              className="ranking-step"
+              aria-label="Предыдущий месяц"
+              onClick={() => {
+                setScope(scope || first.scope?.id || "");
+                setSeason(shiftSeason(season || first.season, -1));
               }}
-              disabled={first.scopes.length === 0}
             >
-              {first.scopes.length === 0 ? (
-                <option value="">Нет доступных областей</option>
-              ) : (
-                first.scopes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </label>
-          <label className="tasks-filter">
-            <span>Месяц · Москва</span>
-            <input
-              type="month"
-              value={season || first.season}
-              min="1000-01"
-              max="9999-12"
-              onChange={(event) => {
-                if (event.target.validity.valid && event.target.value) {
-                  setScope(scope || first.scope?.id || "");
-                  setSeason(event.target.value);
-                }
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m14.5 6-6 6 6 6" />
+              </svg>
+            </button>
+            <label className="ranking-month-field">
+              <span>Месяц · Москва</span>
+              <input
+                type="month"
+                value={season || first.season}
+                min="1000-01"
+                max="9999-12"
+                onChange={(event) => {
+                  if (event.target.validity.valid && event.target.value) {
+                    setScope(scope || first.scope?.id || "");
+                    setSeason(event.target.value);
+                  }
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="ranking-step"
+              aria-label="Следующий месяц"
+              disabled={(season || first.season) >= latest}
+              onClick={() => {
+                setScope(scope || first.scope?.id || "");
+                setSeason(shiftSeason(season || first.season, 1));
               }}
-            />
-          </label>
-        </div>
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m9.5 6 6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+          {first.scopes.length !== 1 ? (
+            <label className="tasks-filter ranking-scope">
+              <span id="ranking-scope-label">Область</span>
+              <select
+                aria-labelledby="ranking-scope-label"
+                value={scope || first.scope?.id || ""}
+                onChange={(event) => {
+                  setScope(event.target.value);
+                  setSeason(season || first.season);
+                }}
+                disabled={first.scopes.length === 0}
+              >
+                {first.scopes.length === 0 ? (
+                  <option value="">Нет доступных областей</option>
+                ) : (
+                  first.scopes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+          ) : (
+            <p className="ranking-scope-name">{first.scopes[0]?.name}</p>
+          )}
+        </>
       )}
       {query.isPending && (
         <p className="tasks-state" role="status">
@@ -220,10 +268,11 @@ export function Leaderboard() {
                           <span className="ranking-podium-badge">
                             {initials(item.displayName)}
                           </span>
-                          <span>{number(item.rank)} место</span>
                           <strong>{item.displayName}</strong>
                           <b>{number(item.xp)}</b>
-                          <small>XP</small>
+                          <span className="ranking-podium-bar">
+                            {number(item.rank)}
+                          </span>
                         </li>
                       ))}
                   </ol>
@@ -241,23 +290,42 @@ export function Leaderboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item) => (
+                    {items.map((item, index) => (
                       <tr
                         key={item.id}
-                        className={item.isSelf ? "ranking-own-row" : undefined}
+                        className={
+                          [
+                            item.isSelf ? "ranking-own-row" : "",
+                            items.length >= 3 && index < 3 ? "ranking-top" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ") || undefined
+                        }
                       >
                         <td>{number(item.rank)}</td>
                         <th scope="row">
-                          {item.displayName}
-                          {item.isSelf && (
-                            <span className="ranking-you">Вы</span>
-                          )}
+                          <span className="ranking-person">
+                            <span className="ranking-avatar" aria-hidden="true">
+                              {initials(item.displayName)}
+                            </span>
+                            <span className="ranking-name">
+                              {item.displayName}
+                              {item.isSelf && (
+                                <span className="ranking-you">Вы</span>
+                              )}
+                            </span>
+                          </span>
                         </th>
                         <td>{number(item.xp)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {ahead && gap > 0 ? (
+                  <p className="ranking-hint">
+                    До {number(ahead.rank)} места — {number(gap)} XP.
+                  </p>
+                ) : null}
               </>
             ))}
           {first.scope && (

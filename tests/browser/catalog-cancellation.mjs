@@ -177,6 +177,7 @@ async function fixture(width = 320, mode = "ready") {
     },
   );
   await page.goto(origin);
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
     .getByRole("button", { name: "Управление каталогом", exact: true })
     .click();

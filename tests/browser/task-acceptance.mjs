@@ -288,6 +288,7 @@ try {
       })
       .waitFor();
     assert.equal(calls.length, 1);
+    await page.getByRole("button", { name: "Ещё", exact: true }).click();
     await page
       .getByRole("button", { name: "Баланс и журнал", exact: true })
       .click();
@@ -406,6 +407,7 @@ try {
   }
   for (const mode of ["ledger-empty", "ledger-failed", "ledger-revoked"]) {
     const { page } = await fixture(320, mode);
+    await page.getByRole("button", { name: "Ещё", exact: true }).click();
     await page
       .getByRole("button", { name: "Баланс и журнал", exact: true })
       .click();
@@ -509,6 +511,7 @@ try {
   }
   for (const mode of ["ledger-more", "ledger-refresh-failed"]) {
     const { page } = await fixture(320, mode);
+    await page.getByRole("button", { name: "Ещё", exact: true }).click();
     await page
       .getByRole("button", { name: "Баланс и журнал", exact: true })
       .click();

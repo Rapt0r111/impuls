@@ -354,6 +354,9 @@ const origin = process.env.TEST_APP_ORIGIN;
             .getByRole("button", { name: "Мои задачи", exact: true })
             .click();
           await page
+            .getByRole("button", { name: "Готово", exact: true })
+            .click();
+          await page
             .getByRole("button", { name: /Synthetic history task 0/ })
             .click();
           await page

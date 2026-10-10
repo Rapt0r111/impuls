@@ -578,6 +578,7 @@ const url = process.env.TEST_DATABASE_URL,
           ]);
           const page = await context.newPage();
           await page.goto(origin!);
+          await page.getByRole("button", { name: "Ещё", exact: true }).click();
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();

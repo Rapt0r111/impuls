@@ -220,3 +220,131 @@
   font-weight: 700;
   line-height: 1.3;
 }
+
+/* Строка каталога по макету: плитка, название и цена, условия, состояние, действие. */
+.reward-list .reward-row::before {
+  grid-row: 1;
+}
+.reward-row-body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.reward-row-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.reward-row-head h3 {
+  margin: 0;
+}
+.reward-row-head .reward-price {
+  flex: none;
+  white-space: nowrap;
+}
+.reward-state {
+  justify-self: start;
+  margin-top: 4px;
+}
+.reward-meter {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+.reward-meter progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.1);
+}
+.reward-meter progress::-webkit-progress-bar {
+  background: rgb(255 255 255 / 0.1);
+}
+.reward-meter progress::-webkit-progress-value {
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f6d083, #fbe3ad);
+}
+.reward-meter progress::-moz-progress-bar {
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f6d083, #fbe3ad);
+}
+.reward-meter span {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.reward-list .reward-row-action {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+.reward-list .reward-row-action .tasks-action {
+  width: 100%;
+  min-height: 48px;
+}
+.reward-list .reward-row-action .reward-cancel {
+  border: 1px solid var(--color-edge);
+  background: transparent;
+  color: var(--color-ink);
+  box-shadow: none;
+}
+/* Баланс: золотая карточка, справа знак звезды. */
+.reward-catalog > .ledger-balances {
+  position: relative;
+  overflow: hidden;
+  padding-right: 84px;
+}
+.reward-catalog > .ledger-balances::after {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 52px;
+  height: 52px;
+  margin-top: -26px;
+  border: 2px solid var(--color-gold);
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f6d083' d='M12 3.5 14.4 9l5.9.5-4.5 3.9 1.4 5.8L12 16.3 6.8 19.2l1.4-5.8L3.7 9.5 9.6 9z'/%3E%3C/svg%3E")
+      center / 28px no-repeat,
+    rgb(246 208 131 / 0.14);
+  content: "";
+}
+
+.reward-list .reward-row-action {
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+}
+/* Баланс как на макете: «Доступно» крупно золотым, резерв строкой ниже. */
+.reward-catalog > .ledger-balances {
+  display: block;
+}
+.reward-catalog > .ledger-balances dd {
+  white-space: nowrap;
+}
+.reward-catalog > .ledger-balances div:first-child dd {
+  font-size: 36px;
+  line-height: 1.1;
+}
+.reward-catalog > .ledger-balances div:last-child {
+  flex-direction: row;
+  gap: 8px;
+  margin-top: 4px;
+}
+.reward-catalog > .ledger-balances div:last-child dt {
+  order: 0;
+}
+.reward-catalog > .ledger-balances div:last-child dd {
+  order: 1;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.reward-catalog > .ledger-balances div:last-child {
+  justify-content: flex-start;
+  align-items: baseline;
+}

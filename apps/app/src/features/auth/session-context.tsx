@@ -1,9 +1,13 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { Permission } from "./permission-labels";
 
 export const SessionContext = createContext<{
   csrfToken: string;
+  user: { id: string; displayName: string };
+  /** `null` — список не удалось загрузить; пустой массив — полномочий нет. */
+  permissions: Permission[] | null;
   canReview?: boolean;
   canReadAudit?: boolean;
   canInspectCatalog?: boolean;

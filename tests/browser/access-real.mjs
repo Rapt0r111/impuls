@@ -75,6 +75,7 @@ for (const width of [320, 360, 390]) {
     }),
   );
   await page.goto(origin);
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
     .getByRole("button", { name: "Управление доступом", exact: true })
     .click();
@@ -157,6 +158,7 @@ for (const width of [320, 360, 390]) {
        FROM impuls.users u WHERE u.telegram_id=$1`,
     );
     assert.deepEqual(removed, { active: false, memberships: 0, changes: 2 });
+    await page.getByRole("button", { name: "Ещё", exact: true }).click();
     await page
       .getByRole("button", { name: "Журнал действий", exact: true })
       .click();

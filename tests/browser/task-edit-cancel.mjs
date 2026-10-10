@@ -216,6 +216,7 @@ async function fixture(width, mode = "success") {
     return route.fallback();
   });
   await page.goto(origin);
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
     .getByRole("button", {
       name: mode === "view-only" ? "Задачи и история" : "Постановка задач",

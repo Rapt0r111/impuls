@@ -783,6 +783,7 @@ const url = process.env.TEST_DATABASE_URL;
               `${String(error)}; visible screen: ${await page.locator("main").innerText()}`,
             );
           });
+        await page.getByRole("button", { name: "Ещё", exact: true }).click();
         await page
           .getByRole("button", { name: "Постановка задач", exact: true })
           .click();

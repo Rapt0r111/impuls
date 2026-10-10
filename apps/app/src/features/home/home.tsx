@@ -39,6 +39,13 @@ const asOfLabel = (value: string) =>
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+// Приветствие считается на клиенте после входа, поэтому серверная разметка с ним не расходится.
+const greeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Доброй ночи";
+  if (hour < 12) return "Доброе утро";
+  return hour < 18 ? "Добрый день" : "Добрый вечер";
+};
 const statusNames = {
   assigned: "Назначена",
   in_progress: "В работе",
@@ -50,7 +57,7 @@ const isOpen = (status: string): status is OpenStatus => status in statusNames;
 type HomeTarget = "tasks" | "ledger";
 
 export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
-  const { loseAccess } = useAuthorizedSession();
+  const { loseAccess, user } = useAuthorizedSession();
   const profile = useParticipantProfile();
   const tasks = useQuery({
     queryKey: ["home-tasks"],
@@ -104,6 +111,20 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
           <p>Ваш прогресс и ближайшая задача.</p>
         </div>
       </div>
+      <header className="home-greeting">
+        <span className="access-avatar" aria-hidden="true">
+          {user.displayName.trim().charAt(0).toUpperCase()}
+        </span>
+        <div>
+          <span className="access-greeting">{greeting()}</span>
+          <strong>{user.displayName}</strong>
+        </div>
+        {level ? (
+          <span className="task-chip home-level-chip">
+            Уровень {level.level}
+          </span>
+        ) : null}
+      </header>
       {profile.isPending ? <p role="status">Загружаем прогресс…</p> : null}
       {profile.isError ? (
         <p className="tasks-state" role="alert">

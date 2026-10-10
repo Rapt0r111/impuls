@@ -300,181 +300,50 @@ body::after {
   white-space: nowrap;
 }
 
-.access-content--authorized .access-identity {
-  margin-top: 6px;
-  padding: 0;
-  border: 0;
-}
-
-.access-content--authorized .access-identity strong {
-  font-size: 18px;
-}
-
-.access-content--authorized .access-permissions {
-  margin-top: 0;
-}
-/* Приветствие и кнопка «Полномочия» — одна строка. На «Главной» крупная шапка,
-   на остальных разделах — компактная (раздел ставит html[data-view]). */
-.access-profile {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  margin-top: 4px;
-}
-.access-profile .access-identity {
-  flex: 1 1 0;
-  min-width: 0;
-  gap: 14px;
-  margin: 0;
-}
-.access-profile .access-identity > div {
+/* Аватар и приветствие: шапка «Главной» и карточка профиля в «Ещё». */
+.access-avatar {
   display: grid;
-  min-width: 0;
-}
-.access-profile .access-permissions[open] {
-  flex-basis: 100%;
-}
-.access-identity .access-avatar {
   width: 50px;
   height: 50px;
+  flex: none;
+  place-items: center;
+  border: 1px solid rgb(112 225 194 / 0.35);
   border-radius: 17px;
+  background: linear-gradient(145deg, #2f6f66, #173f44);
   color: #aef5e0;
   font-size: 17px;
+  font-weight: 700;
 }
 .access-greeting {
   color: var(--color-muted);
   font-size: 14px;
 }
-.access-content--authorized .access-identity strong {
-  font-size: 24px;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-html:not([data-view="home"]) .access-identity .access-avatar,
-html:not([data-view="home"]) .access-greeting {
-  display: none;
-}
-html:not([data-view="home"])
-  .access-content--authorized
-  .access-identity
-  strong {
-  color: var(--color-muted);
-  font-size: 15px;
-  font-weight: 700;
-}
-/* «Полномочия»: кнопка-значок; подпись остаётся текстом summary для скринридеров. */
-.access-content--authorized .access-permissions summary {
-  position: relative;
-  display: block;
-  width: 44px;
+
+/* Возврат из служебного раздела в «Ещё». */
+.screen-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   min-height: 44px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--color-edge);
+  margin: 4px 0 0 -8px;
+  padding: 0 14px 0 8px;
+  border: 0;
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.07);
-  color: transparent;
-  font-size: 0;
-  list-style: none;
-}
-.access-content--authorized .access-permissions summary::before {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 22px;
-  height: 22px;
-  background: var(--color-muted);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E")
-    center / contain no-repeat;
-  content: "";
-}
-.access-permissions summary::-webkit-details-marker {
-  display: none;
-}
-.access-permissions summary {
-  width: fit-content;
-  min-height: 44px;
-  padding: 12px 0;
-  color: var(--color-muted);
-  font-size: 14px;
+  background: transparent;
+  color: var(--color-mint);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
 }
-
-.access-content--authorized .access-permissions p {
-  font-size: 14px;
-}
-
-.access-identity {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-top: 38px;
-  padding: 16px 0;
-  border-top: 1px solid var(--color-line);
-  border-bottom: 1px solid var(--color-line);
-}
-
-.access-avatar {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  flex: none;
-  place-items: center;
-  border: 1px solid rgb(112 225 194 / 0.35);
-  border-radius: 14px;
-  background: linear-gradient(145deg, #2f6f66, #173f44);
-  color: #aef5e0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.access-identity span {
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
-.access-identity strong {
-  overflow-wrap: anywhere;
-  font-size: 18px;
-}
-
-.access-permissions {
-  margin-top: 24px;
-}
-
-.access-permissions h2 {
-  margin: 0 0 10px;
-  font-size: 20px;
-  line-height: 1.3;
-}
-
-.access-permissions p {
-  margin: 0;
-  color: var(--color-muted);
-}
-
-.access-permissions ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.access-permissions li {
-  display: grid;
-  gap: 3px;
-  padding: 11px 0;
-  border-top: 1px solid var(--color-line);
-}
-
-.access-permissions li strong {
-  font-size: 15px;
-}
-
-.access-permissions li span {
-  color: var(--color-muted);
-  font-size: 14px;
-  overflow-wrap: anywhere;
+.screen-back svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .access-actions {
@@ -486,7 +355,7 @@ html:not([data-view="home"])
   padding-bottom: calc(96px + var(--app-safe-bottom));
 }
 .workspace-nav {
-  margin: 4px 0 8px;
+  margin: 0;
 }
 /* Плавающая капсула: размытый фон, мягкая граница, у активного раздела
    подсвеченная «таблетка» под значком. */
@@ -548,44 +417,6 @@ html:not([data-view="home"])
   .workspace-tab-pill {
   background: rgb(112 225 194 / 0.17);
   animation: pop 0.55s var(--ease-pop) both;
-}
-/* Служебные разделы — чипы с переносом строк. */
-.workspace-nav-operations {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  margin-inline: -20px;
-  padding: 2px 32px 2px 20px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-padding-inline: 20px;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
-}
-.workspace-nav-operations::-webkit-scrollbar {
-  display: none;
-}
-.workspace-nav-operations .workspace-tab {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  white-space: nowrap;
-  font-size: 14px;
-  font-weight: 700;
-  min-height: 44px;
-  padding: 8px 16px;
-  border: 1px solid var(--color-edge);
-  border-radius: 14px;
-  background: rgb(255 255 255 / 0.06);
-}
-.workspace-nav-operations .workspace-tab-icon,
-.workspace-nav-operations .workspace-tab-pill {
-  display: none;
-}
-.workspace-nav-operations .workspace-tab[aria-pressed="true"] {
-  border-color: transparent;
-  color: #03241b;
-  background: linear-gradient(135deg, #8af4d6, var(--color-mint-deep));
 }
 .workspace-tab {
   min-width: 0;
@@ -909,39 +740,38 @@ html:not([data-view="home"])
   content: "+";
 }
 
-/* Фильтр по статусу — лента чипов с прокруткой, как у служебных разделов. */
+/* Раздел списка — сегментный переключатель из трёх равных частей, как на макете. */
 .tasks-seg {
   display: flex;
-  gap: 8px;
-  margin: 0 -20px 16px;
-  padding: 2px 32px 2px 20px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
-}
-.tasks-seg::-webkit-scrollbar {
-  display: none;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--color-edge);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.06);
 }
 .tasks-seg-item {
-  flex: none;
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 44px;
-  padding: 8px 16px;
-  border: 1px solid var(--color-edge);
+  padding: 8px 6px;
+  border: 0;
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.06);
+  background: transparent;
   color: var(--color-muted);
   font: inherit;
   font-size: 15px;
   font-weight: 700;
-  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background 180ms ease-out,
+    color 180ms ease-out;
 }
 .tasks-seg-item[aria-pressed="true"] {
-  border-color: transparent;
   background: linear-gradient(135deg, #8af4d6, var(--color-mint-deep));
   color: #03241b;
   box-shadow: 0 8px 18px -8px rgb(112 225 194 / 0.7);
+  animation: pop 0.5s var(--ease-pop) both;
 }
 
 .tasks-action,
@@ -1374,6 +1204,67 @@ html:not([data-view="home"])
   content: "";
 }
 
-.workspace-nav {
-  margin: 12px 0 8px;
+/* Срок задачи: значок и подпись; цвет усиливает, но не заменяет текст. */
+.tasks-row-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.tasks-row-due svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tasks-row-due--today {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+.tasks-row-due--late {
+  color: var(--color-error);
+  font-weight: 700;
+}
+
+/* Экран задачи по макету: возврат, шапка с названием и наградой, затем карточка. */
+.task-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.task-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.task-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.task-hero-meta .task-chip {
+  margin: 0;
+}
+.task-hero h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.task-screen .tasks-detail {
+  margin-top: 0;
+}
+.task-report-primary {
+  position: sticky;
+  bottom: calc(96px + var(--app-safe-bottom));
+  z-index: 5;
 }

@@ -634,6 +634,7 @@ const origin = process.env.TEST_APP_ORIGIN;
               }),
           );
           await page.goto(origin!);
+          await page.getByRole("button", { name: "Ещё", exact: true }).click();
           await page
             .getByRole("button", { name: "Задачи и история", exact: true })
             .click();

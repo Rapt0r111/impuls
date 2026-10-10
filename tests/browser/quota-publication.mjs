@@ -203,6 +203,7 @@ async function fixture(width = 320, readOnly = false) {
       }),
   );
   await page.goto(origin);
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
     .getByRole("button", { name: "Управление каталогом", exact: true })
     .click();
@@ -494,6 +495,7 @@ try {
   for (const width of [320, 1280]) {
     const f = await fixture(width);
     try {
+      await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
       await f.page
         .getByRole("button", { name: "Журнал действий", exact: true })
         .click();

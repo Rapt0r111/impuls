@@ -763,6 +763,7 @@ const url = process.env.TEST_DATABASE_URL;
               }),
           );
           await p.goto(origin);
+          await p.getByRole("button", { name: "Ещё", exact: true }).click();
           await p
             .getByRole("button", { name: "Баланс и журнал", exact: true })
             .click();

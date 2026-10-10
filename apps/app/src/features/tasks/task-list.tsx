@@ -29,6 +29,7 @@ import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
 import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
+import { MoreScreen, type MoreDestination } from "@/features/more/more-screen";
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -131,9 +132,72 @@ const statusIcons: Record<string, ReactNode> = {
   cancelled: <path d="M6 6l12 12M18 6 6 18" />,
 };
 
+// Три раздела списка по макету. Фильтрация выполняется по загруженным
+// страницам, поэтому число в разделе показывается только когда список полный.
+type Segment = "active" | "review" | "done";
+const segments: readonly (readonly [Segment, string])[] = [
+  ["active", "Активные"],
+  ["review", "Проверка"],
+  ["done", "Готово"],
+];
+const segmentOf = (status: TaskStatus): Segment =>
+  status === "in_review"
+    ? "review"
+    : status === "accepted" || status === "cancelled"
+      ? "done"
+      : "active";
+
+const timeLabel = (date: Date) =>
+  new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+const dayKey = (date: Date) =>
+  date.getFullYear() * 400 + date.getMonth() * 32 + date.getDate();
+
+// «Сегодня, 18:00», «Завтра, 12:00» или «24 октября»; для невыполненной задачи
+// с прошедшим сроком — «Просрочено · 8 октября».
+function dueInfo(value: string, status: TaskStatus) {
+  const due = new Date(value);
+  const now = new Date();
+  const open = segmentOf(status) === "active";
+  const diff = dayKey(due) - dayKey(now);
+  const long = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    ...(due.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
+  }).format(due);
+  if (open && due.getTime() < now.getTime())
+    return { text: `Просрочено · ${long}`, tone: "late" as const };
+  if (diff === 0)
+    return { text: `Сегодня, ${timeLabel(due)}`, tone: "today" as const };
+  if (diff === 1)
+    return { text: `Завтра, ${timeLabel(due)}`, tone: "soon" as const };
+  return { text: long, tone: "later" as const };
+}
+
+function DueIcon({ tone }: { tone: "late" | "today" | "soon" | "later" }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {tone === "today" || tone === "late" ? (
+        <>
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M12 7.5V12l3 2" />
+        </>
+      ) : (
+        <>
+          <rect x="4" y="5" width="16" height="15" rx="3" />
+          <path d="M4 10h16M9 3v4M15 3v4" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function TaskListContent() {
   const { confirmLeave, loseAccess } = useAuthorizedSession();
-  const [status, setStatus] = useState<StatusFilter>("all");
+  // Пока участник не выбрал раздел сам, открывается первый непустой.
+  const [chosen, setChosen] = useState<Segment | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useTelegramBack(
     selectedId !== null,
@@ -143,9 +207,9 @@ function TaskListContent() {
     30,
   );
   const tasks = useInfiniteQuery({
-    queryKey: ["assigned-tasks", status],
+    queryKey: ["assigned-tasks", "all"],
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) => readTasks(pageParam, status, signal),
+    queryFn: ({ pageParam, signal }) => readTasks(pageParam, "all", signal),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     retry: false,
   });
@@ -155,7 +219,15 @@ function TaskListContent() {
     enabled: selectedId !== null,
     retry: false,
   });
-  const items = tasks.data?.pages.flatMap((page) => page.items) ?? [];
+  const allItems = tasks.data?.pages.flatMap((page) => page.items) ?? [];
+  const segment: Segment =
+    chosen ??
+    segments.find(([value]) =>
+      allItems.some((task) => segmentOf(task.status) === value),
+    )?.[0] ??
+    "active";
+  const items = allItems.filter((task) => segmentOf(task.status) === segment);
+  const complete = !tasks.hasNextPage && !tasks.isPending;
   useEffect(() => {
     for (const error of [tasks.error, detail.error]) {
       if (
@@ -171,173 +243,81 @@ function TaskListContent() {
     (tasks.isError || tasks.isFetchNextPageError) &&
     tasks.error instanceof TaskRequestError &&
     (tasks.error.status === 401 || tasks.error.status === 403);
+  const selected = allItems.find((task) => task.id === selectedId);
 
-  return (
-    <section className="tasks-section" aria-labelledby="tasks-title">
-      <div className="tasks-heading">
-        <div>
-          <h2 id="tasks-title">Назначенные задачи</h2>
-          <p>Ваши текущие и завершённые назначения.</p>
-        </div>
-      </div>
-      <div className="tasks-seg" role="group" aria-label="Статус">
-        {[["all", "Все"], ...Object.entries(statusNames)].map(
-          ([value, label]) => (
-            <button
-              type="button"
-              key={value}
-              className="tasks-seg-item"
-              aria-pressed={status === value}
-              onClick={() => {
-                if (!confirmLeave()) return;
-                setStatus(value as StatusFilter);
-                setSelectedId(null);
-              }}
-            >
-              {label}
-            </button>
-          ),
-        )}
-      </div>
-
-      {tasks.isPending ? (
-        <p className="tasks-state" role="status">
-          Загружаем задачи…
-        </p>
-      ) : accessError ? (
-        <div className="tasks-state" role="alert">
-          <p>{taskError(tasks.error)}</p>
-          <button
-            type="button"
-            className="tasks-action"
-            onClick={() => window.location.reload()}
-          >
-            Проверить вход
-          </button>
-        </div>
-      ) : tasks.isError && items.length === 0 ? (
-        <div className="tasks-state" role="alert">
-          <p>{taskError(tasks.error)}</p>
-          <button
-            type="button"
-            className="tasks-action"
-            onClick={() =>
-              accessError ? window.location.reload() : void tasks.refetch()
-            }
-          >
-            {accessError ? "Проверить вход" : "Повторить загрузку"}
-          </button>
-        </div>
-      ) : items.length === 0 ? (
-        <p className="tasks-state">По выбранному статусу задач нет.</p>
-      ) : (
-        <>
-          <ul className="tasks-list">
-            {items.map((task) => (
-              <li key={task.id}>
-                <button
-                  type="button"
-                  className="tasks-row"
-                  aria-expanded={selectedId === task.id}
-                  onClick={() => {
-                    if (confirmLeave())
-                      setSelectedId(selectedId === task.id ? null : task.id);
-                  }}
-                >
-                  <span
-                    className={`task-tile task-tile--${task.status}`}
-                    aria-hidden="true"
-                  >
-                    <svg viewBox="0 0 24 24">{statusIcons[task.status]}</svg>
-                  </span>
-                  <span className="tasks-row-main">
-                    <strong>{task.title}</strong>
-                  </span>
-                  <span className="tasks-row-meta">
-                    <span
-                      className={`task-chip task-chip--status task-chip--${task.status}`}
-                    >
-                      {statusNames[task.status]}
-                    </span>
-                    <span className="tasks-row-due">
-                      до {dateLabel(task.dueAt)}
-                    </span>
-                  </span>
-                  <span className="tasks-row-fund">
-                    <span className="task-chip task-chip--xp">
-                      {task.fundXp} XP
-                    </span>
-                    <span className="task-chip task-chip--points">
-                      {task.fundPoints} баллов
-                    </span>
-                    <span
-                      className={`task-chip task-chip--priority task-chip--${task.priority}`}
-                    >
-                      {priorityNames[task.priority]}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {tasks.hasNextPage && (
-            <button
-              type="button"
-              className="tasks-action tasks-more"
-              disabled={tasks.isFetchingNextPage}
-              onClick={() => void tasks.fetchNextPage()}
-            >
-              {tasks.isFetchingNextPage ? "Загружаем…" : "Показать ещё"}
-            </button>
-          )}
-          {tasks.isFetchNextPageError && (
-            <p className="tasks-state" role="alert">
-              {taskError(tasks.error)}
-            </p>
-          )}
-        </>
-      )}
-
-      {selectedId && (
-        <section className="tasks-detail" aria-labelledby="task-detail-title">
-          <div className="tasks-detail-top">
-            <h3 id="task-detail-title">Критерии задачи</h3>
-            <button
-              type="button"
-              className="tasks-close"
-              onClick={() => {
-                if (confirmLeave()) setSelectedId(null);
-              }}
-            >
-              Закрыть
-            </button>
+  if (selectedId) {
+    const due = selected ? dueInfo(selected.dueAt, selected.status) : null;
+    return (
+      <section className="tasks-section task-screen" aria-label="Задача">
+        <button
+          type="button"
+          className="screen-back"
+          aria-label="Задачи: вернуться к списку"
+          onClick={() => {
+            if (confirmLeave()) setSelectedId(null);
+          }}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          Задачи
+        </button>
+        {detail.isPending ? (
+          <p className="tasks-state" role="status">
+            Загружаем детали…
+          </p>
+        ) : detail.isError && !detail.data ? (
+          <div className="tasks-state" role="alert">
+            <p>{taskError(detail.error)}</p>
+            {!(
+              detail.error instanceof TaskRequestError &&
+              detail.error.status === 404
+            ) && (
+              <button
+                type="button"
+                className="tasks-action"
+                onClick={() => void detail.refetch()}
+              >
+                Повторить
+              </button>
+            )}
           </div>
-          {detail.isPending ? (
-            <p role="status">Загружаем детали…</p>
-          ) : detail.isError && !detail.data ? (
-            <div role="alert">
-              <p>{taskError(detail.error)}</p>
-              {!(
-                detail.error instanceof TaskRequestError &&
-                detail.error.status === 404
-              ) && (
-                <button
-                  type="button"
-                  className="tasks-action"
-                  onClick={() => void detail.refetch()}
+        ) : detail.data ? (
+          <>
+            <header className="task-hero">
+              <div className="task-hero-meta">
+                <span
+                  className={`task-chip task-chip--status task-chip--${detail.data.task.status}`}
                 >
-                  Повторить
-                </button>
-              )}
-            </div>
-          ) : detail.data ? (
-            <>
+                  {statusNames[detail.data.task.status]}
+                </span>
+                {selected && due ? (
+                  <span className={`tasks-row-due tasks-row-due--${due.tone}`}>
+                    <DueIcon tone={due.tone} />
+                    {due.text}
+                  </span>
+                ) : null}
+              </div>
+              <h2>{detail.data.task.title}</h2>
+              {selected ? (
+                <div className="tasks-row-fund">
+                  <span className="task-chip task-chip--xp">
+                    {selected.fundXp} XP
+                  </span>
+                  <span className="task-chip task-chip--points">
+                    {selected.fundPoints} баллов
+                  </span>
+                </div>
+              ) : null}
+            </header>
+            <div className="tasks-detail">
               {detail.isError && (
                 <p role="alert">
                   {taskError(detail.error)} Последнее подтверждённое состояние:{" "}
                   {dateLabel(detail.data.task.updatedAt)}.
                 </p>
               )}
+              <h3 id="task-detail-title">Критерии задачи</h3>
               <p className="tasks-detail-criteria">
                 {detail.data.task.criteria}
               </p>
@@ -361,9 +341,134 @@ function TaskListContent() {
                 taskId={selectedId}
               />
               <TaskHistory key={`history-${selectedId}`} taskId={selectedId} />
-            </>
-          ) : null}
-        </section>
+            </div>
+          </>
+        ) : null}
+      </section>
+    );
+  }
+
+  return (
+    <section className="tasks-section" aria-labelledby="tasks-title">
+      <div className="tasks-heading">
+        <h2 id="tasks-title">Задачи</h2>
+      </div>
+      <div className="tasks-seg" role="group" aria-label="Раздел списка">
+        {segments.map(([value, label]) => {
+          const count = allItems.filter(
+            (task) => segmentOf(task.status) === value,
+          ).length;
+          return (
+            <button
+              type="button"
+              key={value}
+              className="tasks-seg-item"
+              aria-pressed={segment === value}
+              onClick={() => setChosen(value)}
+            >
+              {label}
+              {complete && value !== "done" ? ` ${count}` : ""}
+            </button>
+          );
+        })}
+      </div>
+
+      {tasks.isPending ? (
+        <p className="tasks-state" role="status">
+          Загружаем задачи…
+        </p>
+      ) : accessError ? (
+        <div className="tasks-state" role="alert">
+          <p>{taskError(tasks.error)}</p>
+          <button
+            type="button"
+            className="tasks-action"
+            onClick={() => window.location.reload()}
+          >
+            Проверить вход
+          </button>
+        </div>
+      ) : tasks.isError && allItems.length === 0 ? (
+        <div className="tasks-state" role="alert">
+          <p>{taskError(tasks.error)}</p>
+          <button
+            type="button"
+            className="tasks-action"
+            onClick={() => void tasks.refetch()}
+          >
+            Повторить загрузку
+          </button>
+        </div>
+      ) : items.length === 0 ? (
+        <p className="tasks-state">По выбранному статусу задач нет.</p>
+      ) : (
+        <ul className="tasks-list">
+          {items.map((task) => {
+            const due = dueInfo(task.dueAt, task.status);
+            return (
+              <li key={task.id}>
+                <button
+                  type="button"
+                  className="tasks-row"
+                  onClick={() => {
+                    if (confirmLeave()) setSelectedId(task.id);
+                  }}
+                >
+                  <span
+                    className={`task-tile task-tile--${task.status}`}
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24">{statusIcons[task.status]}</svg>
+                  </span>
+                  <span className="tasks-row-main">
+                    <strong>{task.title}</strong>
+                  </span>
+                  <span className="tasks-row-meta">
+                    <span
+                      className={`task-chip task-chip--status task-chip--${task.status}`}
+                    >
+                      {statusNames[task.status]}
+                    </span>
+                    <span
+                      className={`tasks-row-due tasks-row-due--${due.tone}`}
+                    >
+                      <DueIcon tone={due.tone} />
+                      {due.text}
+                    </span>
+                  </span>
+                  <span className="tasks-row-fund">
+                    <span className="task-chip task-chip--xp">
+                      {task.fundXp} XP
+                    </span>
+                    <span className="task-chip task-chip--points">
+                      {task.fundPoints} баллов
+                    </span>
+                    <span
+                      className={`task-chip task-chip--priority task-chip--${task.priority}`}
+                    >
+                      {priorityNames[task.priority]}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {tasks.hasNextPage && (
+        <button
+          type="button"
+          className="tasks-action tasks-more"
+          disabled={tasks.isFetchingNextPage}
+          onClick={() => void tasks.fetchNextPage()}
+        >
+          {tasks.isFetchingNextPage ? "Загружаем…" : "Показать ещё"}
+        </button>
+      )}
+      {tasks.isFetchNextPageError && (
+        <p className="tasks-state" role="alert">
+          {taskError(tasks.error)}
+        </p>
       )}
     </section>
   );
@@ -401,13 +506,41 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M12 13v4M8 20h8M10 17h4" />
     </>
   ),
-  profile: (
+  more: (
     <>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+      <circle cx="5.5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="18.5" cy="12" r="1.5" />
     </>
   ),
 };
+
+type WorkspaceView =
+  | "home"
+  | "tasks"
+  | "ranking"
+  | "rewards"
+  | "more"
+  | "profile"
+  | "ledger"
+  | "reviews"
+  | "management"
+  | "catalog-admin"
+  | "access"
+  | "audit"
+  | "notifications";
+// Разделы, которые открываются из «Ещё»: у них вкладка «Ещё» активна, а возврат ведёт туда.
+const moreViews: readonly WorkspaceView[] = [
+  "more",
+  "profile",
+  "ledger",
+  "reviews",
+  "management",
+  "catalog-admin",
+  "access",
+  "audit",
+  "notifications",
+];
 
 function TaskWorkspace() {
   const {
@@ -420,128 +553,101 @@ function TaskWorkspace() {
     canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
-  const [view, setView] = useState<
-    | "home"
-    | "tasks"
-    | "reviews"
-    | "ledger"
-    | "management"
-    | "ranking"
-    | "profile"
-    | "audit"
-    | "catalog-admin"
-    | "access"
-    | "notifications"
-    | "rewards"
-  >(canReview ? "reviews" : "home");
-  const rootView = canReview ? "reviews" : "home";
+  // Проверяющий начинает с очереди; вкладка «Ещё» при этом подсвечена.
+  const rootView: WorkspaceView = canReview ? "reviews" : "home";
+  const [view, setView] = useState<WorkspaceView>(rootView);
+  const inMore = moreViews.includes(view);
+  const go = (next: WorkspaceView) => {
+    if (confirmLeave()) setView(next);
+  };
   useTelegramBack(
     view !== rootView,
-    () => {
-      if (confirmLeave()) setView(rootView);
-    },
+    () => go(inMore && view !== "more" ? "more" : rootView),
     10,
   );
-  // Раздел сообщает странице, какой экран открыт: «Главная» получает крупную шапку.
-  useEffect(() => {
-    document.documentElement.dataset.view = view;
-    return () => {
-      delete document.documentElement.dataset.view;
-    };
-  }, [view]);
-  // Лента служебных разделов прокручивается: открытый раздел должен быть виден в ней.
-  useEffect(() => {
-    document
-      .querySelector(
-        ".workspace-nav-operations .workspace-tab[aria-pressed=true]",
-      )
-      ?.scrollIntoView({ inline: "nearest", block: "nearest" });
-  }, [view]);
-  type Destination = {
-    id: typeof view;
-    label: string;
-    accessibleLabel: string;
-  };
-  const personal: Destination[] = [
-    { id: "home", label: "Главная", accessibleLabel: "Главная" },
-    { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
-    { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
-    { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
-    { id: "profile", label: "Профиль", accessibleLabel: "Мой профиль" },
-  ];
-  // Журнал начислений вне нижней панели (там пять разделов, как в прототипе).
-  const operations: Destination[] = [
-    { id: "ledger", label: "Баланс", accessibleLabel: "Баланс и журнал" },
+  const tabs: { id: WorkspaceView; label: string; accessibleLabel: string }[] =
+    [
+      { id: "home", label: "Главная", accessibleLabel: "Главная" },
+      { id: "tasks", label: "Задачи", accessibleLabel: "Мои задачи" },
+      { id: "ranking", label: "Рейтинг", accessibleLabel: "Рейтинг" },
+      { id: "rewards", label: "Поощрения", accessibleLabel: "Поощрения" },
+      { id: "more", label: "Ещё", accessibleLabel: "Ещё" },
+    ];
+  const destinations: MoreDestination[] = [
+    { id: "ledger", label: "Баланс и журнал", group: "personal" },
   ];
   if (canReview)
-    operations.push({
+    destinations.push({
       id: "reviews",
-      label: "Проверка",
-      accessibleLabel: "Проверка отчётов",
+      label: "Проверка отчётов",
+      group: "commander",
     });
   if (canManageTasks)
-    operations.push({
+    destinations.push({
       id: "management",
-      label: canSetTasks ? "Постановка" : "История",
-      accessibleLabel: canSetTasks ? "Постановка задач" : "Задачи и история",
+      label: canSetTasks ? "Постановка задач" : "Задачи и история",
+      group: "commander",
     });
   if (canInspectCatalog)
-    operations.push({
+    destinations.push({
       id: "catalog-admin",
-      label: "Конфигурация",
-      accessibleLabel: "Управление каталогом",
+      label: "Управление каталогом",
+      group: "commander",
     });
   if (accessScopes?.length)
-    operations.push({
+    destinations.push({
       id: "access",
-      label: "Доступ",
-      accessibleLabel: "Управление доступом",
+      label: "Управление доступом",
+      group: "commander",
     });
   if (canReadAudit)
-    operations.push({
+    destinations.push({
       id: "audit",
-      label: "Журнал",
-      accessibleLabel: "Журнал действий",
+      label: "Журнал действий",
+      group: "commander",
     });
   if (canReadNotificationStatus)
-    operations.push({
+    destinations.push({
       id: "notifications",
-      label: "Уведомления",
-      accessibleLabel: "Состояние уведомлений",
+      label: "Состояние уведомлений",
+      group: "commander",
     });
-  const destination = (item: Destination) => (
-    <button
-      key={item.id}
-      type="button"
-      className="workspace-tab"
-      aria-label={item.accessibleLabel}
-      aria-pressed={view === item.id}
-      onClick={() => {
-        if (confirmLeave()) setView(item.id);
-      }}
-    >
-      {tabIcons[item.id] ? (
-        <span className="workspace-tab-pill" aria-hidden="true">
-          <svg className="workspace-tab-icon" viewBox="0 0 24 24">
-            {tabIcons[item.id]}
-          </svg>
-        </span>
-      ) : null}
-      <span>{item.label}</span>
-    </button>
-  );
   return (
     <>
       <nav className="workspace-nav" aria-label="Рабочие разделы">
         <div className="workspace-nav-personal">
-          {personal.map(destination)}
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="workspace-tab"
+              aria-label={item.accessibleLabel}
+              aria-pressed={item.id === "more" ? inMore : view === item.id}
+              onClick={() => go(item.id)}
+            >
+              <span className="workspace-tab-pill" aria-hidden="true">
+                <svg className="workspace-tab-icon" viewBox="0 0 24 24">
+                  {tabIcons[item.id]}
+                </svg>
+              </span>
+              <span>{item.label}</span>
+            </button>
+          ))}
         </div>
-        {operations.length ? (
-          <div className="workspace-nav-operations">
-            {operations.map(destination)}
-          </div>
-        ) : null}
       </nav>
+      {inMore && view !== "more" ? (
+        <button
+          type="button"
+          className="screen-back"
+          aria-label="Назад в раздел «Ещё»"
+          onClick={() => go("more")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          Ещё
+        </button>
+      ) : null}
       {view === "rewards" ? (
         <RewardCatalog />
       ) : view === "catalog-admin" && canInspectCatalog ? (
@@ -564,6 +670,11 @@ function TaskWorkspace() {
         <AccountLedger />
       ) : view === "reviews" && canReview ? (
         <ReviewQueue />
+      ) : view === "more" ? (
+        <MoreScreen
+          destinations={destinations}
+          onOpen={(id) => go(id as WorkspaceView)}
+        />
       ) : (
         <TaskListContent />
       )}

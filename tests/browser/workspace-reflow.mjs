@@ -318,7 +318,7 @@ async function fixture(browser, width) {
     },
   );
   await page.goto(origin, { waitUntil: "domcontentloaded" });
-  await page.locator(".workspace-nav").waitFor();
+  await page.locator(".workspace-nav-personal").waitFor();
   return { context, page, errors, unexpected };
 }
 
@@ -401,6 +401,13 @@ try {
       for (const [name, label, ready] of views) {
         const f = await fixture(browser, width);
         try {
+          const inMore = !["home", "tasks", "rewards", "ranking"].includes(
+            name,
+          );
+          if (inMore)
+            await f.page
+              .getByRole("button", { name: "Ещё", exact: true })
+              .click();
           await f.page
             .getByRole("button", { name: label, exact: true })
             .click();
@@ -413,13 +420,14 @@ try {
               .waitFor();
           }
           if (mode !== "normal") await resizeText(f.page, mode);
-          await f.page
-            .getByRole("button", { name: label, exact: true })
-            .focus();
+          // Служебные разделы открываются из «Ещё»: с клавиатуры проверяем
+          // вкладку, которая держит раздел нажатой.
+          const tab = inMore ? "Ещё" : label;
+          await f.page.getByRole("button", { name: tab, exact: true }).focus();
           await f.page.keyboard.press("Enter");
           assert.equal(
             await f.page
-              .getByRole("button", { name: label, exact: true })
+              .getByRole("button", { name: tab, exact: true })
               .getAttribute("aria-pressed"),
             "true",
           );
@@ -444,7 +452,7 @@ try {
               fullPage: true,
             });
             if (name === "tasks" && width === 320) {
-              await f.page.locator(".workspace-nav").screenshot({
+              await f.page.locator(".workspace-nav-personal").screenshot({
                 path: path.join(dir, `navigation-${mode}-${width}.png`),
               });
             }
@@ -473,6 +481,9 @@ try {
               .fill("Синтетический несданный отчёт.");
           } else if (name === "review-detail") {
             await page
+              .getByRole("button", { name: "Ещё", exact: true })
+              .click();
+            await page
               .getByRole("button", { name: "Проверка отчётов", exact: true })
               .click();
             await page.locator(".tasks-row").first().click();
@@ -480,6 +491,9 @@ try {
               .getByLabel("Причина возврата", { exact: true })
               .waitFor();
           } else {
+            await page
+              .getByRole("button", { name: "Ещё", exact: true })
+              .click();
             await page
               .getByRole("button", {
                 name: "Управление каталогом",

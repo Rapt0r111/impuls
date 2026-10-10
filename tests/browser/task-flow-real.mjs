@@ -131,6 +131,7 @@ const taskState = async () =>
 {
   const s = await open(0),
     p = s.page;
+  await p.getByRole("button", { name: "Ещё", exact: true }).click();
   await p
     .getByRole("button", { name: "Постановка задач", exact: true })
     .click();
@@ -211,6 +212,7 @@ const taskState = async () =>
 {
   const s = await open(1),
     p = s.page;
+  await p.getByRole("button", { name: "Ещё", exact: true }).click();
   await p.getByRole("button", { name: "Баланс и журнал", exact: true }).click();
   await p.getByText("+17 XP", { exact: true }).waitFor();
   await p.getByText("+9 баллов", { exact: true }).waitFor();

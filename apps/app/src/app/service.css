@@ -1,0 +1,343 @@
+/* Служебные разделы («Ещё»): тот же язык, что у главной, задач и рейтинга —
+   стеклянные карточки вместо линий-разделителей, поля с крупными целями,
+   раскрывающиеся блоки с поворотным шевроном. Селекторы нарочно на один класс
+   специфичнее правил функций, чтобы порядок подключения CSS не имел значения. */
+
+/* --- Карточки -------------------------------------------------------- */
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .profile-block,
+    .task-mgmt__form,
+    .task-mgmt__list-section,
+    .review-preview,
+    .reward-balance-preview,
+    .reward-confirmation,
+    .admin-catalog-terms,
+    .admin-catalog-quota,
+    .catalog-publication,
+    .notification-history,
+    .notification-attempt-history,
+    .notification-identity
+  ),
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .audit-list,
+    .admin-catalog-items,
+    .admin-catalog-versions,
+    .admin-catalog-periods,
+    .notification-events,
+    .task-history-list,
+    .ledger-list
+  )
+  > li {
+  padding: 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 22px;
+  background:
+    linear-gradient(155deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02)),
+    var(--color-panel);
+  box-shadow: 0 12px 26px -18px rgb(0 0 0 / 0.8);
+}
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .audit-list,
+    .admin-catalog-items,
+    .admin-catalog-versions,
+    .admin-catalog-periods,
+    .notification-events,
+    .task-history-list,
+    .ledger-list
+  ) {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+:is(.tasks-section, .task-mgmt)
+  :is(.profile-block, .task-mgmt__form, .task-mgmt__list-section) {
+  margin-top: 16px;
+}
+:is(.tasks-section, .task-mgmt)
+  :is(.profile-block, .task-mgmt__form)
+  > :first-child {
+  margin-top: 0;
+}
+
+/* Сводка: «Всего мест / В резерве …» — одна карточка со строками. */
+:is(.tasks-section, .task-mgmt) :is(.notification-counts, .ledger-balances) {
+  padding: 4px 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.045);
+}
+:is(.tasks-section, .task-mgmt) .notification-counts > div {
+  padding: 13px 0;
+  border-top: 1px solid var(--color-edge);
+}
+:is(.tasks-section, .task-mgmt) .notification-counts > div:first-child {
+  border-top: 0;
+}
+
+/* --- Поля ------------------------------------------------------------- */
+:is(.tasks-section, .task-mgmt)
+  :is(
+    select,
+    input:not([type="checkbox"], [type="radio"], [type="range"]),
+    textarea
+  ) {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-edge);
+  border-radius: 14px;
+  background-color: rgb(255 255 255 / 0.07);
+  color: var(--color-ink);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 16px;
+  transition:
+    border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
+}
+:is(.tasks-section, .task-mgmt) textarea {
+  min-height: 112px;
+  line-height: 1.5;
+  resize: vertical;
+}
+:is(.tasks-section, .task-mgmt) select {
+  appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2370e1c2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px;
+  text-overflow: ellipsis;
+}
+:is(.tasks-section, .task-mgmt) select option {
+  background: #10252d;
+  color: var(--color-ink);
+}
+:is(.tasks-section, .task-mgmt)
+  :is(select, input, textarea):hover:not(:disabled) {
+  border-color: rgb(112 225 194 / 0.45);
+}
+:is(.tasks-section, .task-mgmt) :is(select, input, textarea):focus-visible {
+  border-color: var(--color-mint);
+  outline: 0;
+  background-color: rgb(112 225 194 / 0.08);
+  box-shadow: 0 0 0 3px rgb(112 225 194 / 0.28);
+}
+:is(.tasks-section, .task-mgmt) :is(select, input, textarea):disabled {
+  opacity: 0.55;
+}
+:is(.tasks-section, .task-mgmt) :is(input, textarea)[aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+:is(.tasks-section, .task-mgmt) input::placeholder,
+:is(.tasks-section, .task-mgmt) textarea::placeholder {
+  color: rgb(255 255 255 / 0.4);
+}
+/* Подпись над полем. */
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .catalog-publication-field,
+    .tasks-filter,
+    .reward-reason,
+    .reward-scope
+  ) {
+  display: grid;
+  gap: 6px;
+}
+:is(.tasks-section, .task-mgmt) :is(label, .tasks-filter) {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+/* Флажки и переключатели. */
+:is(.tasks-section, .task-mgmt) input:is([type="checkbox"], [type="radio"]) {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--color-mint-deep);
+}
+
+/* --- Раскрывающиеся блоки ------------------------------------------- */
+:is(.tasks-section, .task-mgmt) details {
+  margin: 12px 0;
+  border: 1px solid var(--color-edge);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.045);
+  overflow: clip;
+  transition:
+    border-color 0.25s var(--ease-out),
+    background-color 0.25s var(--ease-out);
+}
+:is(.tasks-section, .task-mgmt) details[open] {
+  border-color: rgb(112 225 194 / 0.35);
+  background: rgb(112 225 194 / 0.06);
+}
+:is(.tasks-section, .task-mgmt) details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 16px;
+  color: var(--color-ink);
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+:is(.tasks-section, .task-mgmt) details > summary::-webkit-details-marker {
+  display: none;
+}
+:is(.tasks-section, .task-mgmt) details > summary::after {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2370e1c2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    center / 22px no-repeat;
+  content: "";
+  transition: transform 0.3s var(--ease-pop);
+}
+:is(.tasks-section, .task-mgmt) details[open] > summary::after {
+  transform: rotate(180deg);
+}
+:is(.tasks-section, .task-mgmt) details > :not(summary) {
+  margin-inline: 16px;
+}
+:is(.tasks-section, .task-mgmt) details[open] > :not(summary) {
+  animation: rise 0.45s var(--ease-out) both;
+}
+:is(.tasks-section, .task-mgmt) details > :last-child {
+  margin-bottom: 16px;
+}
+/* Раскрывающееся внутри карточки не должно становиться карточкой в карточке. */
+:is(.tasks-section, .task-mgmt) :is(li, .profile-block) details {
+  border-radius: 14px;
+  background: rgb(0 0 0 / 0.14);
+}
+
+/* --- Кнопки внутри форм: на всю ширину, как в карточках концепта ---- */
+:is(.tasks-section, .task-mgmt) :is(.task-mgmt__button, .access-button) {
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+/* --- Данные --------------------------------------------------------- */
+:is(.tasks-section, .task-mgmt) dl {
+  margin-block: 12px;
+}
+:is(.tasks-section, .task-mgmt) :is(.audit-list, .admin-catalog-items) h3,
+:is(.tasks-section, .task-mgmt) .profile-block h3 {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .audit-note,
+    .notification-note,
+    .audit-asof,
+    .notification-asof,
+    .ledger-asof
+  ) {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 359px) {
+  :is(.tasks-section, .task-mgmt)
+    :is(
+      .profile-block,
+      .task-mgmt__form,
+      .task-mgmt__list-section,
+      .audit-list > li,
+      .admin-catalog-items > li,
+      .admin-catalog-versions > li,
+      .admin-catalog-periods > li,
+      .notification-events li,
+      .task-history-list li
+    ) {
+    padding: 14px;
+  }
+}
+
+/* Карточка внутри карточки теряет рамку и фон: остаётся только отступ. */
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .admin-catalog-quota,
+    .admin-catalog-terms,
+    .catalog-publication,
+    .task-mgmt__form,
+    .task-mgmt__list-section,
+    .profile-block,
+    .audit-list > li,
+    .admin-catalog-items > li,
+    .admin-catalog-versions > li,
+    .admin-catalog-periods > li,
+    .notification-history,
+    .notification-attempt-history
+  )
+  :is(
+    .admin-catalog-quota,
+    .admin-catalog-terms,
+    .catalog-publication,
+    .task-mgmt__form,
+    .profile-block,
+    .review-preview,
+    .reward-confirmation,
+    .notification-identity
+  ),
+:is(.tasks-section, .task-mgmt)
+  details
+  :is(
+    .audit-list,
+    .admin-catalog-items,
+    .admin-catalog-versions,
+    .admin-catalog-periods,
+    .notification-events,
+    .task-history-list
+  )
+  > li {
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--color-edge);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+:is(.tasks-section, .task-mgmt)
+  details
+  :is(
+    .audit-list,
+    .admin-catalog-items,
+    .admin-catalog-versions,
+    .admin-catalog-periods,
+    .notification-events,
+    .task-history-list
+  ) {
+  gap: 0;
+  margin-block: 4px 0;
+}
+:is(.tasks-section, .task-mgmt)
+  details
+  :is(.notification-events)
+  > li:first-child {
+  border-top: 0;
+}
+
+:is(.tasks-section, .task-mgmt)
+  :is(
+    .admin-catalog-quota,
+    .admin-catalog-terms,
+    .profile-block,
+    .task-mgmt__form
+  )
+  :is(.notification-counts, .ledger-balances) {
+  padding: 0;
+  border: 0;
+  background: none;
+}

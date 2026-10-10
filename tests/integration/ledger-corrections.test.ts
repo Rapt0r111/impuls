@@ -700,6 +700,7 @@ const url = process.env.TEST_DATABASE_URL;
         }),
       );
       await page.goto(origin);
+      await page.getByRole("button", { name: "Ещё", exact: true }).click();
       await page
         .getByRole("button", { name: "Баланс и журнал", exact: true })
         .click();

@@ -339,6 +339,7 @@ async function pageFixture(width, mode = "success") {
   await page.goto(origin, { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
     .getByRole("button", { name: "Постановка задач", exact: true })
     .click();
@@ -547,6 +548,7 @@ async function dbFlow() {
       await page
         .getByRole("heading", { name: "Доступ подтверждён", exact: true })
         .waitFor();
+      await page.getByRole("button", { name: "Ещё", exact: true }).click();
       await page
         .getByRole("button", { name: "Постановка задач", exact: true })
         .click();
@@ -770,9 +772,6 @@ try {
       await page
         .getByRole("button", { name: "Мои задачи", exact: true })
         .click();
-      await page
-        .getByRole("button", { name: "Постановка задач", exact: true })
-        .waitFor();
       assert.ok(
         dialogs.some((message) => message.includes("Текст ещё не отправлен")),
       );

@@ -312,3 +312,24 @@
   flex: none;
   margin: 0;
 }
+
+/* Шапка «Главной» по концепту: аватар, приветствие, имя, чип уровня. */
+.home-greeting {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.home-greeting > div {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.home-greeting strong {
+  font-size: 24px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.home-level-chip {
+  flex: none;
+  border: 1px solid var(--color-edge);
+}

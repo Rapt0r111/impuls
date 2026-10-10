@@ -216,6 +216,7 @@ async function fixture(width = 390, mode = "success") {
   );
   page.on("dialog", (dialog) => dialog.dismiss());
   await page.goto(origin);
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
     .getByRole("button", { name: "Баланс и журнал", exact: true })
     .click();

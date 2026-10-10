@@ -159,6 +159,7 @@ async function fixture(mode = "populated", width = 390) {
     },
   );
   await page.goto(origin);
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page.getByRole("button", { name: "Мой профиль", exact: true }).click();
   return {
     page,

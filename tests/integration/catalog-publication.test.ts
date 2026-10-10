@@ -853,6 +853,7 @@ const url = process.env.TEST_DATABASE_URL,
             }),
           );
           await page.goto(origin!, { waitUntil: "domcontentloaded" });
+          await page.getByRole("button", { name: "Ещё", exact: true }).click();
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
@@ -1014,6 +1015,7 @@ const url = process.env.TEST_DATABASE_URL,
             }),
           );
           await page.goto(origin!, { waitUntil: "domcontentloaded" });
+          await page.getByRole("button", { name: "Ещё", exact: true }).click();
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
