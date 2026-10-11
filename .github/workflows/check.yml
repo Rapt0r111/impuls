@@ -43,6 +43,10 @@ jobs:
             PGPASSWORD=test-only psql -h 127.0.0.1 -U impuls -d impuls_test -v ON_ERROR_STOP=1 \
               -c "CREATE ROLE $role NOLOGIN"
           done
+      - name: Dependency audit (production dependencies)
+        run: bun audit --prod
+      - name: Secret scan of tracked files
+        run: node scripts/scan-secrets.mjs
       - run: bun run db:migrate
       - run: bun run check
         env:

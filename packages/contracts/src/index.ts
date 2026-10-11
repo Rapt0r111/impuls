@@ -279,3 +279,15 @@ export type {
   MemberChangeResponse,
   MemberRemovalRequest,
 } from "./access-management";
+
+export {
+  currentRulesSchema,
+  rulesPublishRequestSchema,
+  rulesPublishResponseSchema,
+  rulesResponseSchema,
+} from "./rules";
+export type {
+  RulesPublishRequest,
+  RulesPublishResponse,
+  RulesResponse,
+} from "./rules";

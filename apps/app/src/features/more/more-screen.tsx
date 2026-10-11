@@ -41,6 +41,7 @@ const icons: Record<string, ReactNode> = {
     </>
   ),
   audit: <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3-6 3V5a1 1 0 0 1 1-1z" />,
+  rules: <path d="M5 7h14M5 12h14M5 17h14M9 5v4M15 10v4M8 15v4" />,
   notifications: <path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4" />,
 };
 
