@@ -727,16 +727,18 @@ body::after {
   padding-inline: 0;
   background: transparent;
 }
-.task-chip--xp {
+/* Составной селектор: общий .task-chip ниже по файлу имеет ту же
+   специфичность и без этого перебивал бы оттенки XP и баллов. */
+.task-chip.task-chip--xp {
   background: var(--color-mint-tint);
   color: #8cf0d3;
 }
-.task-chip--points {
+.task-chip.task-chip--points {
   background: var(--color-gold-tint);
   color: var(--color-gold);
 }
-.task-chip--xp::before,
-.task-chip--points::before {
+.task-chip.task-chip--xp::before,
+.task-chip.task-chip--points::before {
   content: "+";
 }
 
