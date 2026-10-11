@@ -10,6 +10,7 @@ export const SessionContext = createContext<{
   permissions: Permission[] | null;
   canReview?: boolean;
   canReadAudit?: boolean;
+  canManageRules?: boolean;
   canInspectCatalog?: boolean;
   canReadNotificationStatus?: boolean;
   canDecideRewards?: boolean;

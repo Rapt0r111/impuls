@@ -25,6 +25,7 @@ import { TaskManagement } from "@/features/task-management/task-management";
 import { Leaderboard } from "@/features/ranking/leaderboard";
 import { ParticipantProfile } from "@/features/profile/participant-profile";
 import { AuditLog } from "@/features/audit/audit-log";
+import { RulesAdmin } from "@/features/rules-admin/rules-admin";
 import { CatalogAdmin } from "@/features/catalog-admin/catalog-admin";
 import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
@@ -532,6 +533,7 @@ type WorkspaceView =
   | "catalog-admin"
   | "access"
   | "audit"
+  | "rules"
   | "notifications";
 // Разделы, которые открываются из «Ещё»: у них вкладка «Ещё» активна, а возврат ведёт туда.
 const moreViews: readonly WorkspaceView[] = [
@@ -543,6 +545,7 @@ const moreViews: readonly WorkspaceView[] = [
   "catalog-admin",
   "access",
   "audit",
+  "rules",
   "notifications",
 ];
 
@@ -550,6 +553,7 @@ function TaskWorkspace() {
   const {
     canReview,
     canReadAudit,
+    canManageRules,
     canInspectCatalog,
     accessScopes,
     canReadNotificationStatus,
@@ -610,6 +614,12 @@ function TaskWorkspace() {
       label: "Журнал действий",
       group: "commander",
     });
+  if (canManageRules)
+    destinations.push({
+      id: "rules",
+      label: "Правила начислений",
+      group: "commander",
+    });
   if (canReadNotificationStatus)
     destinations.push({
       id: "notifications",
@@ -662,6 +672,8 @@ function TaskWorkspace() {
         <NotificationStatus />
       ) : view === "audit" && canReadAudit ? (
         <AuditLog />
+      ) : view === "rules" && canManageRules ? (
+        <RulesAdmin />
       ) : view === "management" && canManageTasks ? (
         <TaskManagement />
       ) : view === "profile" ? (

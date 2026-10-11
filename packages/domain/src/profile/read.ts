@@ -58,6 +58,14 @@ export async function readParticipantProfile(
       )
     ).rows[0];
     const thresholds = rule ? syntheticLevelThresholds(rule.definition) : null;
+    const progression = (
+      rule?.definition as { progression?: unknown } | undefined
+    )?.progression;
+    const explicitlyUnset =
+      typeof progression === "object" &&
+      progression !== null &&
+      !Array.isArray(progression) &&
+      Object.keys(progression).length === 0;
     const first = (
       await client.query<{
         source_entry_id: string;
@@ -89,12 +97,15 @@ export async function readParticipantProfile(
         user: { id: actorId, displayName: user.display_name },
         balance,
         progression: {
-          state: !rule
-            ? ("unconfigured" as const)
-            : thresholds
-              ? ("configured" as const)
-              : ("invalid" as const),
-          ruleVersion: rule?.version_number ?? null,
+          // An explicitly empty progression (published from the rules screen, ADR-0035)
+          // means "levels are not configured", not a broken configuration.
+          state:
+            !rule || explicitlyUnset
+              ? ("unconfigured" as const)
+              : thresholds
+                ? ("configured" as const)
+                : ("invalid" as const),
+          ruleVersion: explicitlyUnset ? null : (rule?.version_number ?? null),
           level: thresholds
             ? levelProgress(balance.lifetimeXp, thresholds)
             : null,

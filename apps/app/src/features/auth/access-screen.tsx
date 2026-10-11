@@ -343,6 +343,10 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                       state.permissions?.some(
                         (permission) => permission.action === "admin.audit",
                       ) ?? false,
+                    canManageRules:
+                      state.permissions?.some(
+                        (permission) => permission.action === "admin.rules",
+                      ) ?? false,
                     canReadNotificationStatus:
                       state.permissions?.some(
                         (permission) =>
