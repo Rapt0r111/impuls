@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { actionNames, scopeNames } from "@/features/auth/permission-labels";
 import { useParticipantProfile } from "@/features/profile/participant-profile";
+import { initials } from "@/shared/ui/initials";
 import "./more.css";
 
 export type MoreDestination = {
@@ -83,7 +84,7 @@ export function MoreScreen({
         onClick={() => onOpen("profile")}
       >
         <span className="access-avatar" aria-hidden="true">
-          {user.displayName.trim().charAt(0).toUpperCase()}
+          {initials(user.displayName)}
         </span>
         <span className="more-profile-text">
           <strong>{user.displayName}</strong>

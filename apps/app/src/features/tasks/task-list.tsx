@@ -448,11 +448,13 @@ function TaskListContent() {
                     <span className="task-chip task-chip--points">
                       {task.fundPoints} баллов
                     </span>
-                    <span
-                      className={`task-chip task-chip--priority task-chip--${task.priority}`}
-                    >
-                      {priorityNames[task.priority]}
-                    </span>
+                    {task.priority !== "normal" ? (
+                      <span
+                        className={`task-chip task-chip--priority task-chip--${task.priority}`}
+                      >
+                        {priorityNames[task.priority]}
+                      </span>
+                    ) : null}
                   </span>
                 </button>
               </li>
@@ -482,15 +484,12 @@ function TaskListContent() {
 // Линейные иконки 24×24, как в прототипе R0 (stroke 1.7, round).
 const tabIcons: Record<string, ReactNode> = {
   home: (
-    <>
-      <path d="M4 11.5 12 4l8 7.5" />
-      <path d="M6 10v10h12V10M10 20v-5h4v5" />
-    </>
+    <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z" />
   ),
   tasks: (
     <>
-      <rect x="5" y="3" width="14" height="18" rx="2.5" />
-      <path d="M9 8h6M9 12h6M9 16h3" />
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="m8.5 12 2.5 2.5 4.5-5" />
     </>
   ),
   ledger: (
@@ -505,12 +504,7 @@ const tabIcons: Record<string, ReactNode> = {
       <path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M8 8a2.5 2.5 0 1 1 4-2M16 8a2.5 2.5 0 1 0-4-2" />
     </>
   ),
-  ranking: (
-    <>
-      <path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H4v1a3 3 0 0 0 3 3M16 6h4v1a3 3 0 0 1-3 3" />
-      <path d="M12 13v4M8 20h8M10 17h4" />
-    </>
-  ),
+  ranking: <path d="M6 20v-7M12 20V5M18 20v-10" />,
   more: (
     <>
       <circle cx="5.5" cy="12" r="1.5" />

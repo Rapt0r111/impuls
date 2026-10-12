@@ -97,6 +97,19 @@
   grid-column: 1 / -1;
 }
 
+/* Два коротких числовых поля в одну строку даже на 320–390 px. */
+.task-mgmt__pair {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Главное действие формы — на всю ширину, как основная кнопка макета. */
+.task-mgmt__form > .task-mgmt__button--primary {
+  width: 100%;
+}
+
 .task-mgmt__fields input,
 .task-mgmt__fields select,
 .task-mgmt__fields textarea,
