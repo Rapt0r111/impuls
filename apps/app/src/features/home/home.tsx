@@ -7,6 +7,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { initials } from "@/shared/ui/initials";
 import {
   ProfileError,
   useParticipantProfile,
@@ -32,6 +33,18 @@ const dueText = (value: string) =>
   sameDay(new Date(value), new Date())
     ? `Сегодня до ${timeLabel(value)}`
     : `до ${dayLabel(value)}, ${timeLabel(value)}`;
+// «· осталось 3 ч 20 мин» — только для срока сегодня, который ещё не наступил.
+const remainingText = (value: string) => {
+  const now = new Date();
+  const due = new Date(value);
+  const minutes = Math.floor((due.getTime() - now.getTime()) / 60000);
+  if (minutes <= 0 || !sameDay(due, now)) return "";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return ` · осталось ${hours > 0 ? `${hours} ч ${rest} мин` : `${rest} мин`}`;
+};
+// В приветствии — имя, как на концепте; полное имя остаётся в профиле.
+const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 const asOfLabel = (value: string) =>
   new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
@@ -113,11 +126,11 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
       </div>
       <header className="home-greeting">
         <span className="access-avatar" aria-hidden="true">
-          {user.displayName.trim().charAt(0).toUpperCase()}
+          {initials(user.displayName)}
         </span>
         <div>
           <span className="access-greeting">{greeting()}</span>
-          <strong>{user.displayName}</strong>
+          <strong>{firstName(user.displayName)}</strong>
         </div>
         {level ? (
           <span className="task-chip home-level-chip">
@@ -172,6 +185,7 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
                 <path d="M12 7.5V12l3 2" />
               </svg>
               {dueText(next.dueAt)}
+              {remainingText(next.dueAt)}
             </p>
             <button
               type="button"

@@ -162,6 +162,32 @@
   accent-color: var(--color-mint-deep);
 }
 
+/* Подтверждения (публикация, решение, исправление, проверка): строка-плитка
+   на всю ширину, выбранное состояние видно без разбора текста. */
+:is(.tasks-section, .task-mgmt) label:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 52px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--color-edge);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.04);
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+:is(.tasks-section, .task-mgmt) label:has(> input[type="checkbox"]:checked) {
+  border-color: rgb(112 225 194 / 0.6);
+  background: rgb(112 225 194 / 0.1);
+}
+:is(.tasks-section, .task-mgmt) label:has(> input[type="checkbox"]:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* --- Раскрывающиеся блоки ------------------------------------------- */
 :is(.tasks-section, .task-mgmt) details {
   margin: 12px 0;

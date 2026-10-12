@@ -4,6 +4,7 @@ import { apiErrorSchema, leaderboardResponseSchema } from "@impuls/contracts";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { initials } from "@/shared/ui/initials";
 import "./leaderboard.css";
 
 class RankingError extends Error {
@@ -38,17 +39,16 @@ async function load(
   }
   return leaderboardResponseSchema.parse(await response.json());
 }
-// Инициалы по первым буквам слов: «И. Крылов» → «ИК», одно слово → две буквы.
-const initials = (name: string) => {
-  const words = name.match(/[\p{L}\p{N}]+/gu) ?? [];
-  const letters =
-    words.length > 1
-      ? words
-          .slice(0, 2)
-          .map((word) => word[0])
-          .join("")
-      : (words[0] ?? "").slice(0, 2);
-  return letters.toUpperCase();
+// «2026-10» → «Октябрь 2026»: заголовок месяца как на концепте.
+const monthTitle = (value: string) => {
+  const [year = 1970, month = 1] = value.split("-").map(Number);
+  const label = new Intl.DateTimeFormat("ru-RU", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+  const text = label.replace(/\s*г\.?$/, "");
+  return text.charAt(0).toUpperCase() + text.slice(1);
 };
 // Соседний месяц для кнопок-стрелок: «2026-10» → «2026-09».
 const shiftSeason = (value: string, delta: number) => {
@@ -136,6 +136,9 @@ export function Leaderboard() {
               </svg>
             </button>
             <label className="ranking-month-field">
+              <span className="ranking-month-value" aria-hidden="true">
+                {monthTitle(season || first.season)}
+              </span>
               <span>Месяц · Москва</span>
               <input
                 type="month"

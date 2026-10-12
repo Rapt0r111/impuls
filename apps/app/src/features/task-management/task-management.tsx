@@ -621,38 +621,40 @@ export function TaskManagement() {
                     required
                   />
                 </label>
-                <label>
-                  <span id="task-mgmt-xp-label">Фонд XP</span>
-                  <input
-                    aria-labelledby="task-mgmt-xp-label"
-                    type="number"
-                    min={0}
-                    max={2147483647}
-                    step={1}
-                    value={draft.fundXp}
-                    disabled={pending || uncertain}
-                    onChange={(event) =>
-                      setField("fundXp", Number(event.target.value))
-                    }
-                    required
-                  />
-                </label>
-                <label>
-                  <span id="task-mgmt-points-label">Фонд баллов</span>
-                  <input
-                    aria-labelledby="task-mgmt-points-label"
-                    type="number"
-                    min={0}
-                    max={2147483647}
-                    step={1}
-                    value={draft.fundPoints}
-                    disabled={pending || uncertain}
-                    onChange={(event) =>
-                      setField("fundPoints", Number(event.target.value))
-                    }
-                    required
-                  />
-                </label>
+                <div className="task-mgmt__pair">
+                  <label>
+                    <span id="task-mgmt-xp-label">Фонд XP</span>
+                    <input
+                      aria-labelledby="task-mgmt-xp-label"
+                      type="number"
+                      min={0}
+                      max={2147483647}
+                      step={1}
+                      value={draft.fundXp}
+                      disabled={pending || uncertain}
+                      onChange={(event) =>
+                        setField("fundXp", Number(event.target.value))
+                      }
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span id="task-mgmt-points-label">Фонд баллов</span>
+                    <input
+                      aria-labelledby="task-mgmt-points-label"
+                      type="number"
+                      min={0}
+                      max={2147483647}
+                      step={1}
+                      value={draft.fundPoints}
+                      disabled={pending || uncertain}
+                      onChange={(event) =>
+                        setField("fundPoints", Number(event.target.value))
+                      }
+                      required
+                    />
+                  </label>
+                </div>
               </div>
               {currentScope && (
                 <p className="task-mgmt__hint">

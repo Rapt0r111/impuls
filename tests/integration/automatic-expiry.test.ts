@@ -515,7 +515,9 @@ const require = createRequire(import.meta.url),
           async () => expect((await state(f)).status).toBe("expired"),
           { timeout: 5000 },
         );
-        expect(stdout).toContain('"expired":1');
+        await vi.waitFor(() => expect(stdout).toContain('"expired":1'), {
+          timeout: 5000,
+        });
         expect(stdout).not.toContain(f.id);
         expect(stdout).not.toContain(f.owner.id);
         expect(stderr).toBe("");
