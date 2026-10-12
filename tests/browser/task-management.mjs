@@ -371,9 +371,7 @@ async function fillCreateForm(page, setTitle = title) {
   await page.getByLabel("Область", { exact: true }).selectOption(scopeId);
   await page.getByLabel("Название", { exact: true }).fill(setTitle);
   await page.getByLabel("Критерии результата", { exact: true }).fill(criteria);
-  await page
-    .getByLabel("Код категории", { exact: true })
-    .fill("synthetic-check");
+  await page.getByLabel("Категория", { exact: true }).fill("synthetic-check");
   await page.getByLabel("Приоритет", { exact: true }).selectOption("high");
   await page.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
   await page.getByLabel("Фонд XP", { exact: true }).fill("17");
@@ -549,7 +547,7 @@ async function dbFlow() {
         .getByLabel("Критерии результата", { exact: true })
         .fill(criteria);
       await page
-        .getByLabel("Код категории", { exact: true })
+        .getByLabel("Категория", { exact: true })
         .fill("synthetic-check");
       await page.getByLabel("Приоритет", { exact: true }).selectOption("high");
       await page.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");

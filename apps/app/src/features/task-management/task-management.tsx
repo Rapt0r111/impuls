@@ -76,6 +76,9 @@ const statusNames: Record<ManagementTask["status"], string> = {
   cancelled: "Отменена",
 };
 
+// Категория — необязательная метка для себя; база требует непустое значение.
+const NO_CATEGORY = "Без категории";
+
 function emptyDraft(): Draft {
   return {
     scopeId: "",
@@ -252,11 +255,12 @@ export function TaskManagement() {
         const parsed = taskCreateRequestSchema.safeParse({
           ...draft,
           ruleSetId: currentRuleSetId,
+          categoryCode: draft.categoryCode.trim() || NO_CATEGORY,
           dueAt: dueAt ? dueAt.toISOString() : "",
         });
         if (!parsed.success) {
           setError(
-            "Заполните область, название, критерии, категорию и срок. Суммы должны быть целыми неотрицательными числами.",
+            "Заполните область, название, критерии и срок. Суммы должны быть целыми неотрицательными числами.",
           );
           return;
         }
@@ -296,7 +300,10 @@ export function TaskManagement() {
         if (!change || change.action !== action) return;
         const raw =
           action === "edit"
-            ? change.fields
+            ? {
+                ...change.fields,
+                categoryCode: change.fields.categoryCode.trim() || NO_CATEGORY,
+              }
             : {
                 expectedVersion: change.fields.expectedVersion,
                 reason: change.fields.reason,
@@ -573,16 +580,16 @@ export function TaskManagement() {
                   />
                 </label>
                 <label>
-                  <span id="task-mgmt-category-label">Код категории</span>
+                  <span id="task-mgmt-category-label">Категория</span>
                   <input
                     aria-labelledby="task-mgmt-category-label"
                     maxLength={40}
+                    placeholder="Необязательно, например: уборка"
                     value={draft.categoryCode}
                     disabled={pending || uncertain}
                     onChange={(event) =>
                       setField("categoryCode", event.target.value)
                     }
-                    required
                   />
                 </label>
                 <label>
@@ -1060,12 +1067,12 @@ function TaskChangeForm({
               />
             </label>
             <label>
-              <span id={`${labelId}-category`}>Код категории</span>
+              <span id={`${labelId}-category`}>Категория</span>
               <input
                 aria-labelledby={`${labelId}-category`}
                 value={f.categoryCode}
                 maxLength={40}
-                required
+                placeholder="Необязательно, например: уборка"
                 onChange={(e) => field("categoryCode", e.target.value)}
               />
             </label>

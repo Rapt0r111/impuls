@@ -10,6 +10,8 @@
 - Сообщения об ошибках начисления в `api/v1/submissions/[id]/review/route.ts` говорят «настройки начислений».
 - Тесты: `tests/browser/{rules-admin,task-management,task-flow-real,task-acceptance,profile}.mjs`.
 
+- Поле «Код категории» → необязательная «Категория» (`task-management.tsx`, `audit-log.tsx`); `task-flow-real.mjs` создаёт задачу без категории и проверяет в базе значение «Без категории».
+
 ## Что проверено
 
 - `bun run format:check`, `bun run lint`, `bun run typecheck`: без замечаний (см. отчёт в треде).

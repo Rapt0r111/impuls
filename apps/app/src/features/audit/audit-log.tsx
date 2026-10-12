@@ -50,7 +50,7 @@ const fieldNames: Record<
   version: "Версия задачи",
   title: "Сохранённое название",
   criteria: "Критерии",
-  categoryCode: "Код категории",
+  categoryCode: "Категория",
   priority: "Приоритет",
   dueAt: "Срок (UTC)",
   fundXp: "Фонд XP",
