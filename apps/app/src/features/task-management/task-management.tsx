@@ -1,5 +1,6 @@
 "use client";
 
+import { IntInput } from "@/shared/ui/int-input";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
@@ -626,34 +627,20 @@ export function TaskManagement() {
                 <div className="task-mgmt__pair">
                   <label>
                     <span id="task-mgmt-xp-label">Фонд XP</span>
-                    <input
-                      aria-labelledby="task-mgmt-xp-label"
-                      type="number"
-                      min={0}
-                      max={2147483647}
-                      step={1}
+                    <IntInput
+                      labelledBy="task-mgmt-xp-label"
                       value={draft.fundXp}
                       disabled={pending || uncertain}
-                      onChange={(event) =>
-                        setField("fundXp", Number(event.target.value))
-                      }
-                      required
+                      onValue={(n) => setField("fundXp", n)}
                     />
                   </label>
                   <label>
                     <span id="task-mgmt-points-label">Фонд баллов</span>
-                    <input
-                      aria-labelledby="task-mgmt-points-label"
-                      type="number"
-                      min={0}
-                      max={2147483647}
-                      step={1}
+                    <IntInput
+                      labelledBy="task-mgmt-points-label"
                       value={draft.fundPoints}
                       disabled={pending || uncertain}
-                      onChange={(event) =>
-                        setField("fundPoints", Number(event.target.value))
-                      }
-                      required
+                      onValue={(n) => setField("fundPoints", n)}
                     />
                   </label>
                 </div>
@@ -1133,28 +1120,18 @@ function TaskChangeForm({
             </label>
             <label>
               <span id={`${labelId}-xp`}>Фонд XP</span>
-              <input
-                aria-labelledby={`${labelId}-xp`}
-                type="number"
-                min={0}
-                max={2147483647}
-                step={1}
+              <IntInput
+                labelledBy={`${labelId}-xp`}
                 value={f.fundXp}
-                required
-                onChange={(e) => field("fundXp", Number(e.target.value))}
+                onValue={(n) => field("fundXp", n)}
               />
             </label>
             <label>
               <span id={`${labelId}-points`}>Фонд баллов</span>
-              <input
-                aria-labelledby={`${labelId}-points`}
-                type="number"
-                min={0}
-                max={2147483647}
-                step={1}
+              <IntInput
+                labelledBy={`${labelId}-points`}
                 value={f.fundPoints}
-                required
-                onChange={(e) => field("fundPoints", Number(e.target.value))}
+                onValue={(n) => field("fundPoints", n)}
               />
             </label>
           </div>

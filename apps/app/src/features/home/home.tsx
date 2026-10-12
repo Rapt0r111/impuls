@@ -2,6 +2,7 @@
 
 import {
   leaderboardResponseSchema,
+  reviewListResponseSchema,
   taskListResponseSchema,
 } from "@impuls/contracts";
 import { useQuery } from "@tanstack/react-query";
@@ -67,10 +68,26 @@ const statusNames = {
 type OpenStatus = keyof typeof statusNames;
 const isOpen = (status: string): status is OpenStatus => status in statusNames;
 
-type HomeTarget = "tasks" | "ledger";
+type HomeTarget = "tasks" | "ledger" | "reviews";
 
 export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
-  const { loseAccess, user } = useAuthorizedSession();
+  const { loseAccess, user, canReview } = useAuthorizedSession();
+  // Проверяющему очередь видна сразу на главной: сколько отчётов ждёт и кнопка входа.
+  const waiting = useQuery({
+    queryKey: ["home-review-waiting"],
+    enabled: canReview === true,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const response = await fetch("/api/v1/reviews?limit=20", {
+        signal,
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!response.ok) throw new ProfileError(response.status);
+      const page = reviewListResponseSchema.parse(await response.json());
+      return { count: page.items.length, more: page.nextCursor !== null };
+    },
+  });
   const profile = useParticipantProfile();
   const tasks = useQuery({
     queryKey: ["home-tasks"],
@@ -157,6 +174,30 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
             Повторить
           </button>
         </p>
+      ) : null}
+
+      {canReview ? (
+        <section className="home-review" aria-labelledby="home-review-title">
+          <div>
+            <h3 id="home-review-title">Очередь проверки</h3>
+            <p>
+              {waiting.data
+                ? waiting.data.count === 0
+                  ? "Сейчас отчётов на проверке нет."
+                  : `Ждут решения: ${waiting.data.count}${waiting.data.more ? " и больше" : ""}.`
+                : waiting.isError
+                  ? "Число не загрузилось, очередь можно открыть."
+                  : "Считаем отчёты…"}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="access-button"
+            onClick={() => onNavigate("reviews")}
+          >
+            Открыть очередь
+          </button>
+        </section>
       ) : null}
 
       <section className="home-next" aria-labelledby="home-next-title">

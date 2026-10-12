@@ -619,7 +619,7 @@ function TaskWorkspace() {
   if (canReview)
     destinations.push({
       id: "reviews",
-      label: "Проверка отчётов",
+      label: "Очередь проверки",
       group: "commander",
     });
   if (canManageTasks)

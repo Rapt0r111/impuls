@@ -72,7 +72,7 @@ const views = [
   ["rewards", "Поощрения", ".reward-row"],
   ["ranking", "Рейтинг", ".ranking-table tbody tr"],
   ["profile", "Мой профиль", ".profile-block"],
-  ["reviews", "Проверка отчётов", ".tasks-list > li"],
+  ["reviews", "Очередь проверки", ".tasks-list > li"],
   ["management", "Постановка задач", ".task-mgmt__item"],
   ["catalog", "Управление каталогом", ".admin-catalog-items > li"],
   ["audit", "Журнал действий", ".audit-section"],
@@ -502,7 +502,7 @@ try {
               .getByRole("button", { name: "Ещё", exact: true })
               .click();
             await page
-              .getByRole("button", { name: "Проверка отчётов", exact: true })
+              .getByRole("button", { name: "Очередь проверки", exact: true })
               .click();
             await page.locator(".tasks-row").first().click();
             await page

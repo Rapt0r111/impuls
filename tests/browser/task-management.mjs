@@ -375,6 +375,14 @@ async function fillCreateForm(page, setTitle = title) {
   await page.getByLabel("Категория", { exact: true }).fill("synthetic-check");
   await page.getByLabel("Приоритет", { exact: true }).selectOption("high");
   await page.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
+  // An untouched zero is an empty field, so typing never leaves a leading zero.
+  const xpField = page.getByLabel("Фонд XP", { exact: true });
+  assert.equal(await xpField.inputValue(), "");
+  await xpField.pressSequentially("007");
+  assert.equal(await xpField.inputValue(), "7");
+  await xpField.fill("");
+  await xpField.pressSequentially("a1b2");
+  assert.equal(await xpField.inputValue(), "12");
   await page.getByLabel("Фонд XP", { exact: true }).fill("17");
   await page.getByLabel("Фонд баллов", { exact: true }).fill("9");
 }
