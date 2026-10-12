@@ -17,15 +17,24 @@ integration("free tasks: listing and claiming in PostgreSQL", () => {
     options: "-c role=impuls_app",
     max: 8,
   });
-  const users: Record<"a" | "b" | "outsider" | "inactive", string> = {
+  const users: Record<
+    "a" | "b" | "c" | "d" | "e" | "outsider" | "inactive",
+    string
+  > = {
     a: "",
     b: "",
+    c: "",
+    d: "",
+    e: "",
     outsider: "",
     inactive: "",
   };
   const hashes = {
     a: randomBytes(32),
     b: randomBytes(32),
+    c: randomBytes(32),
+    d: randomBytes(32),
+    e: randomBytes(32),
     outsider: randomBytes(32),
     inactive: randomBytes(32),
   };
@@ -61,7 +70,7 @@ integration("free tasks: listing and claiming in PostgreSQL", () => {
         "INSERT INTO impuls.access_scopes (kind, name) VALUES ('group', 'Synthetic other scope') RETURNING id",
       )
     ).rows[0]!.id;
-    for (const key of ["a", "b", "inactive"] as const)
+    for (const key of ["a", "b", "c", "d", "e", "inactive"] as const)
       await admin.query(
         "INSERT INTO impuls.task_scope_members (scope_id, user_id, valid_from) VALUES ($1, $2, clock_timestamp() - interval '1 day')",
         [scopeId, users[key]],
@@ -84,6 +93,10 @@ integration("free tasks: listing and claiming in PostgreSQL", () => {
       await admin.query(
         "DELETE FROM impuls.idempotency_records WHERE actor_id = ANY($1::uuid[])",
         [ids],
+      );
+      await admin.query(
+        "DELETE FROM impuls.notification_outbox WHERE task_id = ANY($1::uuid[])",
+        [taskIds],
       );
       await admin.query(
         "DELETE FROM impuls.task_events WHERE task_id = ANY($1::uuid[])",
@@ -304,5 +317,88 @@ integration("free tasks: listing and claiming in PostgreSQL", () => {
         [id],
       ),
     ).rejects.toMatchObject({ code: "42501" });
+  });
+  it("tells the creator when someone else takes the task, and stays quiet on a self-take", async () => {
+    const own = await task();
+    expect(await claim(own, "a")).toMatchObject({ kind: "ok" });
+    const taken = await task();
+    expect(await claim(taken, "d")).toMatchObject({ kind: "ok" });
+    const rows = await admin.query<{ task_id: string; recipient_id: string }>(
+      "SELECT task_id, recipient_id FROM impuls.notification_outbox WHERE task_id = ANY($1::uuid[]) AND kind = 'task.claimed'",
+      [[own, taken]],
+    );
+    expect(rows.rows).toEqual([{ task_id: taken, recipient_id: users.a }]);
+    // A replay with the same key does not queue a second message.
+    const key = randomUUID();
+    const again = await task();
+    await claim(again, "d", { idempotencyKey: key });
+    await claim(again, "d", { idempotencyKey: key });
+    expect(
+      (
+        await admin.query(
+          "SELECT 1 FROM impuls.notification_outbox WHERE task_id = $1 AND kind = 'task.claimed'",
+          [again],
+        )
+      ).rowCount,
+    ).toBe(1);
+    await admin.query(
+      "DELETE FROM impuls.notification_outbox WHERE task_id = ANY($1::uuid[])",
+      [[own, taken, again]],
+    );
+  });
+
+  it("enforces the commander's limit on unfinished self-taken tasks, and none when unset", async () => {
+    // Above every version other test files create, so this is the newest while it exists.
+    const version = 2_100_000_000 + randomInt(0, 1_000_000);
+    const limitRule = (
+      await admin.query<{ id: string }>(
+        "INSERT INTO impuls.rule_sets (version_number, definition, effective_from, created_by) VALUES ($1, $2::jsonb, clock_timestamp() - interval '1 second', $3) RETURNING id",
+        [
+          version,
+          JSON.stringify({ mode: "synthetic", openTaskLimit: 2 }),
+          users.a,
+        ],
+      )
+    ).rows[0]!.id;
+    try {
+      const [one, two, three, four] = [
+        await task(),
+        await task(),
+        await task(),
+        await task(),
+      ] as [string, string, string, string];
+      expect(await claim(one, "c")).toMatchObject({ kind: "ok" });
+      expect(await claim(two, "c")).toMatchObject({ kind: "ok" });
+      expect(await claim(three, "c")).toEqual({
+        kind: "limit_reached",
+        limit: 2,
+      });
+      expect((await state(three)).assignees).toEqual([]);
+      // Someone else is not affected by c's count.
+      expect(await claim(three, "e")).toMatchObject({ kind: "ok" });
+      // Finishing one frees a place.
+      await admin.query(
+        "UPDATE impuls.tasks SET status = 'accepted' WHERE id = $1",
+        [one],
+      );
+      expect(await claim(four, "c")).toMatchObject({ kind: "ok" });
+      // Two simultaneous taps by one member cannot both pass the count.
+      await admin.query(
+        "UPDATE impuls.tasks SET status = 'accepted' WHERE id = ANY($1::uuid[])",
+        [[two, four]],
+      );
+      const racers = [await task(), await task(), await task(), await task()];
+      const results = await Promise.all(racers.map((id) => claim(id, "c")));
+      expect(results.filter((r) => r.kind === "ok")).toHaveLength(2);
+      expect(results.filter((r) => r.kind === "limit_reached")).toHaveLength(2);
+    } finally {
+      await admin.query("DELETE FROM impuls.rule_sets WHERE id = $1", [
+        limitRule,
+      ]);
+    }
+    // Without a limit in the newest settings the same member takes any number.
+    const free = [await task(), await task(), await task()];
+    for (const id of free)
+      expect(await claim(id, "c")).toMatchObject({ kind: "ok" });
   });
 });

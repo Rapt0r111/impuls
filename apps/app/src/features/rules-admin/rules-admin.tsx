@@ -48,6 +48,7 @@ type Settings = {
   minPercent: number | null;
   bonuses: { title: string; percent: number }[];
   levelThresholds: number[] | null;
+  openTaskLimit: number | null;
 };
 const NOT_SET = "не задано";
 // Одна строка на настройку: по ней сравниваются «было» и «станет».
@@ -71,6 +72,10 @@ const labels: [string, (value: Settings) => string][] = [
   [
     "Пороги уровней, XP",
     (v) => (v.levelThresholds ? v.levelThresholds.join(", ") : "не настроены"),
+  ],
+  [
+    "Предел взятых свободных задач",
+    (v) => (v.openTaskLimit === null ? "без предела" : String(v.openTaskLimit)),
   ],
 ];
 const changesBetween = (before: Settings | null, after: Settings) =>
@@ -174,6 +179,8 @@ function RulesForm({
   const [levels, setLevels] = useState(
     current?.levelThresholds?.join(", ") ?? "",
   );
+  const [limited, setLimited] = useState(current?.openTaskLimit != null);
+  const [limit, setLimit] = useState(String(current?.openTaskLimit ?? 3));
   const [reason, setReason] = useState("");
   const [preview, setPreview] = useState<RulesPublishRequest | null>(null);
   const [status, setStatus] = useState("");
@@ -225,11 +232,17 @@ function RulesForm({
               percent: percents[i],
             })),
             levelThresholds: thresholds,
+            openTaskLimit:
+              limited && /^\d+$/.test(limit) ? Number(limit) : null,
             reason,
           });
-    if (!parsed?.success || (adjust && !/^\d+$/.test(minPercent))) {
+    if (
+      !parsed?.success ||
+      (adjust && !/^\d+$/.test(minPercent)) ||
+      (limited && !/^\d+$/.test(limit))
+    ) {
       setStatus(
-        "Проверьте поля: часовой пояс из списка IANA, нижний предел от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля и пояснение.",
+        "Проверьте поля: часовой пояс из списка IANA, нижний предел от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля, предел задач от 1 до 50 и пояснение.",
       );
       return;
     }
@@ -442,6 +455,31 @@ function RulesForm({
               Это XP, с которого начинается каждый уровень. Первый порог — 0,
               каждый следующий больше предыдущего. Пусто — уровни не настроены,
               профиль скажет об этом.
+            </p>
+          </fieldset>
+          <fieldset>
+            <legend>Свободные задачи</legend>
+            <label>
+              <input
+                type="checkbox"
+                checked={limited}
+                onChange={(e) => edit(setLimited)(e.target.checked)}
+              />
+              <span>Ограничить число взятых задач у одного участника</span>
+            </label>
+            {limited ? (
+              <label>
+                <span>Не больше незавершённых взятых задач</span>
+                <input
+                  inputMode="numeric"
+                  value={limit}
+                  onChange={(e) => edit(setLimit)(e.target.value)}
+                />
+              </label>
+            ) : null}
+            <p className="notification-note">
+              Считаются задачи, которые участник взял сам и ещё не довёл до
+              приёмки. Без галочки предела нет.
             </p>
           </fieldset>
           <fieldset>

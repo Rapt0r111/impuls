@@ -32,6 +32,7 @@ const url = process.env.TEST_DATABASE_URL;
       minPercent: 60,
       bonuses: [{ code: "plus_15", title: "Бонус +15 %", percent: 15 }],
       levelThresholds: [0, 100, 300],
+      openTaskLimit: null as number | null,
     };
     const input = (who: number, over: Record<string, unknown> = {}) => ({
       ...settings,
@@ -278,6 +279,20 @@ const url = process.env.TEST_DATABASE_URL;
         levelThresholds: null,
         legacyOptions: false,
       });
+      // The free-task limit is stored only when set, and a new save without it clears it.
+      const limited = definitionFromSettings(next, {
+        ...settings,
+        openTaskLimit: 3,
+      });
+      expect(limited.openTaskLimit).toBe(3);
+      expect(settingsFromDefinition(limited).openTaskLimit).toBe(3);
+      expect("openTaskLimit" in definitionFromSettings(limited, settings)).toBe(
+        false,
+      );
+      expect(
+        settingsFromDefinition({ mode: "synthetic", openTaskLimit: 0 })
+          .openTaskLimit,
+      ).toBeNull();
       expect(
         settingsFromDefinition({
           mode: "synthetic",

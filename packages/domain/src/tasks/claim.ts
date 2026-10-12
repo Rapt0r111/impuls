@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { getAssignedTask, type AssignedTaskDetail } from "./read";
 import { appendTaskEvent } from "./events";
+import { openTaskLimitFrom } from "../admin/rules";
 
 // A free task is a draft with open_for_claim. Any active member of its scope may take it;
 // taking is a self-assignment through the same task_assignments row as a commander's assign.
@@ -93,7 +94,8 @@ export type ClaimResult =
   | { kind: "disabled" }
   | { kind: "not_found" }
   | { kind: "idempotency_conflict" }
-  | { kind: "conflict"; currentVersion: number };
+  | { kind: "conflict"; currentVersion: number }
+  | { kind: "limit_reached"; limit: number };
 
 type IdempotencyRow = {
   request_hash: Buffer;
@@ -224,6 +226,35 @@ export async function claimTask(
         currentVersion: current.version,
       });
 
+    // The commander's limit on unfinished self-taken tasks (null — no limit). The advisory
+    // lock serialises two taps by the same member so both cannot pass the count.
+    const rule = await client.query<{ definition: unknown }>(
+      `SELECT definition FROM impuls.rule_sets
+        WHERE definition->>'mode'='synthetic' AND effective_from<=clock_timestamp()
+        ORDER BY version_number DESC LIMIT 1`,
+    );
+    const definition = rule.rows[0]?.definition;
+    const limit =
+      typeof definition === "object" && definition !== null
+        ? openTaskLimitFrom(definition as Record<string, unknown>)
+        : null;
+    if (limit !== null) {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        `task.claim:${input.actorId}`,
+      ]);
+      const open = await client.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM impuls.tasks t
+           JOIN impuls.task_assignments a ON a.task_id = t.id AND a.user_id = $1
+          WHERE t.status IN ('assigned','in_progress','in_review','needs_work')
+            AND EXISTS (SELECT 1 FROM impuls.task_events e
+                         WHERE e.task_id = t.id AND e.kind = 'assigned'
+                           AND e.actor_id = $1 AND e.assignee_id = $1)`,
+        [input.actorId],
+      );
+      if (open.rows[0]!.n >= limit)
+        return await rollbackResult(client, { kind: "limit_reached", limit });
+    }
+
     await client.query(
       "INSERT INTO impuls.task_assignments (task_id, user_id) VALUES ($1, $2)",
       [input.taskId, input.actorId],
@@ -240,6 +271,14 @@ export async function claimTask(
       actorId: input.actorId,
       kind: "assigned",
     });
+    // Tell the creator, unless they took their own task. The unique index allows one per task.
+    await client.query(
+      `INSERT INTO impuls.notification_outbox (recipient_id, task_id, kind, mode, created_at, updated_at)
+       SELECT t.created_by, t.id, 'task.claimed', 'synthetic', clock_timestamp(), clock_timestamp()
+         FROM impuls.tasks t WHERE t.id = $1 AND t.created_by <> $2
+       ON CONFLICT DO NOTHING`,
+      [input.taskId, input.actorId],
+    );
     const detail = await getAssignedTask(client, input.actorId, input.taskId);
     if (!detail) throw new Error("Claimed task is not readable");
     const response = { task: detail };

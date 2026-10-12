@@ -58,7 +58,7 @@ export async function readNotificationEvents(
         AND s.id=$4::uuid
     ), events AS MATERIALIZED (
       SELECT o.id,o.created_at,
-        CASE WHEN o.kind IN ('task.assigned','task.due_soon','task.returned','task.accepted','ledger.corrected',
+        CASE WHEN o.kind IN ('task.assigned','task.due_soon','task.claimed','task.returned','task.accepted','ledger.corrected',
           'reward.reserved','reward.cancelled','reward.approved','reward.rejected','reward.fulfilled','reward.expired')
           THEN o.kind ELSE 'unsupported' END AS kind,
         coalesce(d.status,'unclaimed') AS status,d.error_code

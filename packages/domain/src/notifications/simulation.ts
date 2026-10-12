@@ -4,6 +4,7 @@ import type { Pool } from "pg";
 // Fixed text only. Never interpolate task/reward titles, reports, reasons, or names.
 const messages: Record<string, string> = {
   "task.assigned": "В приложении назначена задача.",
+  "task.claimed": "В приложении участник взял вашу свободную задачу.",
   "task.due_soon": "В приложении приближается срок задачи.",
   "task.returned": "В приложении результат возвращён на доработку.",
   "task.accepted": "В приложении принято решение по результату.",

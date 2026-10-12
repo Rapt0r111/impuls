@@ -75,6 +75,16 @@ async function open(width, mode = "ok") {
         body: JSON.parse(r.request().postData()),
         url: r.request().url(),
       });
+      if (mode === "limit")
+        return json(
+          r,
+          {
+            code: "OPEN_TASK_LIMIT",
+            message:
+              "Можно держать не больше 2 взятых задач. Завершите одну из них.",
+          },
+          409,
+        );
       if (mode === "taken")
         return json(r, { code: "TASK_CONFLICT", message: "x" }, 409);
       return json(r, { task: claimed(tasks[0]) });
@@ -120,6 +130,18 @@ for (const width of [320, 360, 390]) {
   assert.deepEqual(posts[0].body, { action: "claim", expectedVersion: 1 });
   assert.ok(posts[0].url.endsWith(`/api/v1/tasks/${tasks[0].id}/claim`));
   assert.deepEqual(errors, []);
+  await context.close();
+  scenarios++;
+}
+
+{
+  const { page, context, posts } = await open(390, "limit");
+  await page.getByRole("button", { name: "Взять" }).first().click();
+  await page
+    .getByRole("alert")
+    .getByText(/не больше 2 взятых задач/)
+    .waitFor();
+  assert.equal(posts.length, 1);
   await context.close();
   scenarios++;
 }

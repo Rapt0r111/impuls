@@ -7,6 +7,7 @@ export const notificationEventSchema = z
     kind: z.enum([
       "task.assigned",
       "task.due_soon",
+      "task.claimed",
       "task.returned",
       "task.accepted",
       "ledger.corrected",

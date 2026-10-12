@@ -17,6 +17,7 @@ const rules = {
       { code: "plus_25", title: "Бонус +25 %", percent: 25 },
     ],
     levelThresholds: null,
+    openTaskLimit: null,
     legacyOptions: false,
   },
   history: [
@@ -137,8 +138,17 @@ for (const width of [320, 360, 390]) {
   assert.equal(posts.length, 0);
   // Valid change: the preview lists only what changes, then save once.
   await page.getByLabel(/Пороги уровней/).fill("0, 100, 250");
+  // The free-task limit is off by default and appears with its checkbox.
+  assert.equal(await page.getByLabel(/Не больше незавершённых/).count(), 0);
+  await page.getByLabel(/Ограничить число взятых задач/).check();
+  await page.getByLabel(/Не больше незавершённых/).fill("3");
   await page.getByRole("button", { name: "Проверить изменения" }).click();
   await page.getByRole("heading", { name: "Проверьте изменения" }).waitFor();
+  assert.ok(
+    await page
+      .getByText("Предел взятых свободных задач: без предела → 3")
+      .isVisible(),
+  );
   assert.ok(
     await page
       .getByText("Пороги уровней, XP: не настроены → 0, 100, 250")
@@ -152,6 +162,7 @@ for (const width of [320, 360, 390]) {
   assert.equal(posts[0].csrf, "synthetic");
   assert.deepEqual(posts[0].body.levelThresholds, [0, 100, 250]);
   assert.equal(posts[0].body.minPercent, 50);
+  assert.equal(posts[0].body.openTaskLimit, 3);
   assert.deepEqual(
     posts[0].body.bonuses.map((b) => [b.code, b.percent]),
     [

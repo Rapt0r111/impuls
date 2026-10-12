@@ -146,6 +146,14 @@ export async function handleTaskMutation(
         id,
       );
     }
+    if (result.kind === "limit_reached") {
+      return errorResponse(
+        409,
+        "OPEN_TASK_LIMIT",
+        `Можно держать не больше ${result.limit} взятых задач. Завершите одну из них.`,
+        id,
+      );
+    }
     if (result.kind === "conflict") {
       return errorResponse(
         409,

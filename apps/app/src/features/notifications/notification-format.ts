@@ -29,6 +29,7 @@ export const eventNames: Record<
   string
 > = {
   "task.assigned": "Назначение задачи",
+  "task.claimed": "Свободную задачу взяли",
   "task.due_soon": "Приближается срок задачи",
   "task.returned": "Возврат результата",
   "task.accepted": "Приёмка результата",

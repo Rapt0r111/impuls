@@ -113,6 +113,14 @@ export function OpenTaskList({
       }
       if (response.status === 409 || response.status === 404) {
         keys.current.delete(intent);
+        const body = (await response.json().catch(() => null)) as {
+          code?: string;
+          message?: string;
+        } | null;
+        if (body?.code === "OPEN_TASK_LIMIT" && body.message) {
+          setMessage(body.message);
+          return;
+        }
         setMessage("Эту задачу уже взяли или она изменилась. Список обновлён.");
         await client.invalidateQueries({ queryKey: OPEN_TASKS_KEY });
         return;
