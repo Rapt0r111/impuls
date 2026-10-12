@@ -303,11 +303,13 @@ export function AccessAdmin() {
                 {m.bindings.length ? (
                   <ul>
                     {m.bindings.map((b) => (
-                      <li key={b.id}>
-                        {actionLabels[b.action]}
-                        {b.validUntil
-                          ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
-                          : " · без срока"}
+                      <li key={b.id} className="access-binding">
+                        <span>
+                          {actionLabels[b.action]}
+                          {b.validUntil
+                            ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
+                            : " · без срока"}
+                        </span>
                         {data.canManage && !m.isSelf ? (
                           <button
                             type="button"

@@ -92,3 +92,17 @@
   flex: none;
   accent-color: var(--color-mint);
 }
+/* Право участника и кнопка «Отозвать»: при нехватке ширины кнопка переносится, а не упирается в текст. */
+.access-binding {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.access-binding > span {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+.access-binding > form {
+  flex: 1 0 100%;
+}
