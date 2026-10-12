@@ -88,6 +88,7 @@ integration("free tasks over real HTTP", () => {
       ])
         await pool.query(sql, [users]);
       for (const sql of [
+        "DELETE FROM impuls.notification_outbox WHERE task_id=ANY($1::uuid[])",
         "DELETE FROM impuls.task_events WHERE task_id=ANY($1::uuid[])",
         "DELETE FROM impuls.task_assignments WHERE task_id=ANY($1::uuid[])",
         "DELETE FROM impuls.tasks WHERE id=ANY($1::uuid[])",
