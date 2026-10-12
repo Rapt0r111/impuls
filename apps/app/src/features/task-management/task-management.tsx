@@ -180,12 +180,13 @@ export function TaskManagement() {
   const items = list.data?.pages.flatMap((page) => page.items) ?? [];
   const availableScopes = options.data?.scopes ?? [];
   const createScopes = availableScopes.filter((scope) => scope.canCreate);
+  // Новая задача всегда берёт действующие настройки начислений: сервер отдаёт их первыми.
+  const currentRuleSetId = options.data?.ruleSets[0]?.id ?? "";
   const currentScope = availableScopes.find(
     (scope) => scope.id === draft.scopeId,
   );
   const hasDraft = Boolean(
     draft.scopeId ||
-    draft.ruleSetId ||
     draft.title ||
     draft.criteria ||
     draft.categoryCode ||
@@ -223,7 +224,7 @@ export function TaskManagement() {
     if (status === 409)
       return "Данные задачи изменились. Черновик сохранён; список обновлён. Проверьте актуальные сведения перед новым действием.";
     if (status === 422 && (code?.includes("RULE") || code?.includes("rule")))
-      return "Версия правил недоступна или изменилась. Выберите доступную версию; поля сохранены.";
+      return "Настройки начислений изменились. Обновите экран и повторите; поля сохранены.";
     if (
       status === 422 &&
       (code?.includes("ASSIGNEE") || code?.includes("assignee"))
@@ -250,11 +251,12 @@ export function TaskManagement() {
         }
         const parsed = taskCreateRequestSchema.safeParse({
           ...draft,
+          ruleSetId: currentRuleSetId,
           dueAt: dueAt ? dueAt.toISOString() : "",
         });
         if (!parsed.success) {
           setError(
-            "Заполните область, версию правил, название, критерии, категорию и срок. Суммы должны быть целыми неотрицательными числами.",
+            "Заполните область, название, критерии, категорию и срок. Суммы должны быть целыми неотрицательными числами.",
           );
           return;
         }
@@ -277,7 +279,7 @@ export function TaskManagement() {
           return;
         }
         const accepted = window.confirm(
-          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nВерсия правил: ${task.ruleVersion} · версия задачи: ${task.version}\nФонд: ${formatFunds(task)}`,
+          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
         );
         if (!accepted) return;
         nextAttempt = {
@@ -310,7 +312,7 @@ export function TaskManagement() {
         }
         if (
           !window.confirm(
-            `${action === "edit" ? "Сохранить черновик" : "Отменить задачу"} «${change.task.title}»?\nИсполнитель: ${change.task.assignee?.displayName ?? "не назначен"}\nВерсия задачи: ${change.fields.expectedVersion}, правила: ${change.task.ruleVersion}\nФонд: ${action === "edit" ? `${change.fields.fundXp} XP · ${change.fields.fundPoints} баллов` : formatFunds(change.task)} · синтетические значения\nПричина: ${parsed.data.reason}`,
+            `${action === "edit" ? "Сохранить черновик" : "Отменить задачу"} «${change.task.title}»?\nИсполнитель: ${change.task.assignee?.displayName ?? "не назначен"}\nФонд: ${action === "edit" ? `${change.fields.fundXp} XP · ${change.fields.fundPoints} баллов` : formatFunds(change.task)} · синтетические значения\nПричина: ${parsed.data.reason}`,
           )
         )
           return;
@@ -471,13 +473,13 @@ export function TaskManagement() {
           role="alert"
         >
           Не удалось обновить варианты. Используются последние подтверждённые
-          области и правила.
+          области и настройки начислений.
         </p>
       )}
 
       {options.isPending ? (
         <p className="task-mgmt__state" role="status">
-          Загружаем области и версии правил…
+          Загружаем области и настройки начислений…
         </p>
       ) : accessLost ? (
         <p className="task-mgmt__state" role="alert">
@@ -521,8 +523,9 @@ export function TaskManagement() {
                 <span>Черновик</span>
               </div>
               <p className="task-mgmt__note">
-                XP и баллы задаются выбранной версией правил. Значения версии 1
-                тестовые: утверждённая экономика пока не задана.
+                Фонд XP и баллов вы задаёте сами. Проверяющий сможет снизить
+                награду и добавить бонус в пределах настроек начислений на
+                момент создания задачи.
               </p>
               <div className="task-mgmt__fields">
                 <label>
@@ -540,27 +543,6 @@ export function TaskManagement() {
                     {createScopes.map((scope) => (
                       <option key={scope.id} value={scope.id}>
                         {scope.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span id="task-mgmt-rule-label">Версия правил</span>
-                  <select
-                    aria-labelledby="task-mgmt-rule-label"
-                    value={draft.ruleSetId}
-                    disabled={
-                      pending || uncertain || !options.data?.ruleSets.length
-                    }
-                    onChange={(event) =>
-                      setField("ruleSetId", event.target.value)
-                    }
-                    required
-                  >
-                    <option value="">Выберите версию</option>
-                    {options.data?.ruleSets.map((rule) => (
-                      <option key={rule.id} value={rule.id}>
-                        Версия {rule.version}
                       </option>
                     ))}
                   </select>
@@ -888,8 +870,7 @@ function TaskRow({
         </p>
         <p className="task-mgmt__criteria">{task.criteria}</p>
         <p className="task-mgmt__item-meta">
-          Фонд: {formatFunds(task)} · категория {task.categoryCode} · версия
-          правил {task.ruleVersion}
+          Фонд: {formatFunds(task)} · категория {task.categoryCode}
         </p>
         {task.assignee && (
           <p className="task-mgmt__item-meta">

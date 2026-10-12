@@ -331,10 +331,6 @@ function TaskListContent() {
                   <dt>Область</dt>
                   <dd>{detail.data.task.scope.name}</dd>
                 </div>
-                <div>
-                  <dt>Версия правил</dt>
-                  <dd>{detail.data.task.ruleVersion}</dd>
-                </div>
               </dl>
               <TaskReport key={selectedId} task={detail.data.task} />
               <TaskTimeline
@@ -617,7 +613,7 @@ function TaskWorkspace() {
   if (canManageRules)
     destinations.push({
       id: "rules",
-      label: "Правила начислений",
+      label: "Настройки начислений",
       group: "commander",
     });
   if (canReadNotificationStatus)

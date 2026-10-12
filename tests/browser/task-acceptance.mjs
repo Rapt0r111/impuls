@@ -462,7 +462,8 @@ try {
     assert.match(await preview.innerText(), /получит\s+100 XP\s+и\s+30 баллов/);
     await page.getByLabel(/Базовый XP/).fill("201");
     assert.equal(await send(page).isDisabled(), true);
-    const limits = "XP от 50 до 200, баллы от 15 до 80 по версии правил.";
+    const limits =
+      "XP от 50 до 200, баллы от 15 до 80 по настройкам начислений.";
     await page.getByText(limits, { exact: false }).waitFor();
     await page.getByLabel(/Базовый XP/).fill("49");
     assert.equal(await send(page).isDisabled(), true);
@@ -484,9 +485,12 @@ try {
     await send(page).click();
     if (mode === "bonus-rejected") {
       await page
-        .getByText("Корректировка или бонус не разрешены версией правил", {
-          exact: false,
-        })
+        .getByText(
+          "Корректировка или бонус не разрешены настройками начислений",
+          {
+            exact: false,
+          },
+        )
         .waitFor();
       // The form stays editable: a rejected choice is not a terminal state.
       assert.equal(await page.getByLabel(/Базовый XP/).isDisabled(), false);

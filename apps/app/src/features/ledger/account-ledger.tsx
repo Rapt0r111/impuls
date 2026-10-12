@@ -120,9 +120,9 @@ export function AccountLedger() {
                         <p>
                           {date(entry.createdAt)} ·{" "}
                           {entry.reward
-                            ? `условия ${entry.reward.version}`
-                            : `правила ${entry.ruleVersion}`}{" "}
-                          · сезон {entry.seasonKey} ({entry.timeZone})
+                            ? `условия ${entry.reward.version} · `
+                            : ""}
+                          сезон {entry.seasonKey} ({entry.timeZone})
                         </p>
                         <p className="tasks-detail-criteria">{entry.reason}</p>
                         {entry.reward && (

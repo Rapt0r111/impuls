@@ -233,7 +233,7 @@ export function ParticipantProfile() {
                   <span className="profile-level-number" aria-hidden="true">
                     {level.level}
                   </span>
-                  <span>уровень · правила {data.progression.ruleVersion}</span>
+                  <span>уровень</span>
                 </p>
                 {level.nextLevelXp === null ? (
                   <p>Достигнут последний настроенный уровень.</p>
@@ -263,8 +263,8 @@ export function ParticipantProfile() {
             ) : (
               <p>
                 {data.progression.state === "invalid"
-                  ? "Пороги уровней в текущей версии правил некорректны. Сообщите администратору."
-                  : "Уровни ещё не настроены в правилах."}
+                  ? "Пороги уровней в настройках начислений некорректны. Сообщите администратору."
+                  : "Уровни ещё не настроены."}
               </p>
             )}
           </section>

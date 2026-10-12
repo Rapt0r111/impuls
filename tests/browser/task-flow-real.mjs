@@ -136,7 +136,6 @@ const taskState = async () =>
     .getByRole("button", { name: "Постановка задач", exact: true })
     .click();
   await p.getByLabel("Область", { exact: true }).selectOption(scope);
-  await p.getByLabel("Версия правил", { exact: true }).selectOption(rules);
   await p.getByLabel("Название", { exact: true }).fill(title);
   await p
     .getByLabel("Критерии результата", { exact: true })

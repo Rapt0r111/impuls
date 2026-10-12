@@ -42,11 +42,49 @@ function parseThresholds(text: string): number[] | null | "invalid" {
   return numbers.some(Number.isNaN) ? "invalid" : numbers;
 }
 
+type Settings = {
+  timeZone: string;
+  acceptanceEnabled: boolean;
+  minPercent: number | null;
+  bonuses: { title: string; percent: number }[];
+  levelThresholds: number[] | null;
+};
+const NOT_SET = "не задано";
+// Одна строка на настройку: по ней сравниваются «было» и «станет».
+const labels: [string, (value: Settings) => string][] = [
+  ["Часовой пояс месяца", (v) => v.timeZone],
+  [
+    "Начисление при приёмке",
+    (v) => (v.acceptanceEnabled ? "включено" : "выключено"),
+  ],
+  [
+    "Проверяющий может снизить награду до",
+    (v) => (v.minPercent === null ? "нельзя" : `${v.minPercent} % фонда`),
+  ],
+  [
+    "Бонусы",
+    (v) =>
+      v.bonuses.length
+        ? v.bonuses.map((b) => `${b.title} (+${b.percent} %)`).join(", ")
+        : "нет",
+  ],
+  [
+    "Пороги уровней, XP",
+    (v) => (v.levelThresholds ? v.levelThresholds.join(", ") : "не настроены"),
+  ],
+];
+const changesBetween = (before: Settings | null, after: Settings) =>
+  labels.flatMap(([title, text]) => {
+    const was = before ? text(before) : NOT_SET;
+    const now = text(after);
+    return was === now ? [] : [{ title, was, now }];
+  });
+
 export function RulesAdmin() {
   const { loseAccess } = useAuthorizedSession();
   const id = useId();
   const query = useQuery({ queryKey: QUERY_KEY, queryFn: load, retry: false });
-  const [done, setDone] = useState<number | null>(null);
+  const [done, setDone] = useState(false);
   const current = query.data?.current ?? null;
   const failure = query.error as (Error & { status?: number }) | null;
   useEffect(() => {
@@ -55,52 +93,52 @@ export function RulesAdmin() {
   }, [failure, loseAccess]);
   return (
     <section className="tasks-section" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`}>Правила начислений</h2>
+      <h2 id={`${id}-title`}>Настройки начислений</h2>
       <p className="notification-note">
-        Новая версия действует для задач, созданных после публикации. Уже
-        созданные задачи и начисления не меняются. Пороги уровней применяются
-        сразу ко всем в профиле.
+        Здесь задано, как считаются награды и уровни. Новые доли и бонусы
+        действуют для задач, созданных после сохранения: уже созданные задачи и
+        начисленное не меняются. Пороги уровней применяются сразу ко всем.
       </p>
-      {query.isPending ? <p role="status">Загружаем правила…</p> : null}
+      {query.isPending ? <p role="status">Загружаем настройки…</p> : null}
       {failure && failure.status !== 401 && failure.status !== 403 ? (
         <p role="alert">
           {failure.status === 404
-            ? "Управление правилами выключено или недоступно."
-            : "Правила не загрузились. Попробуйте позже."}
+            ? "Изменение настроек выключено или недоступно."
+            : "Настройки не загрузились. Попробуйте позже."}
         </p>
       ) : null}
       {query.data ? (
         <>
           <p>
             {current
-              ? `Действует версия ${current.versionNumber} с ${dateText(current.effectiveFrom)}.`
-              : "Версий правил ещё нет: первая публикация создаст версию 1."}
+              ? `Действуют с ${dateText(current.effectiveFrom)}.`
+              : "Настроек ещё нет: первое сохранение создаст их."}
           </p>
           {current?.legacyOptions ? (
             <p className="notification-note">
-              В действующей версии есть настройки в абсолютных числах. Форма
-              показывает только доли фонда; публикация заменит их долями.
+              Сейчас часть настроек задана в абсолютных числах. Форма показывает
+              только доли фонда; сохранение заменит их долями.
             </p>
           ) : null}
-          {done ? <p role="status">Опубликована версия {done}.</p> : null}
+          {done ? <p role="status">Настройки сохранены.</p> : null}
           <RulesForm
             key={current?.versionNumber ?? 0}
             current={current}
-            onPublished={setDone}
+            onPublished={() => setDone(true)}
           />
-          <h3>История версий</h3>
+          <h3>Кто и когда менял</h3>
           {query.data.history.length ? (
             <ul>
               {query.data.history.map((item) => (
                 <li key={item.versionNumber}>
-                  Версия {item.versionNumber}, {dateText(item.effectiveFrom)}
+                  {dateText(item.effectiveFrom)}
                   {item.publishedBy ? `, ${item.publishedBy}` : ""}
                   {item.reason ? ` — ${item.reason}` : ""}
                 </li>
               ))}
             </ul>
           ) : (
-            <p>Опубликованных версий нет.</p>
+            <p>Изменений ещё не было.</p>
           )}
         </>
       ) : null}
@@ -108,14 +146,14 @@ export function RulesAdmin() {
   );
 }
 
-// Поля заполняются действующей версией при создании формы. После публикации версия
-// меняется, форма пересоздаётся (key) и показывает уже сохранённые значения.
+// Поля заполняются действующими настройками при создании формы. После сохранения
+// формируется новая запись, форма пересоздаётся (key) и показывает сохранённое.
 function RulesForm({
   current,
   onPublished,
 }: {
   current: RulesResponse["current"];
-  onPublished(version: number): void;
+  onPublished(): void;
 }) {
   const { csrfToken, reportDirty, loseAccess } = useAuthorizedSession();
   const client = useQueryClient();
@@ -191,8 +229,12 @@ function RulesForm({
           });
     if (!parsed?.success || (adjust && !/^\d+$/.test(minPercent))) {
       setStatus(
-        "Проверьте поля: часовой пояс из списка IANA, минимальная доля от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля и основание.",
+        "Проверьте поля: часовой пояс из списка IANA, нижний предел от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля и пояснение.",
       );
+      return;
+    }
+    if (current && !changesBetween(current, parsed.data).length) {
+      setStatus("Вы ничего не изменили.");
       return;
     }
     setPreview(parsed.data);
@@ -205,7 +247,7 @@ function RulesForm({
     setSent(true);
     running.current = true;
     setPending(true);
-    setStatus("Публикуем версию правил…");
+    setStatus("Сохраняем настройки…");
     const abort = new AbortController();
     const timeout = setTimeout(() => abort.abort(), 15000);
     try {
@@ -233,13 +275,13 @@ function RulesForm({
       if ([400, 404, 409, 413, 422].includes(response.status)) {
         setBlocked(true);
         setStatus(
-          "Публикация отклонена. Обновите экран и проверьте поля: возможно, управление правилами выключено или ключ уже использован.",
+          "Сохранение отклонено. Обновите экран и проверьте поля: возможно, изменение настроек выключено или запрос уже использован.",
         );
         return;
       }
       if (!response.ok) throw new Error("unconfirmed");
-      const saved = rulesPublishResponseSchema.parse(await response.json());
-      onPublished(saved.versionNumber);
+      rulesPublishResponseSchema.parse(await response.json());
+      onPublished();
       setPreview(null);
       setTouched(false);
       reportDirty(false);
@@ -250,7 +292,7 @@ function RulesForm({
     } catch {
       if (alive.current)
         setStatus(
-          "Результат не подтверждён. Поля сохранены. Повторите тот же запрос — сервер не создаст вторую версию.",
+          "Результат не подтверждён. Поля сохранены. Повторите тот же запрос — сервер не сохранит изменения дважды.",
         );
     } finally {
       clearTimeout(timeout);
@@ -263,34 +305,16 @@ function RulesForm({
     <form className="tasks-filter" onSubmit={review} aria-busy={pending}>
       {preview ? (
         <>
-          <h3>Проверьте перед публикацией</h3>
+          <h3>Проверьте изменения</h3>
           <ul>
-            <li>Часовой пояс: {preview.timeZone}</li>
-            <li>
-              Приёмка с начислением:{" "}
-              {preview.acceptanceEnabled ? "включена" : "выключена"}
-            </li>
-            <li>
-              Проверяющий может снизить базу до{" "}
-              {preview.minPercent === null
-                ? "— (не может)"
-                : `${preview.minPercent} % фонда`}
-            </li>
-            <li>
-              Бонусы:{" "}
-              {preview.bonuses.length
-                ? preview.bonuses
-                    .map((b) => `${b.title} (+${b.percent} %)`)
-                    .join(", ")
-                : "нет"}
-            </li>
-            <li>
-              Уровни (XP с которого начинается уровень):{" "}
-              {preview.levelThresholds?.join(", ") ?? "не настроены"}
-            </li>
+            {changesBetween(current, preview).map((item) => (
+              <li key={item.title}>
+                {item.title}: {item.was} → {item.now}
+              </li>
+            ))}
           </ul>
           <p className="admin-catalog-conditions">
-            Основание: {preview.reason}
+            Пояснение: {preview.reason}
           </p>
           {!sent ? (
             <button
@@ -308,51 +332,49 @@ function RulesForm({
             onClick={() => void send()}
           >
             {pending
-              ? "Публикуем…"
+              ? "Сохраняем…"
               : sent
                 ? "Повторить тот же запрос"
-                : "Опубликовать версию"}
+                : "Сохранить"}
           </button>
         </>
       ) : (
         <>
-          <label>
-            <span>Часовой пояс расчёта месяца</span>
-            <input
-              value={zone}
-              required
-              maxLength={80}
-              onChange={(e) => edit(setZone)(e.target.value)}
-            />
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => edit(setEnabled)(e.target.checked)}
-            />
-            <span>Начислять XP и баллы при приёмке</span>
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={adjust}
-              onChange={(e) => edit(setAdjust)(e.target.checked)}
-            />
-            <span>Проверяющий может снижать базу начисления</span>
-          </label>
-          {adjust ? (
-            <label>
-              <span>Наименьшая доля фонда задачи, %</span>
-              <input
-                inputMode="numeric"
-                value={minPercent}
-                onChange={(e) => edit(setMinPercent)(e.target.value)}
-              />
-            </label>
-          ) : null}
           <fieldset>
-            <legend>Бонусы при приёмке (не более семи)</legend>
+            <legend>Проверка отчёта</legend>
+            <label>
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => edit(setEnabled)(e.target.checked)}
+              />
+              <span>Начислять XP и баллы при приёмке</span>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={adjust}
+                onChange={(e) => edit(setAdjust)(e.target.checked)}
+              />
+              <span>Проверяющий может снижать награду</span>
+            </label>
+            {adjust ? (
+              <label>
+                <span>Не ниже, % от фонда задачи</span>
+                <input
+                  inputMode="numeric"
+                  value={minPercent}
+                  onChange={(e) => edit(setMinPercent)(e.target.value)}
+                />
+              </label>
+            ) : null}
+          </fieldset>
+          <fieldset>
+            <legend>Бонусы проверяющего (не более семи)</legend>
+            <p className="notification-note">
+              Проверяющий может добавить к награде один бонус — долю фонда
+              задачи.
+            </p>
             {bonuses.map((row, index) => (
               <div key={index} className="catalog-publication-field">
                 <label>
@@ -406,20 +428,36 @@ function RulesForm({
               </button>
             ) : null}
           </fieldset>
-          <label>
-            <span>Пороги уровней, XP через запятую</span>
-            <input
-              value={levels}
-              placeholder="0, 100, 250, 500"
-              onChange={(e) => edit(setLevels)(e.target.value)}
-            />
-          </label>
-          <p className="notification-note">
-            Первый порог — 0, каждый следующий больше предыдущего. Пусто —
-            уровни не настроены, профиль скажет об этом.
-          </p>
+          <fieldset>
+            <legend>Уровни</legend>
+            <label>
+              <span>Пороги уровней, XP через запятую</span>
+              <input
+                value={levels}
+                placeholder="0, 100, 250, 500"
+                onChange={(e) => edit(setLevels)(e.target.value)}
+              />
+            </label>
+            <p className="notification-note">
+              Это XP, с которого начинается каждый уровень. Первый порог — 0,
+              каждый следующий больше предыдущего. Пусто — уровни не настроены,
+              профиль скажет об этом.
+            </p>
+          </fieldset>
+          <fieldset>
+            <legend>Месяц</legend>
+            <label>
+              <span>Часовой пояс расчёта месяца</span>
+              <input
+                value={zone}
+                required
+                maxLength={80}
+                onChange={(e) => edit(setZone)(e.target.value)}
+              />
+            </label>
+          </fieldset>
           <div className="catalog-publication-field">
-            <label htmlFor={`${id}-reason`}>Основание новой версии</label>
+            <label htmlFor={`${id}-reason`}>Что меняете и почему</label>
             <textarea
               id={`${id}-reason`}
               required
@@ -430,7 +468,7 @@ function RulesForm({
             />
           </div>
           <button type="submit" className="tasks-action">
-            Проверить версию
+            Проверить изменения
           </button>
         </>
       )}

@@ -240,9 +240,9 @@ function CorrectionForm({
             </p>
           )}
           <p>
-            Исходный сезон {current.seasonKey} · правила {current.ruleVersion} ·
-            версия баланса {current.balance.version}. Приёмка и исходные записи
-            сохраняются. Синтетический режим.
+            Исходный сезон {current.seasonKey} · версия баланса{" "}
+            {current.balance.version}. Приёмка и исходные записи сохраняются.
+            Синтетический режим.
           </p>
         </div>
         {!success && (

@@ -9,7 +9,7 @@ export const actionLabels: Record<(typeof grantableActions)[number], string> = {
   "task.review": "Проверка отчётов",
   "reward.decide": "Решения по заявкам",
   "reward.fulfill": "Выдача поощрений",
-  "admin.rules": "Правила начислений",
+  "admin.rules": "Настройки начислений",
   "admin.catalog": "Управление каталогом",
   "admin.catalog.create": "Создание позиций каталога",
   "admin.catalog.publish": "Публикация условий каталога",

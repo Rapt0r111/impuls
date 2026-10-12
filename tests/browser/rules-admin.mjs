@@ -99,15 +99,17 @@ async function open(width, mode = "ok") {
   );
   await page.goto(origin);
   await page.getByRole("button", { name: "Ещё", exact: true }).click();
-  await page.getByRole("button", { name: /Правила начислений/ }).click();
+  await page.getByRole("button", { name: /Настройки начислений/ }).click();
   return { page, context, errors, posts };
 }
 
 for (const width of [320, 360, 390]) {
   const { page, context, errors, posts } = await open(width);
-  await page.getByRole("heading", { name: "Правила начислений" }).waitFor();
-  await page.getByText(/Действует версия 3/).waitFor();
-  // Fields are filled with the current version.
+  await page.getByRole("heading", { name: "Настройки начислений" }).waitFor();
+  await page.getByText(/Действуют с/).waitFor();
+  // No version numbers anywhere on the screen.
+  assert.equal(await page.getByText(/верси/i).count(), 0);
+  // Fields are filled with the current settings.
   assert.equal(
     await page.getByLabel("Часовой пояс расчёта месяца").inputValue(),
     "Europe/Moscow",
@@ -124,19 +126,27 @@ for (const width of [320, 360, 390]) {
   );
   // Invalid thresholds are refused before any request.
   await page.getByLabel(/Пороги уровней/).fill("5, 10");
-  await page.getByLabel("Основание новой версии").fill("Пороги уровней");
-  await page.getByRole("button", { name: "Проверить версию" }).click();
+  await page.getByLabel("Что меняете и почему").fill("Пороги уровней");
+  await page.getByRole("button", { name: "Проверить изменения" }).click();
   assert.ok(await page.getByText(/Проверьте поля/).isVisible());
   assert.equal(posts.length, 0);
-  // Valid change: preview, then publish once.
+  // Nothing changed: no request and no preview.
+  await page.getByLabel(/Пороги уровней/).fill("");
+  await page.getByRole("button", { name: "Проверить изменения" }).click();
+  await page.getByText("Вы ничего не изменили.").waitFor();
+  assert.equal(posts.length, 0);
+  // Valid change: the preview lists only what changes, then save once.
   await page.getByLabel(/Пороги уровней/).fill("0, 100, 250");
-  await page.getByRole("button", { name: "Проверить версию" }).click();
-  await page
-    .getByRole("heading", { name: "Проверьте перед публикацией" })
-    .waitFor();
-  assert.ok(await page.getByText(/0, 100, 250/).isVisible());
-  await page.getByRole("button", { name: "Опубликовать версию" }).click();
-  await page.getByText("Опубликована версия 4.").waitFor();
+  await page.getByRole("button", { name: "Проверить изменения" }).click();
+  await page.getByRole("heading", { name: "Проверьте изменения" }).waitFor();
+  assert.ok(
+    await page
+      .getByText("Пороги уровней, XP: не настроены → 0, 100, 250")
+      .isVisible(),
+  );
+  assert.equal(await page.getByText(/Часовой пояс месяца:/).count(), 0);
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await page.getByText("Настройки сохранены.").waitFor();
   assert.equal(posts.length, 1);
   assert.match(posts[0].key, /^[0-9a-f-]{36}$/);
   assert.equal(posts[0].csrf, "synthetic");
@@ -157,19 +167,20 @@ for (const width of [320, 360, 390]) {
 {
   const { page, context } = await open(390, "disabled");
   await page
-    .getByText("Управление правилами выключено или недоступно.")
+    .getByText("Изменение настроек выключено или недоступно.")
     .waitFor();
   await context.close();
   scenarios++;
 }
 {
   const { page, context, posts } = await open(390, "rejected");
-  await page.getByLabel("Основание новой версии").fill("Проверка отказа");
-  await page.getByRole("button", { name: "Проверить версию" }).click();
-  await page.getByRole("button", { name: "Опубликовать версию" }).click();
+  await page.getByLabel(/Пороги уровней/).fill("0, 100");
+  await page.getByLabel("Что меняете и почему").fill("Проверка отказа");
+  await page.getByRole("button", { name: "Проверить изменения" }).click();
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   await page
     .getByRole("alert")
-    .getByText(/Публикация отклонена/)
+    .getByText(/Сохранение отклонено/)
     .waitFor();
   assert.equal(posts.length, 1);
   assert.ok(
