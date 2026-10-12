@@ -16,6 +16,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import { TaskReport } from "./task-report";
+import { OpenTaskList, useOpenTasks } from "./open-tasks";
 import { TaskHistory } from "./task-history";
 import { TaskTimeline } from "./task-timeline";
 import { Home } from "@/features/home/home";
@@ -135,7 +136,7 @@ const statusIcons: Record<string, ReactNode> = {
 
 // Три раздела списка по макету. Фильтрация выполняется по загруженным
 // страницам, поэтому число в разделе показывается только когда список полный.
-type Segment = "active" | "review" | "done";
+type Segment = "active" | "review" | "done" | "open";
 const segments: readonly (readonly [Segment, string])[] = [
   ["active", "Активные"],
   ["review", "Проверка"],
@@ -220,13 +221,15 @@ function TaskListContent() {
     enabled: selectedId !== null,
     retry: false,
   });
+  const openTasks = useOpenTasks();
+  const openItems = openTasks.data ?? [];
   const allItems = tasks.data?.pages.flatMap((page) => page.items) ?? [];
   const segment: Segment =
-    chosen ??
-    segments.find(([value]) =>
-      allItems.some((task) => segmentOf(task.status) === value),
-    )?.[0] ??
-    "active";
+    chosen && (chosen !== "open" || openItems.length)
+      ? chosen
+      : (segments.find(([value]) =>
+          allItems.some((task) => segmentOf(task.status) === value),
+        )?.[0] ?? (openItems.length && !allItems.length ? "open" : "active"));
   const items = allItems.filter((task) => segmentOf(task.status) === segment);
   const complete = !tasks.hasNextPage && !tasks.isPending;
   useEffect(() => {
@@ -350,27 +353,66 @@ function TaskListContent() {
       <div className="tasks-heading">
         <h2 id="tasks-title">Задачи</h2>
       </div>
-      <div className="tasks-seg" role="group" aria-label="Раздел списка">
-        {segments.map(([value, label]) => {
-          const count = allItems.filter(
-            (task) => segmentOf(task.status) === value,
-          ).length;
-          return (
+      {segment === "open" ? (
+        <button
+          type="button"
+          className="screen-back"
+          aria-label="Свободные задачи: вернуться к моим задачам"
+          onClick={() => setChosen("active")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          Мои задачи
+        </button>
+      ) : (
+        <>
+          {openItems.length ? (
             <button
               type="button"
-              key={value}
-              className="tasks-seg-item"
-              aria-pressed={segment === value}
-              onClick={() => setChosen(value)}
+              className="open-tasks-banner"
+              onClick={() => setChosen("open")}
             >
-              {label}
-              {complete && value !== "done" ? ` ${count}` : ""}
+              <span>
+                <strong>Свободные задачи</strong>
+                <small>Можно взять самому</small>
+              </span>
+              <span className="task-chip task-chip--xp">
+                {openItems.length}
+              </span>
             </button>
-          );
-        })}
-      </div>
+          ) : null}
+          <div className="tasks-seg" role="group" aria-label="Раздел списка">
+            {segments.map(([value, label]) => {
+              const count = allItems.filter(
+                (task) => segmentOf(task.status) === value,
+              ).length;
+              return (
+                <button
+                  type="button"
+                  key={value}
+                  className="tasks-seg-item"
+                  aria-pressed={segment === value}
+                  onClick={() => setChosen(value)}
+                >
+                  {label}
+                  {complete && value !== "done" ? ` ${count}` : ""}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-      {tasks.isPending ? (
+      {segment === "open" ? (
+        <OpenTaskList
+          items={openItems}
+          onClaimed={(taskId) => {
+            setChosen("active");
+            setSelectedId(taskId);
+          }}
+        />
+      ) : tasks.isPending ? (
         <p className="tasks-state" role="status">
           Загружаем задачи…
         </p>

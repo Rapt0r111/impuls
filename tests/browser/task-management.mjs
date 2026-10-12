@@ -34,6 +34,7 @@ const body = {
   dueAt,
   fundXp: 17,
   fundPoints: 9,
+  openForClaim: false,
 };
 
 function task(overrides = {}) {

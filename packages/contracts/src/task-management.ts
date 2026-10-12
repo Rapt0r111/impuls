@@ -37,6 +37,8 @@ export const managementTaskSchema = z.object({
   updatedAt: z.iso.datetime(),
   scope: taskScopeSchema,
   assignee: taskAssigneeSchema.nullable(),
+  // Свободная задача: любой участник области может взять её сам, пока она черновик.
+  openForClaim: z.boolean().default(false),
 });
 
 export const taskCreateRequestSchema = z.strictObject({
@@ -49,6 +51,7 @@ export const taskCreateRequestSchema = z.strictObject({
   dueAt: z.iso.datetime(),
   fundXp: fundSchema,
   fundPoints: fundSchema,
+  openForClaim: z.boolean().default(false),
 });
 
 export const taskAssignRequestSchema = z.strictObject({
@@ -57,7 +60,7 @@ export const taskAssignRequestSchema = z.strictObject({
 });
 
 export const taskEditRequestSchema = taskCreateRequestSchema
-  .omit({ scopeId: true, ruleSetId: true })
+  .omit({ scopeId: true, ruleSetId: true, openForClaim: true })
   .extend({
     expectedVersion: z.number().int().positive(),
     reason: z.string().trim().min(1).max(2000),

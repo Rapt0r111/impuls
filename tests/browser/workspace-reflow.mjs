@@ -127,6 +127,24 @@ async function fixture(browser, width) {
       })),
     },
     "/api/v1/tasks": { items: [task], nextCursor: null },
+    "/api/v1/tasks/open": {
+      items: [
+        {
+          id: "c1111111-1111-4111-8111-111111111111",
+          title:
+            "Свободная задача с очень длинным названием для проверки переноса строк",
+          criteria:
+            "Подробное описание свободной задачи, которое должно переноситься и обрезаться без выхода за край экрана.",
+          priority: "high",
+          dueAt: "2035-01-01T12:00:00.000Z",
+          fundXp: 1234567,
+          fundPoints: 6789,
+          version: 1,
+          updatedAt: "2026-10-12T08:00:00.000Z",
+          scope: { ...task.scope, name: "Область с длинным названием" },
+        },
+      ],
+    },
     [`/api/v1/tasks/${id}`]: { task },
     "/api/v1/reviews": { items: [review], nextCursor: null },
     "/api/v1/me/ledger": {

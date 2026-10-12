@@ -21,6 +21,7 @@ export type ManagedTask = {
   updatedAt: string;
   scope: Scope;
   assignee: Assignee | null;
+  openForClaim: boolean;
 };
 export type CreateTaskData = {
   scopeId: string;
@@ -32,6 +33,7 @@ export type CreateTaskData = {
   dueAt: string;
   fundXp: number;
   fundPoints: number;
+  openForClaim: boolean;
 };
 type MutationBase = {
   actorId: string;
@@ -47,7 +49,7 @@ export type AssignTaskInput = MutationBase & {
 };
 export type EditTaskInput = MutationBase & {
   taskId: string;
-  data: Omit<CreateTaskData, "scopeId" | "ruleSetId"> & {
+  data: Omit<CreateTaskData, "scopeId" | "ruleSetId" | "openForClaim"> & {
     expectedVersion: number;
     reason: string;
   };
@@ -77,7 +79,7 @@ const manageBinding = `${activeBinding} AND b.action IN ('task.view', 'task.crea
 const selectTask = `SELECT t.id, t.title, t.criteria, t.category_code, t.priority,
   t.status, t.due_at, t.fund_xp, t.fund_points, t.rule_set_id, r.version_number,
   t.version, t.updated_at, s.id AS scope_id, s.kind, s.name,
-  u.id AS assignee_id, u.display_name
+  u.id AS assignee_id, u.display_name, t.open_for_claim
   FROM impuls.tasks t JOIN impuls.rule_sets r ON r.id = t.rule_set_id
   JOIN impuls.access_scopes s ON s.id = t.scope_id
   LEFT JOIN impuls.task_assignments a ON a.task_id = t.id
@@ -101,6 +103,7 @@ type TaskRow = {
   name: string;
   assignee_id: string | null;
   display_name: string | null;
+  open_for_claim: boolean;
 };
 function mapTask(row: TaskRow): ManagedTask {
   return {
@@ -122,6 +125,7 @@ function mapTask(row: TaskRow): ManagedTask {
       row.assignee_id && row.display_name
         ? { id: row.assignee_id, displayName: row.display_name }
         : null,
+    openForClaim: row.open_for_claim,
   };
 }
 export async function listManagedTasks(
@@ -342,8 +346,8 @@ async function manageTask(
       taskId = (
         await client.query<{ id: string }>(
           `INSERT INTO impuls.tasks
-        (scope_id,rule_set_id,created_by,title,criteria,category_code,priority,status,due_at,fund_xp,fund_points)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10) RETURNING id`,
+        (scope_id,rule_set_id,created_by,title,criteria,category_code,priority,status,due_at,fund_xp,fund_points,open_for_claim)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8,$9,$10,$11) RETURNING id`,
           [
             scopeId,
             ruleId,
@@ -355,6 +359,7 @@ async function manageTask(
             d.dueAt,
             d.fundXp,
             d.fundPoints,
+            d.openForClaim === true,
           ],
         )
       ).rows[0]!.id;

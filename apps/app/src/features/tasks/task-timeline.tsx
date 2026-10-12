@@ -130,7 +130,12 @@ export function TaskTimeline({ taskId }: { taskId: string }) {
                         {items.map((item) => (
                           <li key={item.id}>
                             <h4>
-                              {labels[item.kind]} · версия {item.taskVersion}
+                              {item.kind === "assigned" &&
+                              item.actor &&
+                              item.actor.id === item.assignee?.id
+                                ? "Исполнитель взял задачу сам"
+                                : labels[item.kind]}{" "}
+                              · версия {item.taskVersion}
                             </h4>
                             <p className="task-history-date">
                               <time dateTime={item.occurredAt}>

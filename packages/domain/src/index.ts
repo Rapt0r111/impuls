@@ -30,6 +30,8 @@ export type {
   AssignedTaskSummary,
 } from "./tasks/read";
 export { mutateAssignedTask } from "./tasks/write";
+export { claimTask, listOpenTasks } from "./tasks/claim";
+export type { ClaimInput, ClaimResult, OpenTask } from "./tasks/claim";
 export { consumeTaskMutationAttempt } from "./tasks/rate-limit";
 export type {
   TaskMutation,

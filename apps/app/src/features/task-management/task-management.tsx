@@ -90,6 +90,7 @@ function emptyDraft(): Draft {
     dueAt: "",
     fundXp: 0,
     fundPoints: 0,
+    openForClaim: false,
   };
 }
 
@@ -195,7 +196,8 @@ export function TaskManagement() {
     draft.categoryCode ||
     draft.dueAt ||
     draft.fundXp ||
-    draft.fundPoints,
+    draft.fundPoints ||
+    draft.openForClaim,
   );
 
   useEffect(() => {
@@ -656,6 +658,19 @@ export function TaskManagement() {
                   </label>
                 </div>
               </div>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={draft.openForClaim}
+                  disabled={pending || uncertain}
+                  onChange={(event) =>
+                    setField("openForClaim", event.target.checked)
+                  }
+                />
+                <span>
+                  Свободная задача: любой участник области сможет взять её сам
+                </span>
+              </label>
               {currentScope && (
                 <p className="task-mgmt__hint">
                   Создание разрешено в области «{currentScope.name}». Назначение
@@ -871,7 +886,11 @@ function TaskRow({
       <div className="task-mgmt__item-main">
         <div className="task-mgmt__item-title">
           <h4>{task.title}</h4>
-          <span className="task-mgmt__status">{statusNames[task.status]}</span>
+          <span className="task-mgmt__status">
+            {task.status === "draft" && task.openForClaim
+              ? "Свободная"
+              : statusNames[task.status]}
+          </span>
         </div>
         <p className="task-mgmt__item-meta">
           {task.scope.name} · {priorityNames[task.priority]} · до{" "}

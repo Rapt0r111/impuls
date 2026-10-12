@@ -145,6 +145,7 @@ const taskState = async () =>
   await p.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
   await p.getByLabel("Фонд XP", { exact: true }).fill("17");
   await p.getByLabel("Фонд баллов", { exact: true }).fill("9");
+  await p.getByLabel(/Свободная задача/).check();
   await p
     .getByRole("button", { name: "Создать черновик", exact: true })
     .click();
@@ -161,6 +162,15 @@ const taskState = async () =>
       )
     ).rows[0].category_code,
     "Без категории",
+  );
+  assert.equal(
+    (
+      await db.query(
+        "SELECT open_for_claim FROM impuls.tasks WHERE created_by=$1 AND title=$2",
+        [manager, title],
+      )
+    ).rows[0].open_for_claim,
+    true,
   );
   await done(s, "1-manager");
 }

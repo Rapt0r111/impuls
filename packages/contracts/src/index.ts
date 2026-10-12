@@ -69,12 +69,18 @@ export {
   taskSubmissionResponseSchema,
   taskStartRequestSchema,
   taskStartResponseSchema,
+  taskClaimRequestSchema,
+  taskClaimResponseSchema,
+  openTaskSchema,
+  openTaskListResponseSchema,
   taskDetailResponseSchema,
   taskIdSchema,
   taskListQuerySchema,
   taskListResponseSchema,
 } from "./tasks";
 export type {
+  OpenTask,
+  OpenTaskListResponse,
   TaskDetailResponse,
   TaskListResponse,
   TaskSubmissionHeaders,
