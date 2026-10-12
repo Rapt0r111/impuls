@@ -21,10 +21,20 @@ describe("rules publish request", () => {
       }).success,
     ).toBe(true);
   });
+  it("accepts a free-task limit, no limit, and an omitted field as no limit", () => {
+    const parse = (extra: object) =>
+      rulesPublishRequestSchema.safeParse({ ...valid, ...extra });
+    expect(parse({ openTaskLimit: 3 }).success).toBe(true);
+    expect(parse({ openTaskLimit: null }).success).toBe(true);
+    const omitted = parse({});
+    expect(omitted.success && omitted.data.openTaskLimit).toBeNull();
+  });
   it.each([
     ["first threshold not zero", { levelThresholds: [10, 20] }],
     ["non-increasing thresholds", { levelThresholds: [0, 50, 50] }],
     ["unknown zone", { timeZone: "Mars/Base" }],
+    ["limit of zero", { openTaskLimit: 0 }],
+    ["limit above fifty", { openTaskLimit: 51 }],
     ["percent above 100", { minPercent: 101 }],
     [
       "duplicate bonus codes",

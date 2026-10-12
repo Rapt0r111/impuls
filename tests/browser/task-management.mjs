@@ -34,6 +34,7 @@ const body = {
   dueAt,
   fundXp: 17,
   fundPoints: 9,
+  openForClaim: false,
 };
 
 function task(overrides = {}) {
@@ -369,14 +370,19 @@ async function pageFixture(width, mode = "success") {
 
 async function fillCreateForm(page, setTitle = title) {
   await page.getByLabel("Область", { exact: true }).selectOption(scopeId);
-  await page.getByLabel("Версия правил", { exact: true }).selectOption(ruleId);
   await page.getByLabel("Название", { exact: true }).fill(setTitle);
   await page.getByLabel("Критерии результата", { exact: true }).fill(criteria);
-  await page
-    .getByLabel("Код категории", { exact: true })
-    .fill("synthetic-check");
+  await page.getByLabel("Категория", { exact: true }).fill("synthetic-check");
   await page.getByLabel("Приоритет", { exact: true }).selectOption("high");
   await page.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
+  // An untouched zero is an empty field, so typing never leaves a leading zero.
+  const xpField = page.getByLabel("Фонд XP", { exact: true });
+  assert.equal(await xpField.inputValue(), "");
+  await xpField.pressSequentially("007");
+  assert.equal(await xpField.inputValue(), "7");
+  await xpField.fill("");
+  await xpField.pressSequentially("a1b2");
+  assert.equal(await xpField.inputValue(), "12");
   await page.getByLabel("Фонд XP", { exact: true }).fill("17");
   await page.getByLabel("Фонд баллов", { exact: true }).fill("9");
 }
@@ -409,8 +415,7 @@ async function createAndAssign(page, calls, dialogs, keyboard = false) {
   assert.deepEqual(calls[1].body, { assigneeId: memberId, expectedVersion: 1 });
   assert.notEqual(calls[0].key, calls[1].key);
   assert.ok(dialogs.at(-1)?.includes(title));
-  assert.ok(dialogs.at(-1)?.includes("Версия правил: 7"));
-  assert.ok(dialogs.at(-1)?.includes("версия задачи: 1"));
+  assert.ok(!dialogs.at(-1)?.includes("Версия правил"));
   assert.ok(dialogs.at(-1)?.includes("17 XP · 9 баллов"));
 }
 
@@ -438,7 +443,6 @@ async function dbFlow() {
   const dbTitle = `${title} ${randomUUID()}`;
   const scope = randomUUID();
   const rules = randomUUID();
-  let dbRuleVersion;
   const sessionTokens = users.map(() => randomBytes(32).toString("base64url"));
   const hashes = sessionTokens.map((token) =>
     createHash("sha256").update(token).digest(),
@@ -465,12 +469,6 @@ async function dbFlow() {
       "INSERT INTO impuls.rule_sets (id,version_number,definition,effective_from,created_by) VALUES ($1,$2,'{\"mode\":\"synthetic\"}',clock_timestamp()-interval '1 minute',$3)",
       [rules, randomInt(100_000, 2_000_000_000), manager],
     );
-    dbRuleVersion = (
-      await admin.query(
-        "SELECT version_number FROM impuls.rule_sets WHERE id=$1",
-        [rules],
-      )
-    ).rows[0].version_number;
     await admin.query(
       "INSERT INTO impuls.role_bindings (user_id,action,scope_id,granted_by,reason) VALUES ($1,'task.create',$2,$1,'Synthetic browser fixture'),($1,'task.assign',$2,$1,'Synthetic browser fixture')",
       [manager, scope],
@@ -553,15 +551,12 @@ async function dbFlow() {
         .getByRole("button", { name: "Постановка задач", exact: true })
         .click();
       await page.getByLabel("Область", { exact: true }).selectOption(scope);
-      await page
-        .getByLabel("Версия правил", { exact: true })
-        .selectOption(rules);
       await page.getByLabel("Название", { exact: true }).fill(dbTitle);
       await page
         .getByLabel("Критерии результата", { exact: true })
         .fill(criteria);
       await page
-        .getByLabel("Код категории", { exact: true })
+        .getByLabel("Категория", { exact: true })
         .fill("synthetic-check");
       await page.getByLabel("Приоритет", { exact: true }).selectOption("high");
       await page.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
@@ -606,11 +601,7 @@ async function dbFlow() {
       );
       assert.ok(confirmText.includes(dbTitle));
       assert.ok(confirmText.includes(criteria));
-      assert.ok(
-        confirmText.includes(
-          `Версия правил: ${dbRuleVersion} · версия задачи: 1`,
-        ),
-      );
+      assert.ok(!confirmText.includes("Версия правил"));
       assert.ok(confirmText.includes("17 XP · 9 баллов"));
 
       const state = await admin.query(
@@ -750,7 +741,7 @@ try {
       width === 320 ? "dirty-nav-dismiss" : "success",
     );
     await page
-      .getByText("утверждённая экономика пока не задана", { exact: false })
+      .getByText("Фонд XP и баллов вы задаёте сами", { exact: false })
       .waitFor();
     await fillCreateForm(page);
     assert.equal(await page.evaluate(() => window.closingCalls.at(-1)), true);
@@ -764,7 +755,7 @@ try {
     await page.keyboard.press("Tab");
     assert.equal(
       await page
-        .getByLabel("Версия правил", { exact: true })
+        .getByLabel("Название", { exact: true })
         .evaluate((el) => el === document.activeElement),
       true,
     );
@@ -912,7 +903,7 @@ try {
           hasText:
             mode === "create-conflict"
               ? "Данные задачи изменились"
-              : "Версия правил недоступна",
+              : "Настройки начислений изменились",
         })
         .waitFor();
       assert.equal(

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  openTaskListResponseSchema,
+  taskClaimRequestSchema,
   taskSubmissionHeadersSchema,
   taskSubmissionRequestSchema,
   taskSubmissionResponseSchema,
@@ -153,5 +155,37 @@ describe("task start contracts", () => {
         task: { ...taskDetail, latestSubmission: null },
       }).success,
     ).toBe(true);
+  });
+
+  it("validates free task lists and the claim request strictly", () => {
+    const open = {
+      id: taskId,
+      title: "Free",
+      criteria: "Do it",
+      priority: "normal",
+      dueAt: "2035-01-01T00:00:00.000Z",
+      fundXp: 10,
+      fundPoints: 5,
+      version: 1,
+      updatedAt: "2026-10-12T08:00:00.000Z",
+      scope: { id: scopeId, kind: "group", name: "Scope" },
+    };
+    expect(
+      openTaskListResponseSchema.safeParse({ items: [open] }).success,
+    ).toBe(true);
+    expect(
+      openTaskListResponseSchema.safeParse({ items: Array(51).fill(open) })
+        .success,
+    ).toBe(false);
+    expect(
+      taskClaimRequestSchema.safeParse({ action: "claim", expectedVersion: 1 })
+        .success,
+    ).toBe(true);
+    for (const bad of [
+      { action: "start", expectedVersion: 1 },
+      { action: "claim", expectedVersion: 0 },
+      { action: "claim", expectedVersion: 1, assigneeId: taskId },
+    ])
+      expect(taskClaimRequestSchema.safeParse(bad).success).toBe(false);
   });
 });

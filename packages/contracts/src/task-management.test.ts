@@ -51,6 +51,12 @@ describe("task management contracts", () => {
   it("requires a reason/version for changes and rejects scope/rule/assignee changes", () => {
     const { scopeId: _scope, ruleSetId: _rule, ...fields } = createBody;
     expect([_scope, _rule]).toEqual([ids.scope, ids.rules]);
+    // Free tasks are chosen at creation only: not part of an edit.
+    expect(taskCreateRequestSchema.parse(createBody).openForClaim).toBe(false);
+    expect(
+      taskCreateRequestSchema.parse({ ...createBody, openForClaim: true })
+        .openForClaim,
+    ).toBe(true);
     const edit = { ...fields, expectedVersion: 1, reason: " Correction " };
     expect(taskEditRequestSchema.parse(edit).reason).toBe("Correction");
     for (const patch of [

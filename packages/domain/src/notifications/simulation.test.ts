@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { neutralNotification } from "./simulation";
 
 describe("neutral notification allowlist", () => {
-  it("covers all ten saved kinds using fixed text without source data", () => {
+  it("covers all saved kinds using fixed text without source data", () => {
     const kinds = [
       "task.assigned",
+      "task.claimed",
       "task.returned",
       "task.accepted",
       "ledger.corrected",

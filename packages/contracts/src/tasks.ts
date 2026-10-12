@@ -96,6 +96,34 @@ export const taskStartResponseSchema = z.object({
   task: assignedTaskDetailSchema,
 });
 
+// Свободная задача: черновик, который участник области может взять сам.
+export const openTaskSchema = z.object({
+  id: taskIdSchema,
+  title: z.string().min(1).max(120),
+  criteria: z.string().min(1).max(2000),
+  priority: z.enum(["critical", "high", "normal"]),
+  dueAt: z.iso.datetime(),
+  fundXp: z.number().int().nonnegative(),
+  fundPoints: z.number().int().nonnegative(),
+  version: z.number().int().positive(),
+  updatedAt: z.iso.datetime(),
+  scope: z.object({
+    id: z.uuid(),
+    kind: z.enum(["rota", "group", "project"]),
+    name: z.string().min(1).max(80),
+  }),
+});
+export const openTaskListResponseSchema = z.object({
+  items: z.array(openTaskSchema).max(50),
+});
+export const taskClaimRequestSchema = z.strictObject({
+  expectedVersion: z.number().int().positive(),
+  action: z.literal("claim"),
+});
+export const taskClaimResponseSchema = taskStartResponseSchema;
+
+export type OpenTask = z.infer<typeof openTaskSchema>;
+export type OpenTaskListResponse = z.infer<typeof openTaskListResponseSchema>;
 export type TaskListResponse = z.infer<typeof taskListResponseSchema>;
 export type TaskDetailResponse = z.infer<typeof taskDetailResponseSchema>;
 export type TaskSubmissionHeaders = z.infer<typeof taskSubmissionHeadersSchema>;

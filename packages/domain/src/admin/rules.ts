@@ -8,6 +8,7 @@ export type RuleSettings = {
   minPercent: number | null;
   bonuses: { code: string; title: string; percent: number }[];
   levelThresholds: number[] | null;
+  openTaskLimit: number | null;
 };
 export type CurrentRules = RuleSettings & {
   versionNumber: number;
@@ -57,6 +58,14 @@ const isZone = (value: unknown): value is string => {
 const record = (value: unknown): Record<string, unknown> | null =>
   typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
+    : null;
+
+export const openTaskLimitFrom = (rule: Record<string, unknown>) =>
+  typeof rule.openTaskLimit === "number" &&
+  Number.isInteger(rule.openTaskLimit) &&
+  rule.openTaskLimit >= 1 &&
+  rule.openTaskLimit <= 50
+    ? rule.openTaskLimit
     : null;
 
 // What the form can show from a saved definition. Anything the form cannot express
@@ -109,6 +118,7 @@ export function settingsFromDefinition(
     minPercent,
     bonuses,
     levelThresholds: syntheticLevelThresholds(rule),
+    openTaskLimit: openTaskLimitFrom(rule),
     legacyOptions,
   };
 }
@@ -123,6 +133,7 @@ export function definitionFromSettings(
   const acceptance = { ...(record(base.acceptance) ?? {}) };
   delete acceptance.adjustment;
   delete acceptance.bonuses;
+  delete base.openTaskLimit;
   acceptance.enabled = settings.acceptanceEnabled;
   if (settings.minPercent !== null)
     acceptance.adjustment = { minPercent: settings.minPercent };
@@ -136,6 +147,9 @@ export function definitionFromSettings(
     ...base,
     mode: "synthetic",
     timeZone: settings.timeZone,
+    ...(settings.openTaskLimit !== null
+      ? { openTaskLimit: settings.openTaskLimit }
+      : {}),
     acceptance,
     // An empty progression keeps "levels are not configured" explicit: without it the
     // profile would fall back to the thresholds of an older version.
@@ -280,6 +294,7 @@ export async function publishRules(
       minPercent: input.minPercent,
       bonuses: input.bonuses,
       levelThresholds: input.levelThresholds,
+      openTaskLimit: input.openTaskLimit ?? null,
     };
     if (
       !isZone(settings.timeZone) ||

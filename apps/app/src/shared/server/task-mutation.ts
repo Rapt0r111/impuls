@@ -1,13 +1,19 @@
 import "server-only";
 import {
   taskIdSchema,
+  taskClaimRequestSchema,
+  taskClaimResponseSchema,
   taskStartRequestSchema,
   taskStartResponseSchema,
   taskSubmissionHeadersSchema,
   taskSubmissionRequestSchema,
   taskSubmissionResponseSchema,
 } from "@impuls/contracts";
-import { hashSessionToken, mutateAssignedTask } from "@impuls/domain";
+import {
+  claimTask,
+  hashSessionToken,
+  mutateAssignedTask,
+} from "@impuls/domain";
 import type { NextRequest } from "next/server";
 import { getAuthorizedSession, hasValidCsrf } from "./auth";
 import { getPool } from "./db";
@@ -23,7 +29,7 @@ import {
 export async function handleTaskMutation(
   request: NextRequest,
   taskId: string,
-  action: "start" | "submit",
+  action: "start" | "submit" | "claim",
 ) {
   const id = requestId();
   if (!process.env.APP_ORIGIN || !process.env.CSRF_SECRET) {
@@ -73,31 +79,43 @@ export async function handleTaskMutation(
     const body =
       action === "start"
         ? taskStartRequestSchema.safeParse(rawBody)
-        : taskSubmissionRequestSchema.safeParse(rawBody);
+        : action === "claim"
+          ? taskClaimRequestSchema.safeParse(rawBody)
+          : taskSubmissionRequestSchema.safeParse(rawBody);
     if (!body.success) {
       return errorResponse(400, "BAD_REQUEST", "Неверные данные задачи", id);
     }
-    const result = await mutateAssignedTask(
-      getPool(),
-      action === "start"
-        ? {
-            action,
+    const result =
+      action === "claim"
+        ? await claimTask(getPool(), {
             taskId,
             actorId: session.user.id,
             sessionHash: hashSessionToken(session.token),
             expectedVersion: body.data.expectedVersion,
             idempotencyKey: headers.data.idempotencyKey,
-          }
-        : {
-            action,
-            taskId,
-            actorId: session.user.id,
-            sessionHash: hashSessionToken(session.token),
-            expectedVersion: body.data.expectedVersion,
-            idempotencyKey: headers.data.idempotencyKey,
-            text: (body.data as { text: string }).text,
-          },
-    );
+            enabled: process.env.TASK_MANAGEMENT_ENABLED === "true",
+          })
+        : await mutateAssignedTask(
+            getPool(),
+            action === "start"
+              ? {
+                  action,
+                  taskId,
+                  actorId: session.user.id,
+                  sessionHash: hashSessionToken(session.token),
+                  expectedVersion: body.data.expectedVersion,
+                  idempotencyKey: headers.data.idempotencyKey,
+                }
+              : {
+                  action,
+                  taskId,
+                  actorId: session.user.id,
+                  sessionHash: hashSessionToken(session.token),
+                  expectedVersion: body.data.expectedVersion,
+                  idempotencyKey: headers.data.idempotencyKey,
+                  text: (body.data as { text: string }).text,
+                },
+          );
     if (result.kind === "unauthorized") {
       return errorResponse(
         401,
@@ -114,6 +132,9 @@ export async function handleTaskMutation(
         id,
       );
     }
+    if (result.kind === "disabled") {
+      return errorResponse(404, "NOT_FOUND", "Задача не найдена", id);
+    }
     if (result.kind === "not_found") {
       return errorResponse(404, "NOT_FOUND", "Задача не найдена", id);
     }
@@ -122,6 +143,14 @@ export async function handleTaskMutation(
         409,
         "IDEMPOTENCY_CONFLICT",
         "Ключ уже использован для другого запроса",
+        id,
+      );
+    }
+    if (result.kind === "limit_reached") {
+      return errorResponse(
+        409,
+        "OPEN_TASK_LIMIT",
+        `Можно держать не больше ${result.limit} взятых задач. Завершите одну из них.`,
         id,
       );
     }
@@ -137,7 +166,9 @@ export async function handleTaskMutation(
     const response =
       action === "start"
         ? taskStartResponseSchema.parse(result.response)
-        : taskSubmissionResponseSchema.parse(result.response);
+        : action === "claim"
+          ? taskClaimResponseSchema.parse(result.response)
+          : taskSubmissionResponseSchema.parse(result.response);
     return jsonResponse(response, result.status, id);
   } catch {
     return errorResponse(503, "UNAVAILABLE", "Сервис временно недоступен", id);

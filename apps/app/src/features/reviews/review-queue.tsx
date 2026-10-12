@@ -79,8 +79,8 @@ function ReturnForm({
               parsedBaseXp < adjustment.minXp ||
               parsedBasePoints < adjustment.minPoints)
           ? adjustment
-            ? `XP от ${adjustment.minXp} до ${adjustment.maxXp}, баллы от ${adjustment.minPoints} до ${adjustment.maxPoints} по версии правил.`
-            : "Версия правил не разрешает корректировку."
+            ? `XP от ${adjustment.minXp} до ${adjustment.maxXp}, баллы от ${adjustment.minPoints} до ${adjustment.maxPoints} по настройкам начислений.`
+            : "Настройки начислений не разрешают корректировку."
           : null;
   const totalXp = (parsedBaseXp ?? 0) + (bonus?.xp ?? 0);
   const totalPoints = (parsedBasePoints ?? 0) + (bonus?.points ?? 0);
@@ -184,7 +184,7 @@ function ReturnForm({
                 : code === "RECIPIENT_REVOKED"
                   ? "Доступ исполнителя отозван. Решение не сохранено."
                   : code === "AWARD_INVALID"
-                    ? "Корректировка или бонус не разрешены версией правил. Измените выбор и подтвердите снова."
+                    ? "Корректировка или бонус не разрешены настройками начислений. Измените выбор и подтвердите снова."
                     : response.status === 400
                       ? "Укажите причину от 1 до 2000 символов."
                       : "Отчёт или право проверки больше недоступны. Закройте форму и обновите очередь.",
@@ -260,10 +260,6 @@ function ReturnForm({
         <div>
           <dt>Область</dt>
           <dd>{item.task.scope.name}</dd>
-        </div>
-        <div>
-          <dt>Версия правил</dt>
-          <dd>{item.task.ruleVersion}</dd>
         </div>
       </dl>
       <div className="task-report">
@@ -395,10 +391,6 @@ function ReturnForm({
               {bonus && !awardProblem
                 ? ` Из них бонус «${bonus.title}»: ${bonus.xp} XP и ${bonus.points} баллов.`
                 : ""}
-            </p>
-            <p>
-              Версия задачи {item.task.version} · правила{" "}
-              {item.task.ruleVersion}
             </p>
             <label>
               <input

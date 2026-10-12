@@ -136,16 +136,16 @@ const taskState = async () =>
     .getByRole("button", { name: "Постановка задач", exact: true })
     .click();
   await p.getByLabel("Область", { exact: true }).selectOption(scope);
-  await p.getByLabel("Версия правил", { exact: true }).selectOption(rules);
   await p.getByLabel("Название", { exact: true }).fill(title);
   await p
     .getByLabel("Критерии результата", { exact: true })
     .fill("Источники приложены и проверены.");
-  await p.getByLabel("Код категории", { exact: true }).fill("synthetic-e2e");
+  // Категория не заполнена: сервер получает «Без категории».
   await p.getByLabel("Приоритет", { exact: true }).selectOption("high");
   await p.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
   await p.getByLabel("Фонд XP", { exact: true }).fill("17");
   await p.getByLabel("Фонд баллов", { exact: true }).fill("9");
+  await p.getByLabel(/Свободная задача/).check();
   await p
     .getByRole("button", { name: "Создать черновик", exact: true })
     .click();
@@ -154,6 +154,24 @@ const taskState = async () =>
   await p.getByRole("button", { name: "Назначить", exact: true }).click();
   await p.getByText("Задача назначена участнику").waitFor();
   assert.equal((await taskState()).status, "assigned");
+  assert.equal(
+    (
+      await db.query(
+        "SELECT category_code FROM impuls.tasks WHERE created_by=$1 AND title=$2",
+        [manager, title],
+      )
+    ).rows[0].category_code,
+    "Без категории",
+  );
+  assert.equal(
+    (
+      await db.query(
+        "SELECT open_for_claim FROM impuls.tasks WHERE created_by=$1 AND title=$2",
+        [manager, title],
+      )
+    ).rows[0].open_for_claim,
+    true,
+  );
   await done(s, "1-manager");
 }
 // 2. participant works and submits

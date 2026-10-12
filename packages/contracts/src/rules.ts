@@ -42,6 +42,8 @@ const fields = {
     ),
   // null — levels are not configured, the profile shows that honestly.
   levelThresholds: thresholds.nullable(),
+  // How many self-taken free tasks one participant may keep unfinished; null — no limit.
+  openTaskLimit: z.number().int().min(1).max(50).nullable().default(null),
 };
 export const rulesPublishRequestSchema = z.strictObject({
   ...fields,
