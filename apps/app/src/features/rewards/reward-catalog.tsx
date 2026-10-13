@@ -695,6 +695,11 @@ export function RewardCatalog() {
                                 Причина: {why}
                               </p>
                             ) : null}
+                            {item.decision?.actorId === null ? (
+                              <p className="notification-note">
+                                Закрыто автоматически
+                              </p>
+                            ) : null}
                             {(first?.scopes.length ?? 0) > 1 ? (
                               <p className="notification-note">
                                 {item.scope.name}

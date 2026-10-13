@@ -728,12 +728,8 @@ const require = createRequire(import.meta.url),
           await page
             .getByRole("button", { name: "Поощрения", exact: true })
             .click();
-          await page
-            .getByText(/Срок резерва истёк, баллы и место возвращены/)
-            .waitFor();
-          await page
-            .getByText(/Обработчик: Автоматическое истечение резерва/)
-            .waitFor();
+          await page.getByText(/Срок истёк, баллы вернулись/).waitFor();
+          await page.getByText("Закрыто автоматически").waitFor();
           expect(
             await page.evaluate(
               () => document.documentElement.scrollWidth > innerWidth,
@@ -758,9 +754,7 @@ const require = createRequire(import.meta.url),
           });
           await refresh.focus();
           await page.keyboard.press("Enter");
-          await page
-            .getByText(/Обработчик: Автоматическое истечение резерва/)
-            .waitFor();
+          await page.getByText("Закрыто автоматически").waitFor();
           if (width === 320) {
             await page.addStyleTag({
               content:
