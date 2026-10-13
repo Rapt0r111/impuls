@@ -450,115 +450,123 @@ export function AccessAdmin() {
             preview ? (
               pendingForm
             ) : (
-              <form
-                className="catalog-publication tasks-filter"
-                aria-labelledby={`${id}-grant`}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const validUntil = until ? new Date(until) : null;
-                  if (validUntil && !(validUntil.getTime() > Date.now())) {
-                    setStatus("Срок права должен быть в будущем.");
-                    return;
-                  }
-                  const held = new Set(
-                    subject?.bindings.map((binding) => binding.action) ?? [],
-                  );
-                  const actions =
-                    action === COMMANDER
-                      ? commanderActions.filter((a) => !held.has(a))
-                      : [action];
-                  if (!actions.length) {
-                    setStatus("У участника уже есть все права командира.");
-                    return;
-                  }
-                  const term = validUntil
-                    ? ` до ${dateTime.format(validUntil)} МСК`
-                    : " без срока";
-                  stage({
-                    path: "grants",
-                    actions,
-                    summary:
+              // Формы свёрнуты: сначала виден список людей и их прав.
+              <details className="access-form">
+                <summary>Выдать право</summary>
+                <form
+                  className="catalog-publication tasks-filter"
+                  aria-labelledby={`${id}-grant`}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const validUntil = until ? new Date(until) : null;
+                    if (validUntil && !(validUntil.getTime() > Date.now())) {
+                      setStatus("Срок права должен быть в будущем.");
+                      return;
+                    }
+                    const held = new Set(
+                      subject?.bindings.map((binding) => binding.action) ?? [],
+                    );
+                    const actions =
                       action === COMMANDER
-                        ? `Сделать ${subject?.displayName ?? ""} командиром${term}: ${actions.map((a) => actionLabels[a as (typeof grantableActions)[number]].toLowerCase()).join(", ")}.`
-                        : `Выдать «${actionLabels[action as (typeof grantableActions)[number]]}» участнику ${subject?.displayName ?? ""}${term}.`,
-                    body: {
-                      scope,
-                      subjectId,
-                      action,
-                      validUntil: validUntil ? validUntil.toISOString() : null,
-                      reason: reason.trim(),
-                    },
-                  });
-                }}
-              >
-                <h4 id={`${id}-grant`}>Выдать право</h4>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-subject`}>Участник</label>
-                  <select
-                    id={`${id}-subject`}
-                    required
-                    value={subjectId}
-                    onChange={(event) => setSubjectId(event.target.value)}
-                  >
-                    <option value="">Выберите участника</option>
-                    {members
-                      .filter((m) => !m.isSelf)
-                      .map((m) => (
-                        <option key={m.userId} value={m.userId}>
-                          {m.displayName}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-action`}>Право</label>
-                  <select
-                    id={`${id}-action`}
-                    value={action}
-                    onChange={(event) => setAction(event.target.value)}
-                  >
-                    <option value={COMMANDER}>
-                      Командир: задачи, проверка, заявки
-                    </option>
-                    <optgroup label="Отдельное право">
-                      {grantableActions.map((a) => (
-                        <option key={a} value={a}>
-                          {actionLabels[a]}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-until`}>
-                    Действует до (необязательно)
-                  </label>
-                  <input
-                    id={`${id}-until`}
-                    type="datetime-local"
-                    value={until}
-                    onChange={(event) => setUntil(event.target.value)}
-                  />
-                </div>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-reason`}>Основание выдачи</label>
-                  <textarea
-                    id={`${id}-reason`}
-                    required
-                    maxLength={500}
-                    rows={2}
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="tasks-action"
-                  disabled={!subjectId || !reason.trim()}
+                        ? commanderActions.filter((a) => !held.has(a))
+                        : [action];
+                    if (!actions.length) {
+                      setStatus("У участника уже есть все права командира.");
+                      return;
+                    }
+                    const term = validUntil
+                      ? ` до ${dateTime.format(validUntil)} МСК`
+                      : " без срока";
+                    stage({
+                      path: "grants",
+                      actions,
+                      summary:
+                        action === COMMANDER
+                          ? `Сделать ${subject?.displayName ?? ""} командиром${term}: ${actions.map((a) => actionLabels[a as (typeof grantableActions)[number]].toLowerCase()).join(", ")}.`
+                          : `Выдать «${actionLabels[action as (typeof grantableActions)[number]]}» участнику ${subject?.displayName ?? ""}${term}.`,
+                      body: {
+                        scope,
+                        subjectId,
+                        action,
+                        validUntil: validUntil
+                          ? validUntil.toISOString()
+                          : null,
+                        reason: reason.trim(),
+                      },
+                    });
+                  }}
                 >
-                  Проверить выдачу
-                </button>
-              </form>
+                  <h4 id={`${id}-grant`} className="sr-only">
+                    Выдать право
+                  </h4>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-subject`}>Участник</label>
+                    <select
+                      id={`${id}-subject`}
+                      required
+                      value={subjectId}
+                      onChange={(event) => setSubjectId(event.target.value)}
+                    >
+                      <option value="">Выберите участника</option>
+                      {members
+                        .filter((m) => !m.isSelf)
+                        .map((m) => (
+                          <option key={m.userId} value={m.userId}>
+                            {m.displayName}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-action`}>Право</label>
+                    <select
+                      id={`${id}-action`}
+                      value={action}
+                      onChange={(event) => setAction(event.target.value)}
+                    >
+                      <option value={COMMANDER}>
+                        Командир: задачи, проверка, заявки
+                      </option>
+                      <optgroup label="Отдельное право">
+                        {grantableActions.map((a) => (
+                          <option key={a} value={a}>
+                            {actionLabels[a]}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-until`}>
+                      Действует до (необязательно)
+                    </label>
+                    <input
+                      id={`${id}-until`}
+                      type="datetime-local"
+                      value={until}
+                      onChange={(event) => setUntil(event.target.value)}
+                    />
+                  </div>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-reason`}>Основание выдачи</label>
+                    <textarea
+                      id={`${id}-reason`}
+                      required
+                      maxLength={500}
+                      rows={2}
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="tasks-action"
+                    disabled={!subjectId || !reason.trim()}
+                  >
+                    Проверить выдачу
+                  </button>
+                </form>
+              </details>
             )
           ) : null}
           {revokeId && preview ? pendingForm : null}
@@ -568,21 +576,24 @@ export function AccessAdmin() {
             </p>
           ) : null}
           {data.canManageMembers ? (
-            <MemberAdmin
-              key={scope}
-              scope={scope}
-              data={data}
-              onDirty={setMemberDirty}
-              onChanged={() => void query.refetch()}
-              onUnavailable={() => {
-                client.setQueriesData<AccessListResponse | null>(
-                  { queryKey: ["admin-access"] },
-                  () => null,
-                );
-                setBlocked(true);
-                setStatus("Управление составом недоступно.");
-              }}
-            />
+            <details className="access-form">
+              <summary>Допуск участников</summary>
+              <MemberAdmin
+                key={scope}
+                scope={scope}
+                data={data}
+                onDirty={setMemberDirty}
+                onChanged={() => void query.refetch()}
+                onUnavailable={() => {
+                  client.setQueriesData<AccessListResponse | null>(
+                    { queryKey: ["admin-access"] },
+                    () => null,
+                  );
+                  setBlocked(true);
+                  setStatus("Управление составом недоступно.");
+                }}
+              />
+            </details>
           ) : null}
         </>
       ) : null}

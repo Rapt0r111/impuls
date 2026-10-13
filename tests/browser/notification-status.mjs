@@ -328,10 +328,7 @@ async function fixture(mode = "ready", width = 320) {
 const refresh = (f) =>
   f.page.getByRole("button", { name: "Обновить состояние уведомлений" });
 async function ready(f) {
-  await f.page
-    .locator(".notification-section > .notification-counts")
-    .first()
-    .waitFor();
+  await f.page.locator(".notification-section .notification-summary").waitFor();
 }
 async function settle(f) {
   await refresh(f)
@@ -495,7 +492,7 @@ try {
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );
@@ -535,7 +532,7 @@ try {
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );
@@ -602,7 +599,7 @@ try {
     const f = await fixture("ready", width);
     await ready(f);
     assert.match(
-      await f.page.locator(".notification-section").innerText(),
+      await f.page.locator(".notification-breakdown").textContent(),
       /сообщение принято Telegram/,
     );
     assert.equal(
@@ -669,7 +666,7 @@ try {
       .waitFor();
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );
@@ -710,14 +707,14 @@ try {
     const f = await fixture();
     await ready(f);
     const oldText = await f.page
-      .locator(".notification-section > .notification-counts")
+      .locator(".notification-breakdown > .notification-counts")
       .innerText();
     f.setFail(503);
     await refresh(f).click();
     await f.page.locator(".notification-section").getByRole("alert").waitFor();
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .innerText(),
       oldText,
     );
@@ -728,7 +725,7 @@ try {
     await settle(f);
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .innerText(),
       oldText,
     );
@@ -743,7 +740,7 @@ try {
     await f.page.locator(".notification-section").getByRole("alert").waitFor();
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       1,
     );
@@ -758,7 +755,7 @@ try {
     await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );
@@ -773,7 +770,7 @@ try {
     await f.page.locator(".notification-section").getByRole("alert").waitFor();
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );
@@ -805,7 +802,7 @@ try {
         .waitFor();
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );
@@ -822,7 +819,7 @@ try {
     await f.page.waitForTimeout(850);
     assert.equal(
       await f.page
-        .locator(".notification-section > .notification-counts")
+        .locator(".notification-breakdown > .notification-counts")
         .count(),
       0,
     );

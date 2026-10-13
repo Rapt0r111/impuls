@@ -96,3 +96,70 @@
   overflow-wrap: anywhere;
   font-size: 14px;
 }
+
+/* Сводка «светофор»: одна фраза и три числа над подробной разбивкой. */
+.notification-summary {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+.notification-summary .notification-verdict {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+.notification-verdict--good {
+  background: rgb(112 225 194 / 0.1);
+  color: var(--color-mint);
+}
+.notification-verdict--wait {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--color-ink);
+}
+.notification-verdict--bad {
+  background: rgb(240 154 133 / 0.12);
+  color: var(--color-error);
+}
+.notification-summary .notification-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.notification-tiles > div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-edge);
+  border-radius: 16px;
+  background: var(--color-panel);
+}
+.notification-tiles dt {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+.notification-tiles dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.notification-tiles .notification-tile--good dd {
+  color: var(--color-mint);
+}
+.notification-tiles .notification-tile--bad {
+  border-color: rgb(240 154 133 / 0.5);
+}
+.notification-tiles .notification-tile--bad dd {
+  color: var(--color-error);
+}
+.tasks-section .notification-breakdown .notification-counts {
+  padding: 0;
+  border: 0;
+  background: none;
+}
