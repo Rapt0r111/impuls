@@ -598,9 +598,9 @@ const url = process.env.TEST_DATABASE_URL,
             .fill("Проверено через браузер");
           await page.getByRole("checkbox").check();
           await page
-            .getByRole("button", { name: "Выдать косметику", exact: true })
+            .getByRole("button", { name: "Выдать поощрение", exact: true })
             .click();
-          await page.getByText(/Косметика выдана\. Право владения/).waitFor();
+          await page.getByText(/Поощрение выдано\./).waitFor();
           expect(await state(f)).toMatchObject({
             status: "fulfilled",
             entitlements: 1,

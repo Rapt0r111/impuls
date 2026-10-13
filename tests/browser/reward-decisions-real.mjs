@@ -240,9 +240,9 @@ async function review(s, title, decision) {
     .fill("Синтетическая выдача.");
   await f.page.getByRole("checkbox").check();
   await f.page
-    .getByRole("button", { name: "Выдать косметику", exact: true })
+    .getByRole("button", { name: "Выдать поощрение", exact: true })
     .click();
-  await f.page.getByText(/Косметика выдана/).waitFor();
+  await f.page.getByText(/Поощрение выдано/).waitFor();
   s = await state(r, "recipient");
   assert.equal(s.redemption[0].status, "fulfilled");
   assert.equal(s.redemption[0].fulfillment_actor_id, ids.fulfiller);
@@ -276,9 +276,7 @@ async function review(s, title, decision) {
           .waitFor()
           .then(() => "won"),
         s.page
-          .getByText(
-            /Решение не принято: заявку уже решил другой уполномоченный/,
-          )
+          .getByText(/Решение не сохранено: заявка уже изменилась/)
           .waitFor()
           .then(() => "lost"),
       ]),
@@ -374,7 +372,7 @@ async function review(s, title, decision) {
   await d.page
     .getByRole("button", { name: "Завершить резерв", exact: true })
     .click();
-  await d.page.getByText(/Резерв завершён по истечению срока/).waitFor();
+  await d.page.getByText(/Срок заявки истёк\. Баллы вернулись/).waitFor();
   const s = await state(r, "recipient");
   assert.equal(s.redemption[0].status, "expired");
   assert.deepEqual(s.quota, [0, 0]);
