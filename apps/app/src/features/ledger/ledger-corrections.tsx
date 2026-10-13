@@ -8,7 +8,10 @@ import {
 } from "@impuls/contracts";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 
@@ -36,6 +39,7 @@ function CorrectionForm({
   item: LedgerCorrectionItem;
   onClose(): void;
 }) {
+  const manyScopes = useManyScopes();
   const { csrfToken, loseAccess, reportDirty } = useAuthorizedSession();
   const queryClient = useQueryClient();
   const [current, setCurrent] = useState(item);
@@ -219,8 +223,8 @@ function CorrectionForm({
       >
         <div className="review-preview">
           <p>
-            Получатель: <strong>{current.recipient.displayName}</strong> ·{" "}
-            {current.scope.name}
+            Получатель: <strong>{current.recipient.displayName}</strong>
+            {manyScopes ? ` · ${current.scope.name}` : ""}
           </p>
           <p>
             Возврат: <strong>−{number(current.xp)} XP</strong> и −
@@ -340,6 +344,7 @@ function CorrectionForm({
 }
 
 function CorrectionList() {
+  const manyScopes = useManyScopes();
   const { loseAccess, confirmLeave } = useAuthorizedSession();
   const [selected, setSelected] = useState<LedgerCorrectionItem | null>(null);
   const query = useInfiniteQuery({
@@ -389,16 +394,13 @@ function CorrectionList() {
           Обновить начисления
         </button>
       </div>
-      <p>
-        Полный однократный возврат за приёмку. Доступ только в области
-        отдельного права.
-      </p>
+      <p>Полный однократный возврат за приёмку. Нужно отдельное право.</p>
       {query.isPending ? (
         <p role="status">Загружаем начисления…</p>
       ) : query.isError ? (
         <p role="alert">Начисления недоступны. Повторите загрузку.</p>
       ) : items.length === 0 ? (
-        <p className="tasks-state">В доступных областях пока нет начислений.</p>
+        <p className="tasks-state">Пока нет начислений.</p>
       ) : (
         <ul className="tasks-list ledger-list">
           {items.map((item) => (
@@ -406,7 +408,8 @@ function CorrectionList() {
               <div className="ledger-entry">
                 <strong>{item.task.title}</strong>
                 <p>
-                  {item.recipient.displayName} · {item.scope.name}
+                  {item.recipient.displayName}
+                  {manyScopes ? ` · ${item.scope.name}` : ""}
                 </p>
                 <p>
                   {number(item.xp)} XP · {number(item.points)} баллов · сезон{" "}

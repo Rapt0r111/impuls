@@ -845,6 +845,15 @@ const url = process.env.TEST_DATABASE_URL,
             { name: "impuls_session", value: tokens[0]!, url: origin! },
           ]);
           const page = await context.newPage();
+          // Подробности карточки каталога свёрнуты; сценарию нужны все кнопки.
+          await page.addInitScript(() => {
+            new MutationObserver(() => {
+              for (const d of document.querySelectorAll<HTMLDetailsElement>(
+                "details.admin-catalog-more:not([open])",
+              ))
+                d.open = true;
+            }).observe(document, { childList: true, subtree: true });
+          });
           page.setDefaultTimeout(5000);
           await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
             r.fulfill({
@@ -857,7 +866,12 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
-          await page.getByLabel("Область", { exact: true }).selectOption(scope);
+          // При одной области списка нет: каталог сразу открыт в ней.
+          await page
+            .locator('.admin-catalog-section[aria-busy="false"]')
+            .waitFor();
+          const scopeField = page.getByLabel("Область", { exact: true });
+          if (await scopeField.count()) await scopeField.selectOption(scope);
           const row = page
             .locator(".admin-catalog-items > li")
             .filter({ hasText: body.title });
@@ -1007,6 +1021,15 @@ const url = process.env.TEST_DATABASE_URL,
             { name: "impuls_session", value: tokens[0]!, url: origin! },
           ]);
           const page = await context.newPage();
+          // Подробности карточки каталога свёрнуты; сценарию нужны все кнопки.
+          await page.addInitScript(() => {
+            new MutationObserver(() => {
+              for (const d of document.querySelectorAll<HTMLDetailsElement>(
+                "details.admin-catalog-more:not([open])",
+              ))
+                d.open = true;
+            }).observe(document, { childList: true, subtree: true });
+          });
           page.setDefaultTimeout(5000);
           await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
             r.fulfill({
@@ -1019,7 +1042,12 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
-          await page.getByLabel("Область", { exact: true }).selectOption(scope);
+          // При одной области списка нет: каталог сразу открыт в ней.
+          await page
+            .locator('.admin-catalog-section[aria-busy="false"]')
+            .waitFor();
+          const scopeField = page.getByLabel("Область", { exact: true });
+          if (await scopeField.count()) await scopeField.selectOption(scope);
           const row = page.locator(".admin-catalog-items > li").filter({
             has: page.getByRole("heading", {
               name: uiTerms.title,

@@ -144,7 +144,7 @@ export function CatalogQuotas({
           {query.isError ? (
             <p role="alert">
               {error instanceof CatalogError && error.status === 404
-                ? "Периоды квоты в этой области недоступны."
+                ? "Периоды квоты недоступны."
                 : error instanceof CatalogError && error.status === 400
                   ? "Страница периодов изменилась. Обновите периоды с первой страницы."
                   : "Не удалось загрузить периоды. Нажмите «Обновить периоды»."}

@@ -144,7 +144,7 @@ export function CatalogHistory({
           {query.isError ? (
             <p role="alert">
               {error instanceof CatalogError && error.status === 404
-                ? "История позиции в этой области недоступна."
+                ? "История позиции недоступна."
                 : error instanceof CatalogError && error.status === 400
                   ? "Страница истории изменилась. Обновите историю с первой страницы."
                   : "Не удалось загрузить версии. Нажмите «Обновить историю»."}

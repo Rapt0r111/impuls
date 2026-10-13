@@ -148,7 +148,7 @@ function ProfileNameForm({ current }: { current: string }) {
           }}
         />
         <p id={`${id}-hint`}>
-          {nameRule}. Имя видно в рейтинге, очереди проверки и журналах области.
+          {nameRule}. Имя видно в рейтинге, очереди проверки и журналах.
         </p>
         <button
           type="submit"

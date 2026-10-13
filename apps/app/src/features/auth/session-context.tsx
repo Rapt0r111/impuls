@@ -30,3 +30,12 @@ export function useAuthorizedSession() {
   if (!session) throw new Error("Authorized session is required");
   return session;
 }
+
+/**
+ * Больше одной области у человека? В пилоте область одна, и её название на
+ * экранах только мешает, поэтому оно показывается лишь при выборе из нескольких.
+ */
+export function useManyScopes(): boolean {
+  const session = useContext(SessionContext);
+  return new Set(session?.permissions?.map((p) => p.scope.id)).size > 1;
+}

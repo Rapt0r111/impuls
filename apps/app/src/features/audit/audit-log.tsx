@@ -158,7 +158,7 @@ export function AuditLog() {
     : hidden
       ? error.code === "AUDIT_DISABLED"
         ? "Синтетический журнал выключен."
-        : "Журнал в этой области недоступен."
+        : "Журнал недоступен."
       : error instanceof AuditError && error.code === "INVALID_CURSOR"
         ? "Страница недоступна. Обновите журнал с начала."
         : "Не удалось загрузить журнал. Проверьте соединение и повторите загрузку.";
@@ -194,26 +194,26 @@ export function AuditLog() {
           Обновить
         </button>
       </div>
-      <p className="audit-intro">
-        Действия по задачам, заявкам и условиям каталога в вашей области.
-      </p>
+      <p className="audit-intro">Действия по задачам, заявкам и поощрениям.</p>
       {first ? (
         <>
           <div className="audit-filters">
-            <label className="tasks-filter">
-              <span id="audit-scope-label">Область</span>
-              <select
-                aria-labelledby="audit-scope-label"
-                value={scope || first.scope.id}
-                onChange={(e) => setScope(e.target.value)}
-              >
-                {first.scopes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {first.scopes.length > 1 ? (
+              <label className="tasks-filter">
+                <span id="audit-scope-label">Область</span>
+                <select
+                  aria-labelledby="audit-scope-label"
+                  value={scope || first.scope.id}
+                  onChange={(e) => setScope(e.target.value)}
+                >
+                  {first.scopes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="tasks-filter">
               <span id="audit-action-label">Действие</span>
               <select

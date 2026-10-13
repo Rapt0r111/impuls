@@ -16,6 +16,7 @@ import { CatalogCancel } from "./catalog-cancel";
 import { CatalogPublish } from "./catalog-publish";
 import { QuotaPublish } from "./quota-publish";
 import { RewardQuickCreate } from "./reward-quick-create";
+import { RewardBadge } from "../rewards/reward-visual";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import {
   CatalogError,
@@ -136,7 +137,7 @@ export function CatalogAdmin() {
           {error instanceof CatalogError && error.status === 404
             ? error.code === "ADMIN_CATALOG_DISABLED"
               ? "Просмотр управления каталогом выключен."
-              : "Каталог управления в этой области недоступен."
+              : "Каталог управления недоступен."
             : error instanceof CatalogError && error.status === 400
               ? "Страница изменилась. Обновите каталог с первой страницы."
               : "Не удалось загрузить конфигурацию. Нажмите «Обновить»."}
@@ -145,26 +146,28 @@ export function CatalogAdmin() {
       {notice ? <p role="status">{notice}</p> : null}
       {data ? (
         <>
-          <label className="tasks-filter notification-scope">
-            <span id="admin-catalog-scope-label">Область</span>
-            <select
-              aria-labelledby="admin-catalog-scope-label"
-              value={scope || data.scope.id}
-              onChange={(event) => {
-                if (!confirmLeave()) return;
-                setEditing(null);
-                setNotice("");
-                setScope(event.target.value);
-                setCursor("");
-              }}
-            >
-              {data.scopes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {data.scopes.length > 1 ? (
+            <label className="tasks-filter notification-scope">
+              <span id="admin-catalog-scope-label">Область</span>
+              <select
+                aria-labelledby="admin-catalog-scope-label"
+                value={scope || data.scope.id}
+                onChange={(event) => {
+                  if (!confirmLeave()) return;
+                  setEditing(null);
+                  setNotice("");
+                  setScope(event.target.value);
+                  setCursor("");
+                }}
+              >
+                {data.scopes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           {query.isError ? (
             <p className="notification-asof">
               Показаны данные на {date(data.updatedAt)} МСК.
@@ -191,9 +194,7 @@ export function CatalogAdmin() {
                 }}
                 onDenied={() => {
                   setEditing(null);
-                  setNotice(
-                    "Добавление в этой области недоступно. Обновите каталог.",
-                  );
+                  setNotice("Добавление недоступно. Обновите каталог.");
                   void query.refetch();
                 }}
               />
@@ -237,9 +238,7 @@ export function CatalogAdmin() {
                     void client.cancelQueries({ queryKey: [key] });
                     client.setQueriesData({ queryKey: [key] }, () => null);
                   }
-                  setNotice(
-                    "Создание в этой области недоступно. Обновите каталог.",
-                  );
+                  setNotice("Создание недоступно. Обновите каталог.");
                 }}
               />
             ) : (
@@ -264,253 +263,294 @@ export function CatalogAdmin() {
             <ul className="admin-catalog-items">
               {data.items.map((item) => (
                 <li key={item.rewardId}>
-                  {item.current ? (
-                    <CatalogTerms value={item.current} />
-                  ) : (
-                    <p>Действующие условия ещё не заданы.</p>
-                  )}
-                  {item.scheduled ? (
-                    <details className="notification-errors">
-                      <summary>Будущая версия {item.scheduled.version}</summary>
-                      <CatalogTerms
-                        value={item.scheduled}
-                        label="Ближайшие будущие условия"
-                      />
-                    </details>
-                  ) : null}
-                  {item.scheduled && data.canCancelSchedule ? (
-                    editing === `cancel:${item.rewardId}` ? (
-                      <CatalogCancel
-                        key={`cancel|${data.scope.id}|${item.scheduled.id}`}
-                        scope={data.scope.id}
-                        rewardId={item.rewardId}
-                        scheduled={item.scheduled}
-                        onClose={() => setEditing(null)}
-                        onCancelled={() => {
-                          setEditing(null);
-                          setNotice(
-                            "Отмена подтверждена сервером. Перечитываем каталог.",
-                          );
-                          void client.invalidateQueries({
-                            queryKey: ["admin-catalog-history"],
-                          });
-                          void client.invalidateQueries({
-                            queryKey: ["admin-audit"],
-                          });
-                          void client.invalidateQueries({
-                            queryKey: ["reward-catalog"],
-                          });
-                          void query.refetch();
-                        }}
-                        onDenied={() => {
-                          setEditing(null);
-                          for (const key of [
-                            "admin-catalog",
-                            "admin-catalog-history",
-                            "admin-catalog-quotas",
-                          ]) {
-                            void client.cancelQueries({ queryKey: [key] });
-                            client.setQueriesData(
-                              { queryKey: [key] },
-                              () => null,
-                            );
-                          }
-                          setNotice(
-                            "Отмена в этой области недоступна. Обновите каталог.",
-                          );
-                        }}
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        className="tasks-action"
-                        disabled={query.isFetching || query.isError}
-                        onClick={() => {
-                          if (confirmLeave()) {
-                            setEditing(`cancel:${item.rewardId}`);
-                            setNotice("");
-                          }
-                        }}
-                      >
-                        Отменить будущие условия
-                      </button>
-                    )
-                  ) : null}
-                  {item.quota ? (
-                    <div className="admin-catalog-quota">
-                      <h4>Текущая квота</h4>
-                      <p className="notification-note">
-                        {date(item.quota.startsAt)} — {date(item.quota.endsAt)}{" "}
-                        МСК
+                  <div className="admin-reward-head">
+                    <RewardBadge title={item.current?.title ?? ""} />
+                    <div>
+                      <p className="admin-reward-title">
+                        {item.current?.title ?? "Без названия"}
                       </p>
-                      <dl className="notification-counts">
-                        {(
-                          [
-                            ["Всего мест", item.quota.capacity],
-                            ["В резерве", item.quota.reserved],
-                            ["Использовано", item.quota.used],
-                            ["Осталось", item.quota.available],
-                          ] as const
-                        ).map(([label, value]) => (
-                          <div key={label}>
-                            <dt>{label}</dt>
-                            <dd>{value.toLocaleString("ru-RU")}</dd>
-                          </div>
-                        ))}
-                      </dl>
+                      <p className="admin-reward-sub">
+                        {item.current ? (
+                          <span className="admin-catalog-price">
+                            {item.current.price.toLocaleString("ru-RU")} баллов
+                          </span>
+                        ) : null}
+                        <span>
+                          {!item.current?.enabled
+                            ? "Выключено"
+                            : !item.quota
+                              ? "Сейчас недоступно"
+                              : item.quota.available === 0
+                                ? "Закончились"
+                                : "Доступно участникам"}
+                        </span>
+                      </p>
                     </div>
-                  ) : (
-                    <p className="notification-note">
-                      Сейчас участникам недоступно: период с местами ещё не
-                      начался или уже закончился.
-                    </p>
-                  )}
-                  {(data.canPublish || data.canSchedule) && item.current ? (
-                    item.scheduled ? (
+                  </div>
+                  {item.quota ? (
+                    <div className="admin-reward-places">
+                      <progress
+                        max={item.quota.capacity}
+                        value={item.quota.used + item.quota.reserved}
+                        aria-label={`Занято ${item.quota.used + item.quota.reserved} из ${item.quota.capacity}`}
+                      />
+                      <span>
+                        Выдано {item.quota.used} · ждут решения{" "}
+                        {item.quota.reserved} · свободно {item.quota.available}{" "}
+                        из {item.quota.capacity}
+                      </span>
+                    </div>
+                  ) : null}
+                  <details className="admin-catalog-more">
+                    <summary>Подробнее и изменить</summary>
+                    {item.current ? (
+                      <CatalogTerms value={item.current} />
+                    ) : (
+                      <p>Действующие условия ещё не заданы.</p>
+                    )}
+                    {item.scheduled ? (
+                      <details className="notification-errors">
+                        <summary>
+                          Будущая версия {item.scheduled.version}
+                        </summary>
+                        <CatalogTerms
+                          value={item.scheduled}
+                          label="Ближайшие будущие условия"
+                        />
+                      </details>
+                    ) : null}
+                    {item.scheduled && data.canCancelSchedule ? (
+                      editing === `cancel:${item.rewardId}` ? (
+                        <CatalogCancel
+                          key={`cancel|${data.scope.id}|${item.scheduled.id}`}
+                          scope={data.scope.id}
+                          rewardId={item.rewardId}
+                          scheduled={item.scheduled}
+                          onClose={() => setEditing(null)}
+                          onCancelled={() => {
+                            setEditing(null);
+                            setNotice(
+                              "Отмена подтверждена сервером. Перечитываем каталог.",
+                            );
+                            void client.invalidateQueries({
+                              queryKey: ["admin-catalog-history"],
+                            });
+                            void client.invalidateQueries({
+                              queryKey: ["admin-audit"],
+                            });
+                            void client.invalidateQueries({
+                              queryKey: ["reward-catalog"],
+                            });
+                            void query.refetch();
+                          }}
+                          onDenied={() => {
+                            setEditing(null);
+                            for (const key of [
+                              "admin-catalog",
+                              "admin-catalog-history",
+                              "admin-catalog-quotas",
+                            ]) {
+                              void client.cancelQueries({ queryKey: [key] });
+                              client.setQueriesData(
+                                { queryKey: [key] },
+                                () => null,
+                              );
+                            }
+                            setNotice("Отмена недоступна. Обновите каталог.");
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="tasks-action"
+                          disabled={query.isFetching || query.isError}
+                          onClick={() => {
+                            if (confirmLeave()) {
+                              setEditing(`cancel:${item.rewardId}`);
+                              setNotice("");
+                            }
+                          }}
+                        >
+                          Отменить будущие условия
+                        </button>
+                      )
+                    ) : null}
+                    {item.quota ? (
+                      <div className="admin-catalog-quota">
+                        <h4>Текущая квота</h4>
+                        <p className="notification-note">
+                          {date(item.quota.startsAt)} —{" "}
+                          {date(item.quota.endsAt)} МСК
+                        </p>
+                        <dl className="notification-counts">
+                          {(
+                            [
+                              ["Всего мест", item.quota.capacity],
+                              ["В резерве", item.quota.reserved],
+                              ["Использовано", item.quota.used],
+                              ["Осталось", item.quota.available],
+                            ] as const
+                          ).map(([label, value]) => (
+                            <div key={label}>
+                              <dt>{label}</dt>
+                              <dd>{value.toLocaleString("ru-RU")}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    ) : (
                       <p className="notification-note">
-                        Есть будущие условия. Новая публикация для этой позиции
-                        недоступна до их начала действия или подтверждённой
-                        отмены.
+                        Сейчас участникам недоступно: период с местами ещё не
+                        начался или уже закончился.
                       </p>
-                    ) : editing === item.rewardId ||
-                      editing === `schedule:${item.rewardId}` ? (
-                      <CatalogPublish
-                        key={`publish|${data.scope.id}|${editing}`}
-                        scheduling={editing === `schedule:${item.rewardId}`}
-                        scope={data.scope.id}
-                        rewardId={item.rewardId}
-                        current={item.current}
-                        onClose={() => setEditing(null)}
-                        onPublished={() => {
-                          setEditing(null);
-                          setNotice(
-                            "Новая версия подтверждена сервером. Перечитываем каталог.",
-                          );
-                          void client.invalidateQueries({
-                            queryKey: ["admin-catalog-history"],
-                          });
-                          void client.invalidateQueries({
-                            queryKey: ["admin-audit"],
-                          });
-                          void query.refetch();
-                        }}
-                        onDenied={() => {
-                          setEditing(null);
-                          for (const key of [
-                            "admin-catalog",
-                            "admin-catalog-history",
-                            "admin-catalog-quotas",
-                          ]) {
-                            void client.cancelQueries({ queryKey: [key] });
-                            client.setQueriesData(
-                              { queryKey: [key] },
-                              () => null,
+                    )}
+                    {(data.canPublish || data.canSchedule) && item.current ? (
+                      item.scheduled ? (
+                        <p className="notification-note">
+                          Есть будущие условия. Новая публикация для этой
+                          позиции недоступна до их начала действия или
+                          подтверждённой отмены.
+                        </p>
+                      ) : editing === item.rewardId ||
+                        editing === `schedule:${item.rewardId}` ? (
+                        <CatalogPublish
+                          key={`publish|${data.scope.id}|${editing}`}
+                          scheduling={editing === `schedule:${item.rewardId}`}
+                          scope={data.scope.id}
+                          rewardId={item.rewardId}
+                          current={item.current}
+                          onClose={() => setEditing(null)}
+                          onPublished={() => {
+                            setEditing(null);
+                            setNotice(
+                              "Новая версия подтверждена сервером. Перечитываем каталог.",
                             );
-                          }
-                          setNotice(
-                            "Публикация в этой области недоступна. Обновите каталог.",
-                          );
-                        }}
-                      />
-                    ) : (
-                      <>
-                        {data.canPublish ? (
-                          <button
-                            type="button"
-                            className="tasks-action"
-                            disabled={query.isFetching || query.isError}
-                            onClick={() => {
-                              if (confirmLeave()) {
-                                setEditing(item.rewardId);
-                                setNotice("");
-                              }
-                            }}
-                          >
-                            Опубликовать новые условия
-                          </button>
-                        ) : null}
-                        {data.canSchedule ? (
-                          <button
-                            type="button"
-                            className="tasks-action"
-                            disabled={query.isFetching || query.isError}
-                            onClick={() => {
-                              if (confirmLeave()) {
-                                setEditing(`schedule:${item.rewardId}`);
-                                setNotice("");
-                              }
-                            }}
-                          >
-                            Запланировать новые условия
-                          </button>
-                        ) : null}
-                      </>
-                    )
-                  ) : null}
-                  <CatalogHistory
-                    key={`${data.scope.id}|${item.rewardId}`}
-                    scope={data.scope.id}
-                    rewardId={item.rewardId}
-                  />
-                  <CatalogQuotas
-                    key={`quotas|${data.scope.id}|${item.rewardId}`}
-                    scope={data.scope.id}
-                    rewardId={item.rewardId}
-                  />
-                  {data.canPublishQuota ? (
-                    editing === `quota|${item.rewardId}` ? (
-                      <QuotaPublish
-                        key={`quota-publish|${data.scope.id}|${item.rewardId}`}
-                        scope={data.scope.id}
-                        rewardId={item.rewardId}
-                        onClose={() => setEditing(null)}
-                        onPublished={() => {
-                          setEditing(null);
-                          setNotice(
-                            "Период подтверждён сервером. Перечитываем квоты.",
-                          );
-                          void client.invalidateQueries({
-                            queryKey: ["admin-catalog-quotas"],
-                          });
-                          void client.invalidateQueries({
-                            queryKey: ["admin-audit"],
-                          });
-                          void query.refetch();
-                        }}
-                        onDenied={() => {
-                          setEditing(null);
-                          for (const key of [
-                            "admin-catalog",
-                            "admin-catalog-history",
-                            "admin-catalog-quotas",
-                          ]) {
-                            void client.cancelQueries({ queryKey: [key] });
-                            client.setQueriesData(
-                              { queryKey: [key] },
-                              () => null,
+                            void client.invalidateQueries({
+                              queryKey: ["admin-catalog-history"],
+                            });
+                            void client.invalidateQueries({
+                              queryKey: ["admin-audit"],
+                            });
+                            void query.refetch();
+                          }}
+                          onDenied={() => {
+                            setEditing(null);
+                            for (const key of [
+                              "admin-catalog",
+                              "admin-catalog-history",
+                              "admin-catalog-quotas",
+                            ]) {
+                              void client.cancelQueries({ queryKey: [key] });
+                              client.setQueriesData(
+                                { queryKey: [key] },
+                                () => null,
+                              );
+                            }
+                            setNotice(
+                              "Публикация недоступна. Обновите каталог.",
                             );
-                          }
-                          setNotice(
-                            "Публикация периода недоступна. Обновите каталог.",
-                          );
-                        }}
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        className="tasks-action"
-                        disabled={query.isFetching || query.isError}
-                        onClick={() => {
-                          if (confirmLeave()) {
-                            setEditing(`quota|${item.rewardId}`);
-                            setNotice("");
-                          }
-                        }}
-                      >
-                        Опубликовать период квоты
-                      </button>
-                    )
-                  ) : null}
+                          }}
+                        />
+                      ) : (
+                        <>
+                          {data.canPublish ? (
+                            <button
+                              type="button"
+                              className="tasks-action"
+                              disabled={query.isFetching || query.isError}
+                              onClick={() => {
+                                if (confirmLeave()) {
+                                  setEditing(item.rewardId);
+                                  setNotice("");
+                                }
+                              }}
+                            >
+                              Опубликовать новые условия
+                            </button>
+                          ) : null}
+                          {data.canSchedule ? (
+                            <button
+                              type="button"
+                              className="tasks-action"
+                              disabled={query.isFetching || query.isError}
+                              onClick={() => {
+                                if (confirmLeave()) {
+                                  setEditing(`schedule:${item.rewardId}`);
+                                  setNotice("");
+                                }
+                              }}
+                            >
+                              Запланировать новые условия
+                            </button>
+                          ) : null}
+                        </>
+                      )
+                    ) : null}
+                    <CatalogHistory
+                      key={`${data.scope.id}|${item.rewardId}`}
+                      scope={data.scope.id}
+                      rewardId={item.rewardId}
+                    />
+                    <CatalogQuotas
+                      key={`quotas|${data.scope.id}|${item.rewardId}`}
+                      scope={data.scope.id}
+                      rewardId={item.rewardId}
+                    />
+                    {data.canPublishQuota ? (
+                      editing === `quota|${item.rewardId}` ? (
+                        <QuotaPublish
+                          key={`quota-publish|${data.scope.id}|${item.rewardId}`}
+                          scope={data.scope.id}
+                          rewardId={item.rewardId}
+                          onClose={() => setEditing(null)}
+                          onPublished={() => {
+                            setEditing(null);
+                            setNotice(
+                              "Период подтверждён сервером. Перечитываем квоты.",
+                            );
+                            void client.invalidateQueries({
+                              queryKey: ["admin-catalog-quotas"],
+                            });
+                            void client.invalidateQueries({
+                              queryKey: ["admin-audit"],
+                            });
+                            void query.refetch();
+                          }}
+                          onDenied={() => {
+                            setEditing(null);
+                            for (const key of [
+                              "admin-catalog",
+                              "admin-catalog-history",
+                              "admin-catalog-quotas",
+                            ]) {
+                              void client.cancelQueries({ queryKey: [key] });
+                              client.setQueriesData(
+                                { queryKey: [key] },
+                                () => null,
+                              );
+                            }
+                            setNotice(
+                              "Публикация периода недоступна. Обновите каталог.",
+                            );
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="tasks-action"
+                          disabled={query.isFetching || query.isError}
+                          onClick={() => {
+                            if (confirmLeave()) {
+                              setEditing(`quota|${item.rewardId}`);
+                              setNotice("");
+                            }
+                          }}
+                        >
+                          Опубликовать период квоты
+                        </button>
+                      )
+                    ) : null}
+                  </details>
                 </li>
               ))}
             </ul>

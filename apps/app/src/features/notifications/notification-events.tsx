@@ -127,7 +127,7 @@ export function NotificationEvents({
               {error instanceof StatusError && error.status === 400
                 ? "Страница событий изменилась. Обновите события с первой страницы."
                 : error instanceof StatusError && error.status === 404
-                  ? "События в этой области недоступны."
+                  ? "События недоступны."
                   : "Не удалось загрузить события. Нажмите «Обновить события»."}
             </p>
           ) : null}

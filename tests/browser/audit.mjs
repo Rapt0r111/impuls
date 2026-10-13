@@ -624,7 +624,7 @@ try {
     const text = {
       empty: "Записанных действий по выбранному фильтру нет.",
       disabled: "Синтетический журнал выключен.",
-      denied: "Журнал в этой области недоступен.",
+      denied: "Журнал недоступен.",
       unavailable: "Не удалось загрузить журнал.",
       loading: "Загружаем журнал…",
     }[mode];
@@ -656,7 +656,7 @@ try {
     } else {
       await f.page.locator(".audit-list").waitFor({ state: "hidden" });
       if (status === 404)
-        await f.page.getByText("Журнал в этой области недоступен.").waitFor();
+        await f.page.getByText("Журнал недоступен.").waitFor();
       else
         await f.page
           .getByRole("heading", {

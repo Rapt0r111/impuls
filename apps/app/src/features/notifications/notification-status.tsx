@@ -84,7 +84,7 @@ export function NotificationStatus() {
     : hidden
       ? error.code === "NOTIFICATION_STATUS_DISABLED"
         ? "Просмотр уведомлений выключен."
-        : "Состояние уведомлений в этой области недоступно."
+        : "Состояние уведомлений недоступно."
       : "Не удалось загрузить состояние уведомлений. Проверьте соединение и нажмите «Обновить».";
   return (
     <section
@@ -122,27 +122,29 @@ export function NotificationStatus() {
       ) : null}
       {data ? (
         <>
-          <label className="tasks-filter notification-scope">
-            <span id="notification-scope-label">Область</span>
-            <select
-              aria-labelledby="notification-scope-label"
-              value={scope || data.scope.id}
-              onChange={(event) => setScope(event.target.value)}
-            >
-              {data.scopes.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {data.scopes.length > 1 ? (
+            <label className="tasks-filter notification-scope">
+              <span id="notification-scope-label">Область</span>
+              <select
+                aria-labelledby="notification-scope-label"
+                value={scope || data.scope.id}
+                onChange={(event) => setScope(event.target.value)}
+              >
+                {data.scopes.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <p className="notification-asof">
             Обновлено {date(data.updatedAt)} МСК.
           </p>
           {empty ? (
             <p className="tasks-state">
-              В этой области уведомлений пока не было. Они появляются после
-              действий с задачами и заявками.
+              Уведомлений пока не было. Они появляются после действий с задачами
+              и заявками.
             </p>
           ) : (
             <>

@@ -7,7 +7,10 @@ import {
 } from "@impuls/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import "./open-tasks.css";
 
@@ -62,6 +65,7 @@ export function OpenTaskList({
   items: OpenTask[];
   onClaimed(taskId: string): void;
 }) {
+  const manyScopes = useManyScopes();
   const { csrfToken, loseAccess } = useAuthorizedSession();
   const client = useQueryClient();
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -75,7 +79,7 @@ export function OpenTaskList({
     if (running.current) return;
     if (
       !window.confirm(
-        `Взять задачу «${task.title}»?\n\nОбласть: ${task.scope.name}\nСрок: ${dueText(task.dueAt)}\nНаграда за приёмку: до ${task.fundXp} XP и ${task.fundPoints} баллов\n\nПосле этого задача станет вашей, и остальные её не увидят.`,
+        `Взять задачу «${task.title}»?\n\n${manyScopes ? `Область: ${task.scope.name}\n` : ""}Срок: ${dueText(task.dueAt)}\nНаграда за приёмку: до ${task.fundXp} XP и ${task.fundPoints} баллов\n\nПосле этого задача станет вашей, и остальные её не увидят.`,
       )
     )
       return;
@@ -145,8 +149,8 @@ export function OpenTaskList({
   return (
     <>
       <p className="open-tasks-note">
-        Свободные задачи вашей области. Возьмите ту, которую готовы выполнить:
-        она станет вашей и появится в «Активных».
+        Свободные задачи. Возьмите ту, которую готовы выполнить: она станет
+        вашей и появится в «Активных».
       </p>
       {message ? (
         <p role="alert" className="open-tasks-message">
@@ -159,7 +163,9 @@ export function OpenTaskList({
             <li key={task.id} className="open-task">
               <div className="open-task-head">
                 <strong>{task.title}</strong>
-                <span className="open-task-scope">{task.scope.name}</span>
+                {manyScopes ? (
+                  <span className="open-task-scope">{task.scope.name}</span>
+                ) : null}
               </div>
               <p className="open-task-criteria">{task.criteria}</p>
               <p className="open-task-meta">

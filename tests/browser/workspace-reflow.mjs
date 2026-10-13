@@ -69,7 +69,7 @@ const views = [
   ["home", "Главная", ".home-level"],
   ["tasks", "Мои задачи", ".tasks-list > li"],
   ["ledger", "Баланс и журнал", ".ledger-balances"],
-  ["rewards", "Поощрения", ".reward-row"],
+  ["rewards", "Поощрения", ".reward-card"],
   ["ranking", "Рейтинг", ".ranking-table tbody tr"],
   ["profile", "Мой профиль", ".profile-block"],
   ["reviews", "Очередь проверки", ".tasks-list > li"],
@@ -87,6 +87,15 @@ async function fixture(browser, width) {
   });
   const page = await context.newPage();
   page.setDefaultTimeout(8000);
+  // Подробности карточки каталога свёрнуты; сценарию нужны все кнопки.
+  await page.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const d of document.querySelectorAll(
+        "details.admin-catalog-more:not([open])",
+      ))
+        d.open = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
   const errors = [],
     unexpected = [];
   page.on("pageerror", (e) => errors.push(e.message));

@@ -490,9 +490,7 @@ try {
         .getByRole("button", { name: "Обновить события", exact: true })
         .click();
     }
-    await f.page
-      .getByText("Состояние уведомлений в этой области недоступно.")
-      .waitFor();
+    await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     assert.equal(
@@ -526,9 +524,7 @@ try {
       .getByRole("button", { name: "Обновить события", exact: true })
       .click();
     if (denial === 404)
-      await f.page
-        .getByText("Состояние уведомлений в этой области недоступно.")
-        .waitFor();
+      await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     else
       await f.page
         .getByRole("heading", {
@@ -570,7 +566,7 @@ try {
       .getByRole("button", { name: "Обновить события", exact: true })
       .click();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
+    await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     await f.page.getByText("Все события", { exact: true }).click();
@@ -587,9 +583,7 @@ try {
       .waitFor();
     f.setFail(404);
     await refresh(f).click();
-    await f.page
-      .getByText("Состояние уведомлений в этой области недоступно.")
-      .waitFor();
+    await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     f.setFail(0);
     f.setEventFail(503);
     await refresh(f).click();
@@ -665,11 +659,11 @@ try {
     await f.page
       .getByText(
         mode === "empty"
-          ? /В этой области уведомлений пока не было/
+          ? /Уведомлений пока не было/
           : mode === "disabled"
             ? "Просмотр уведомлений выключен."
             : mode === "denied"
-              ? "Состояние уведомлений в этой области недоступно."
+              ? "Состояние уведомлений недоступно."
               : /Не удалось загрузить состояние/,
       )
       .waitFor();
@@ -761,9 +755,7 @@ try {
     await ready(f);
     f.setFail(404);
     await refresh(f).click();
-    await f.page
-      .getByText("Состояние уведомлений в этой области недоступно.")
-      .waitFor();
+    await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     assert.equal(
       await f.page
         .locator(".notification-section > .notification-counts")
@@ -803,9 +795,7 @@ try {
     if (badBody) f.setMalformedError();
     await refresh(f).click();
     if (status === 404)
-      await f.page
-        .getByText("Состояние уведомлений в этой области недоступно.")
-        .waitFor();
+      await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     else
       await f.page
         .getByRole("heading", {
@@ -828,7 +818,7 @@ try {
     f.setValue(999);
     await refresh(f).click();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
+    await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(
       await f.page
@@ -918,7 +908,7 @@ try {
   }
   {
     const f = await fixture("empty");
-    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
+    await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText(/Новых записей попыток пока нет/).waitFor();
     await capture(f, "attempts-empty-320.png");
@@ -986,9 +976,7 @@ try {
       .getByRole("button", { name: "Обновить журнал", exact: true })
       .click();
     if (status === 404) {
-      await f.page
-        .getByText("Состояние уведомлений в этой области недоступно.")
-        .waitFor();
+      await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
       f.setFail(503);
       await f.page
         .getByRole("button", { name: "Мои задачи", exact: true })
@@ -1026,9 +1014,7 @@ try {
     await f.page
       .getByRole("button", { name: "Обновить журнал", exact: true })
       .click();
-    await f.page
-      .getByText("Состояние уведомлений в этой области недоступно.")
-      .waitFor();
+    await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     f.setFail(503);
@@ -1059,9 +1045,7 @@ try {
       f.setEventFail(404);
       await f.page.getByText("Все события", { exact: true }).click();
     }
-    await f.page
-      .getByText("Состояние уведомлений в этой области недоступно.")
-      .waitFor();
+    await f.page.getByText("Состояние уведомлений недоступно.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     f.setFail(503);
@@ -1083,7 +1067,7 @@ try {
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText("Загружаем журнал попыток…").waitFor();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
+    await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText(/Новых записей попыток пока нет/).waitFor();

@@ -132,17 +132,12 @@ const finish = async (s, name) => {
 };
 async function prepare(s) {
   await s.page.getByRole("heading", { name: title, exact: true }).waitFor();
+  await s.page.getByRole("button", { name: "Получить", exact: true }).click();
   await s.page
-    .getByRole("button", { name: "Оформить заявку", exact: true })
-    .click();
-  await s.page
-    .getByRole("heading", { name: "Подтвердите резерв", exact: true })
+    .getByRole("heading", { name: "Получить поощрение?", exact: true })
     .waitFor();
-  await s.page
-    .getByRole("checkbox", { name: "Подтверждаю резерв баллов и одного места" })
-    .check();
   return s.page.getByRole("button", {
-    name: "Создать заявку и резерв",
+    name: "Получить за 30 баллов",
     exact: true,
   });
 }
@@ -160,7 +155,8 @@ let winner, loser;
         .waitFor()
         .then(() => "won"),
       s.page
-        .getByRole("button", { name: "Обновить условия", exact: true })
+        .locator(".reward-confirmation")
+        .getByRole("button", { name: "Обновить поощрения", exact: true })
         .waitFor()
         .then(() => "lost"),
     ]);
@@ -176,7 +172,7 @@ let winner, loser;
   assert.deepEqual(s.balances[winner], [90, 30]);
   assert.deepEqual(s.balances[loser], [120, 0]);
   const stale = sessions[loser].page;
-  await stale.getByText("Данные устарели, обновите условия.").waitFor();
+  await stale.getByText("Данные устарели, обновите поощрения.").waitFor();
   assert.equal(await stale.getByText(/Свободно: 1/).count(), 0);
   await finish(sessions[winner], "1-race-winner");
   await finish(sessions[loser], "1-race-loser");
@@ -193,12 +189,9 @@ let winner, loser;
     .getByLabel("Причина отмены", { exact: true })
     .fill("Синтетическая отмена в проверке.");
   await w.page
-    .getByRole("checkbox", { name: "Подтверждаю отмену и возврат резерва" })
-    .check();
-  await w.page
     .getByRole("button", { name: "Отменить и вернуть баллы", exact: true })
     .click();
-  await w.page.getByText(/Заявка отменена. Возвращено 30 баллов/).waitFor();
+  await w.page.getByText(/Заявка отменена. 30 баллов вернулись/).waitFor();
   let s = await state();
   assert.deepEqual(s.statuses, ["cancelled"]);
   assert.deepEqual(s.balances[winner], [120, 0]);
@@ -217,7 +210,7 @@ let winner, loser;
 // 3. No scope membership: no catalog item and no balance change.
 {
   const s = await open("outsider");
-  await s.page.getByText(/Поощрения видны участникам области/).waitFor();
+  await s.page.getByText(/Поощрения видны участникам/).waitFor();
   assert.equal(
     await s.page.getByRole("heading", { name: title, exact: true }).count(),
     0,

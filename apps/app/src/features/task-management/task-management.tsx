@@ -24,7 +24,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { TaskTimeline } from "@/features/tasks/task-timeline";
 import { TaskHistory } from "@/features/tasks/task-history";
 import "./task-management.css";
@@ -147,6 +150,7 @@ function requestMessage(error: Error | null): string {
 }
 
 export function TaskManagement() {
+  const manyScopes = useManyScopes();
   const { csrfToken, reportDirty, confirmLeave, loseAccess } =
     useAuthorizedSession();
   const client = useQueryClient();
@@ -189,9 +193,10 @@ export function TaskManagement() {
   const createScopes = availableScopes.filter((scope) => scope.canCreate);
   // Новая задача всегда берёт действующие настройки начислений: сервер отдаёт их первыми.
   const currentRuleSetId = options.data?.ruleSets[0]?.id ?? "";
-  const currentScope = availableScopes.find(
-    (scope) => scope.id === draft.scopeId,
-  );
+  // Одна область — поле не показываем, задача создаётся в ней.
+  const singleScope = createScopes.length === 1;
+  const scopeId = draft.scopeId || (singleScope ? createScopes[0]!.id : "");
+  const currentScope = availableScopes.find((scope) => scope.id === scopeId);
   const hasDraft = Boolean(
     draft.scopeId ||
     draft.title ||
@@ -230,7 +235,7 @@ export function TaskManagement() {
 
   function recoverableMessage(status: number, code?: string): string {
     if (status === 404)
-      return "Задача или область больше недоступна. Введённые данные сохранены; список и варианты обновлены.";
+      return "Задача больше недоступна. Введённые данные сохранены; список и варианты обновлены.";
     if (status === 409)
       return "Данные задачи изменились. Черновик сохранён; список обновлён. Проверьте актуальные сведения перед новым действием.";
     if (status === 422 && (code?.includes("RULE") || code?.includes("rule")))
@@ -239,7 +244,7 @@ export function TaskManagement() {
       status === 422 &&
       (code?.includes("ASSIGNEE") || code?.includes("assignee"))
     )
-      return "Исполнитель больше не активен в этой области. Выберите другого участника; критерии и поля сохранены.";
+      return "Исполнитель больше не участвует. Выберите другого участника; критерии и поля сохранены.";
     if (status === 400 || status === 422)
       return "Проверьте поля задачи или доступность исполнителя. Введённые значения сохранены.";
     return "Сервер не подтвердил результат. Повторите тот же запрос с сохранённым ключом.";
@@ -261,13 +266,14 @@ export function TaskManagement() {
         }
         const parsed = taskCreateRequestSchema.safeParse({
           ...draft,
+          scopeId,
           ruleSetId: currentRuleSetId,
           categoryCode: draft.categoryCode.trim() || NO_CATEGORY,
           dueAt: dueAt ? dueAt.toISOString() : "",
         });
         if (!parsed.success) {
           setError(
-            "Заполните область, название, критерии и срок. Суммы должны быть целыми неотрицательными числами.",
+            "Заполните название, критерии и срок. Суммы должны быть целыми неотрицательными числами.",
           );
           return;
         }
@@ -286,11 +292,11 @@ export function TaskManagement() {
           (person) => person.id === assigneeId,
         );
         if (!scope?.canAssign || !recipient) {
-          setError("Выберите активного исполнителя в этой области.");
+          setError("Выберите исполнителя.");
           return;
         }
         const accepted = window.confirm(
-          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
+          `Назначить задачу «${task.title}» участнику ${recipient.displayName}${manyScopes ? ` в области «${task.scope.name}»` : ""}?\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
         );
         if (!accepted) return;
         nextAttempt = {
@@ -407,7 +413,7 @@ export function TaskManagement() {
         setNewAssignee("");
         setSuccess(
           result.task.openForClaim
-            ? `Свободная задача «${result.task.title}» создана. Участники области увидят её в разделе «Задачи».`
+            ? `Свободная задача «${result.task.title}» создана. Участники увидят её в разделе «Задачи».`
             : `Черновик «${result.task.title}» создан.`,
         );
         // Исполнитель выбран в форме: назначение уходит отдельным запросом
@@ -512,13 +518,13 @@ export function TaskManagement() {
           role="alert"
         >
           Не удалось обновить варианты. Используются последние подтверждённые
-          области и настройки начислений.
+          участники и настройки начислений.
         </p>
       )}
 
       {options.isPending ? (
         <p className="task-mgmt__state" role="status">
-          Загружаем области и настройки начислений…
+          Загружаем участников и настройки начислений…
         </p>
       ) : accessLost ? (
         <p className="task-mgmt__state" role="alert">
@@ -564,25 +570,27 @@ export function TaskManagement() {
                 XP и баллы исполнитель получит после приёмки отчёта.
               </p>
               <div className="task-mgmt__fields">
-                <label>
-                  <span id="task-mgmt-scope-label">Область</span>
-                  <select
-                    aria-labelledby="task-mgmt-scope-label"
-                    value={draft.scopeId}
-                    disabled={pending || uncertain}
-                    onChange={(event) =>
-                      setField("scopeId", event.target.value)
-                    }
-                    required
-                  >
-                    <option value="">Выберите область</option>
-                    {createScopes.map((scope) => (
-                      <option key={scope.id} value={scope.id}>
-                        {scope.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {singleScope ? null : (
+                  <label>
+                    <span id="task-mgmt-scope-label">Область</span>
+                    <select
+                      aria-labelledby="task-mgmt-scope-label"
+                      value={scopeId}
+                      disabled={pending || uncertain}
+                      onChange={(event) =>
+                        setField("scopeId", event.target.value)
+                      }
+                      required
+                    >
+                      <option value="">Выберите область</option>
+                      {createScopes.map((scope) => (
+                        <option key={scope.id} value={scope.id}>
+                          {scope.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label className="task-mgmt__wide">
                   <span id="task-mgmt-title-label">Название</span>
                   <input
@@ -736,7 +744,7 @@ export function TaskManagement() {
             aria-labelledby="task-mgmt-list-title"
           >
             <div className="task-mgmt__section-heading">
-              <h3 id="task-mgmt-list-title">Задачи в доступных областях</h3>
+              <h3 id="task-mgmt-list-title">Все задачи</h3>
               <button
                 type="button"
                 className="task-mgmt__button"
@@ -904,6 +912,7 @@ function TaskRow({
   onChange(action: "edit" | "cancel"): void;
   changeForm: React.ReactNode;
 }) {
+  const manyScopes = useManyScopes();
   const canAssign = task.status === "draft" && Boolean(scope?.canAssign);
   const { historyScopeIds } = useAuthorizedSession();
   return (
@@ -918,8 +927,8 @@ function TaskRow({
           </span>
         </div>
         <p className="task-mgmt__item-meta">
-          {task.scope.name} · {priorityNames[task.priority]} · до{" "}
-          {formatDate(task.dueAt)}
+          {manyScopes ? `${task.scope.name} · ` : ""}
+          {priorityNames[task.priority]} · до {formatDate(task.dueAt)}
         </p>
         <p className="task-mgmt__criteria">{task.criteria}</p>
         <p className="task-mgmt__item-meta">
@@ -946,7 +955,9 @@ function TaskRow({
             <>
               <label>
                 <span id={`task-mgmt-assignee-label-${task.id}`}>
-                  Активный участник области «{scope.name}»
+                  {manyScopes
+                    ? `Участник области «${scope.name}»`
+                    : "Кому назначить"}
                 </span>
                 <select
                   aria-labelledby={`task-mgmt-assignee-label-${task.id}`}
@@ -973,7 +984,7 @@ function TaskRow({
             </>
           ) : (
             <p className="task-mgmt__hint">
-              В этой области пока нет доступных активных участников.
+              Пока нет участников, которым можно назначить задачу.
             </p>
           )}
         </div>
@@ -1059,7 +1070,7 @@ function TaskChangeForm({
       </h3>
       <p className="task-mgmt__note">
         {change.action === "edit"
-          ? "После назначения условия заморожены. Область и версия правил сохраняются."
+          ? "После назначения условия заморожены."
           : "Отчёты и история сохранятся. Задача выйдет из очереди проверки. Начислений при отмене нет."}{" "}
         Версия {f.expectedVersion} ·{" "}
         {change.task.assignee?.displayName ?? "Исполнитель не назначен"} ·{" "}

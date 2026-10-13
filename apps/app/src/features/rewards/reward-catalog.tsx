@@ -19,6 +19,7 @@ import { useAuthorizedSession } from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import "./rewards.css";
 import { RewardDecisions } from "./reward-decisions";
+import { RewardBadge } from "./reward-visual";
 
 class RewardError extends Error {
   constructor(readonly status: number) {
@@ -58,7 +59,7 @@ const errorText = (error: Error | null) =>
   error instanceof RewardError && [400, 409].includes(error.status)
     ? "Каталог или список заявок изменился; страница устарела. Нажмите «Обновить поощрения», чтобы начать с первой страницы."
     : error instanceof RewardError && error.status === 404
-      ? "Каталог выключен или область больше недоступна. Обновите поощрения."
+      ? "Каталог выключен или недоступен. Обновите поощрения."
       : "Не удалось загрузить поощрения. Проверьте соединение и повторите загрузку.";
 
 // «за 1 ч», «за 3 дн.»: срок резерва словами вместо секунд.
@@ -68,6 +69,19 @@ function durationText(seconds: number) {
   if (hours < 48) return `за ${hours} ч`;
   return `за ${Math.round(hours / 24)} дн.`;
 }
+
+// Состояние заявки одним словом и цветом метки.
+const requestStatus: Record<
+  Redemption["status"],
+  { text: string; tone: string }
+> = {
+  pending: { text: "Ждёт решения", tone: "in_review" },
+  approved: { text: "Одобрено, ждёт выдачи", tone: "in_progress" },
+  fulfilled: { text: "Получено", tone: "accepted" },
+  rejected: { text: "Отказано, баллы вернулись", tone: "cancelled" },
+  expired: { text: "Срок истёк, баллы вернулись", tone: "cancelled" },
+  cancelled: { text: "Отменено, баллы вернулись", tone: "cancelled" },
+};
 
 export function RewardCatalog() {
   const {
@@ -84,7 +98,6 @@ export function RewardCatalog() {
   const [scope, setScope] = useState("");
   const [selection, setSelection] = useState<Selection | null>(null);
   const [reason, setReason] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
   const [intent, setIntent] = useState<Intent | null>(null);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
@@ -152,7 +165,6 @@ export function RewardCatalog() {
     if (sending || !confirmLeave()) return;
     setSelection(null);
     setReason("");
-    setConfirmed(false);
     setIntent(null);
     setOutcome("idle");
     setMessage("");
@@ -161,7 +173,6 @@ export function RewardCatalog() {
   function choose(next: Selection) {
     if (!confirmLeave()) return;
     setSelection(next);
-    setConfirmed(false);
     setReason("");
     setIntent(null);
     setOutcome("idle");
@@ -171,8 +182,7 @@ export function RewardCatalog() {
     if (
       !selection ||
       sending ||
-      (!intent &&
-        (!confirmed || (selection.action === "cancel" && !reason.trim())))
+      (!intent && selection.action === "cancel" && !reason.trim())
     )
       return;
     const request = intent ?? {
@@ -229,7 +239,6 @@ export function RewardCatalog() {
         const data: unknown = await response.json();
         setIntent(null);
         setOutcome("conflict");
-        setConfirmed(false);
         setMessage(
           typeof data === "object" &&
             data !== null &&
@@ -246,13 +255,12 @@ export function RewardCatalog() {
       setOutcome("success");
       setMessage(
         data.redemption.status === "pending"
-          ? `Заявка сохранена. В резерве ${number(data.redemption.price)} баллов. Выдача ещё не подтверждена.`
-          : `Заявка отменена. Возвращено ${number(data.redemption.price)} баллов и место в исходной квоте.`,
+          ? `Заявка сохранена: ${number(data.redemption.price)} баллов ждут решения командира.`
+          : `Заявка отменена. ${number(data.redemption.price)} баллов вернулись.`,
       );
       setSelection(null);
       setIntent(null);
       setReason("");
-      setConfirmed(false);
       reportDirty(false);
       await Promise.all(
         [
@@ -329,7 +337,7 @@ export function RewardCatalog() {
       <div className="tasks-heading">
         <div>
           <h2 id="rewards-title">Поощрения</h2>
-          <p>Обменяйте баллы на поощрение. XP при этом не уменьшается.</p>
+          <p>Обменивайте баллы на поощрения. XP при этом не уменьшается.</p>
         </div>
         <button
           className="tasks-action"
@@ -384,72 +392,48 @@ export function RewardCatalog() {
           className="tasks-detail reward-confirmation"
           aria-labelledby="reward-confirm-title"
         >
+          <RewardBadge title={selection.item.title} size="lg" />
           <h3 id="reward-confirm-title" ref={formHeading} tabIndex={-1}>
             {selection.action === "reserve"
-              ? "Подтвердите резерв"
-              : "Отменить заявку"}
+              ? "Получить поощрение?"
+              : "Отменить заявку?"}
           </h3>
-          <strong>{selection.item.title}</strong>
+          <strong className="reward-confirm-name">
+            {selection.item.title}
+          </strong>
           <p>{selection.item.conditions}</p>
-          {selection.action === "reserve" ? (
-            selection.item.reservationSeconds !== null ? (
-              <p>
-                Если решения не будет{" "}
-                {durationText(selection.item.reservationSeconds)}, баллы
-                вернутся.
-              </p>
-            ) : null
-          ) : selection.item.expiresAt ? (
-            <p>Срок резерва: {deadlineDate(selection.item.expiresAt)} МСК.</p>
-          ) : null}
-          <p className="reward-price">
-            {number(selection.item.price)} баллов{" "}
-            {selection.action === "reserve"
-              ? "перейдут в резерв"
-              : "вернутся из резерва"}
+          <p className="reward-confirm-sum">
+            {selection.action === "reserve" ? "−" : "+"}
+            {number(selection.item.price)} баллов
           </p>
           {first && (
-            <div className="reward-balance-preview">
-              <p>
-                Сейчас доступно: {number(first.balance.availablePoints)} баллов.
-              </p>
-              <p>
-                {insufficientPreview
-                  ? "Недостаточно доступных баллов. Обновите условия."
-                  : `После ${selection.action === "reserve" ? "резерва" : "отмены"} останется доступно: ${number(projectedAvailable!)} баллов.`}
-              </p>
-            </div>
+            <p className="reward-balance-preview">
+              {insufficientPreview
+                ? "Баллов не хватает. Обновите поощрения."
+                : `После ${selection.action === "reserve" ? "заявки" : "отмены"} останется ${number(projectedAvailable!)} баллов.`}
+            </p>
           )}
           {selection.action === "reserve" ? (
-            <p>
+            <p className="notification-note">
               {outcome === "conflict"
-                ? "Данные устарели, обновите условия."
-                : `Осталось: ${selection.item.quota.available}. Если заявку отклонят, баллы вернутся.`}
+                ? "Данные устарели, обновите поощрения."
+                : `Командир подтвердит заявку и выдаст поощрение. Если откажет${
+                    selection.item.reservationSeconds !== null
+                      ? ` или не ответит ${durationText(selection.item.reservationSeconds)}`
+                      : ""
+                  }, баллы вернутся.`}
             </p>
           ) : (
-            <>
-              <label className="reward-reason">
-                Причина отмены
-                <textarea
-                  value={reason}
-                  maxLength={2000}
-                  disabled={locked}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </label>
-            </>
+            <label className="reward-reason">
+              Причина отмены
+              <textarea
+                value={reason}
+                maxLength={2000}
+                disabled={locked}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </label>
           )}
-          <label className="reward-check">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              disabled={locked || outcome === "conflict" || insufficientPreview}
-              onChange={(e) => setConfirmed(e.target.checked)}
-            />
-            {selection.action === "reserve"
-              ? "Подтверждаю резерв баллов и одного места"
-              : "Подтверждаю отмену и возврат резерва"}
-          </label>
           <div className="task-history-actions">
             {outcome === "conflict" ? (
               <button
@@ -464,7 +448,7 @@ export function RewardCatalog() {
                   refresh();
                 }}
               >
-                Обновить условия
+                Обновить поощрения
               </button>
             ) : (
               <button
@@ -474,17 +458,16 @@ export function RewardCatalog() {
                   sending ||
                   (!intent &&
                     (insufficientPreview ||
-                      !confirmed ||
                       (selection.action === "cancel" && !reason.trim())))
                 }
                 onClick={() => void submit()}
               >
                 {sending
-                  ? "Подтверждаем…"
+                  ? "Отправляем…"
                   : intent
                     ? "Повторить тот же запрос"
                     : selection.action === "reserve"
-                      ? "Создать заявку и резерв"
+                      ? `Получить за ${number(selection.item.price)} баллов`
                       : "Отменить и вернуть баллы"}
               </button>
             )}
@@ -494,7 +477,7 @@ export function RewardCatalog() {
               disabled={sending}
               onClick={close}
             >
-              Закрыть форму
+              Назад
             </button>
           </div>
         </div>
@@ -510,21 +493,21 @@ export function RewardCatalog() {
                 <p className="tasks-state" role="alert">
                   {errorText(catalog.error)}
                   {first &&
-                    " Показаны последние подтверждённые данные; создание заявки отключено до обновления."}
+                    " Показаны последние подтверждённые данные; заявки отключены до обновления."}
                 </p>
               )}
               {first && (
                 <>
-                  <dl className="ledger-balances">
-                    <div>
-                      <dt>Доступно</dt>
-                      <dd>{number(first.balance.availablePoints)} баллов</dd>
-                    </div>
-                    <div>
-                      <dt>В резерве</dt>
-                      <dd>{number(first.balance.reservedPoints)} баллов</dd>
-                    </div>
-                  </dl>
+                  <div className="reward-wallet">
+                    <span>У вас</span>
+                    <strong>{number(first.balance.availablePoints)}</strong>
+                    <span>баллов</span>
+                    {first.balance.reservedPoints > 0 ? (
+                      <small>
+                        Ещё {number(first.balance.reservedPoints)} в заявках
+                      </small>
+                    ) : null}
+                  </div>
                   {first.scopes.length > 1 && (
                     <label className="tasks-filter reward-scope">
                       Область
@@ -544,10 +527,10 @@ export function RewardCatalog() {
                     <p className="tasks-state">
                       {first.scope
                         ? "Поощрений пока нет. Их добавляет командир."
-                        : "Поощрения видны участникам области. Вас пока не включили ни в одну область."}
+                        : "Поощрения видны участникам. Вас пока не добавили в участники."}
                     </p>
                   ) : (
-                    <ul className="tasks-list reward-list">
+                    <ul className="reward-list">
                       {items.map((item) => {
                         const short =
                           item.price - first.balance.availablePoints;
@@ -556,91 +539,85 @@ export function RewardCatalog() {
                             request.status === "pending" &&
                             request.rewardId === item.rewardId,
                         );
+                        const soldOut = item.quota.available === 0;
                         return (
-                          <li key={item.id}>
-                            <div className="reward-row">
-                              <div className="reward-row-body">
-                                <div className="reward-row-head">
-                                  <h3>{item.title}</h3>
-                                  <strong className="reward-price">
-                                    {number(item.price)} баллов
-                                  </strong>
-                                </div>
-                                <p>{item.conditions}</p>
-                                <p>
-                                  До {date(item.quota.endsAt)} · осталось{" "}
-                                  {item.quota.available}
-                                </p>
-                                {item.hasPendingRequest ? (
-                                  <span className="task-chip task-chip--in_review reward-state">
-                                    Ждёт решения командира
-                                  </span>
-                                ) : null}
-                                {!item.owned &&
-                                !item.hasPendingRequest &&
-                                item.quota.available > 0 &&
-                                short > 0 ? (
-                                  <div className="reward-meter">
-                                    <progress
-                                      max={item.price}
-                                      value={Math.max(
-                                        0,
-                                        first.balance.availablePoints,
-                                      )}
-                                      aria-label={`Накоплено ${number(first.balance.availablePoints)} из ${number(item.price)} баллов`}
-                                    />
-                                    <span>
-                                      Не хватает {number(short)} баллов
-                                    </span>
-                                  </div>
-                                ) : null}
+                          <li key={item.id} className="reward-card">
+                            <RewardBadge title={item.title} />
+                            <h3>{item.title}</h3>
+                            <p className="reward-card-text">
+                              {item.conditions}
+                            </p>
+                            <p className="reward-card-meta">
+                              <strong className="reward-price">
+                                {number(item.price)} баллов
+                              </strong>
+                              <span>
+                                {soldOut
+                                  ? "Закончились"
+                                  : `Осталось ${item.quota.available} · до ${date(item.quota.endsAt)}`}
+                              </span>
+                            </p>
+                            {!item.owned &&
+                            !item.hasPendingRequest &&
+                            !soldOut &&
+                            short > 0 ? (
+                              <div className="reward-meter">
+                                <progress
+                                  max={item.price}
+                                  value={Math.max(
+                                    0,
+                                    first.balance.availablePoints,
+                                  )}
+                                  aria-label={`Накоплено ${number(first.balance.availablePoints)} из ${number(item.price)} баллов`}
+                                />
+                                <span>Не хватает {number(short)} баллов</span>
                               </div>
-                              <div className="reward-row-action">
+                            ) : null}
+                            <div className="reward-card-actions">
+                              <button
+                                className="tasks-action task-report-primary"
+                                type="button"
+                                disabled={
+                                  unavailable ||
+                                  catalog.isFetching ||
+                                  item.hasPendingRequest ||
+                                  item.owned ||
+                                  soldOut ||
+                                  first.balance.availablePoints < item.price
+                                }
+                                onClick={() =>
+                                  choose({ action: "reserve", item })
+                                }
+                              >
+                                {item.owned
+                                  ? "Уже получено"
+                                  : item.hasPendingRequest
+                                    ? "Ждёт решения"
+                                    : soldOut
+                                      ? "Закончились"
+                                      : short > 0
+                                        ? "Недостаточно баллов"
+                                        : "Получить"}
+                              </button>
+                              {pending ? (
                                 <button
-                                  className="tasks-action"
+                                  className="tasks-action reward-cancel"
                                   type="button"
                                   disabled={
-                                    unavailable ||
-                                    catalog.isFetching ||
-                                    item.hasPendingRequest ||
-                                    item.owned ||
-                                    item.quota.available === 0 ||
-                                    first.balance.availablePoints < item.price
+                                    mine.isError ||
+                                    mine.isFetching ||
+                                    mine.isFetchNextPageError
                                   }
                                   onClick={() =>
-                                    choose({ action: "reserve", item })
+                                    choose({
+                                      action: "cancel",
+                                      item: pending,
+                                    })
                                   }
                                 >
-                                  {item.owned
-                                    ? "Уже в коллекции"
-                                    : item.hasPendingRequest
-                                      ? "Заявка уже есть"
-                                      : item.quota.available === 0
-                                        ? "Нет свободных мест"
-                                        : short > 0
-                                          ? "Недостаточно баллов"
-                                          : "Оформить заявку"}
+                                  Отменить запрос
                                 </button>
-                                {pending ? (
-                                  <button
-                                    className="tasks-action reward-cancel"
-                                    type="button"
-                                    disabled={
-                                      mine.isError ||
-                                      mine.isFetching ||
-                                      mine.isFetchNextPageError
-                                    }
-                                    onClick={() =>
-                                      choose({
-                                        action: "cancel",
-                                        item: pending,
-                                      })
-                                    }
-                                  >
-                                    Отменить запрос
-                                  </button>
-                                ) : null}
-                              </div>
+                              ) : null}
                             </div>
                           </li>
                         );
@@ -681,66 +658,53 @@ export function RewardCatalog() {
                     </p>
                   )}
                   {!mine.isError && requests.length === 0 && (
-                    <p>
-                      Заявок пока нет. Перед подачей вы сможете проверить
-                      условия и сумму резерва.
+                    <p className="notification-note">
+                      Заявок пока нет. Выберите поощрение выше.
                     </p>
                   )}
-                  <ul className="tasks-list">
-                    {requests.map((item) => (
-                      <li key={item.id}>
-                        <div className="reward-row">
-                          <div>
+                  <ul className="reward-request-list">
+                    {requests.map((item) => {
+                      const state = requestStatus[item.status];
+                      const why =
+                        item.cancellationReason ??
+                        (item.status === "rejected" || item.status === "expired"
+                          ? item.decision?.reason
+                          : null);
+                      return (
+                        <li key={item.id}>
+                          <RewardBadge title={item.title} size="sm" />
+                          <div className="reward-request-body">
                             <h4>{item.title}</h4>
                             <p>
-                              {item.status === "pending"
-                                ? "В резерве, ожидает решения"
-                                : item.status === "fulfilled"
-                                  ? "Косметика выдана, право владения сохранено"
-                                  : item.status === "approved"
-                                    ? "Одобрена, резерв списан. Выдача ещё не подтверждена"
-                                    : item.status === "rejected"
-                                      ? "Отказано, резерв возвращён"
-                                      : item.status === "expired"
-                                        ? "Срок резерва истёк, баллы и место возвращены"
-                                        : "Отменена, резерв возвращён"}{" "}
-                              · {number(item.price)} баллов
+                              <span
+                                className={`task-chip task-chip--status task-chip--${state.tone}`}
+                              >
+                                {state.text}
+                              </span>{" "}
+                              <span className="reward-price">
+                                {number(item.price)} баллов
+                              </span>
                             </p>
-                            <p>{item.conditions}</p>
-                            <p>
-                              {item.scope.name} · условия {item.rewardVersion} ·
-                              квота до {date(item.periodEnd)}
-                            </p>
-                            <p>
-                              {item.expiresAt
-                                ? `Срок резерва: ${deadlineDate(item.expiresAt)} МСК.`
-                                : "Срок резерва не задан."}
-                              {item.status === "pending" &&
-                                item.expiresAt &&
-                                " Возврат по истечении срока требует серверной обработки или решения уполномоченного."}
-                            </p>
-                            {item.cancellationReason && (
-                              <p>Причина: {item.cancellationReason}</p>
-                            )}
-                            {item.decision && (
-                              <p>
-                                Причина решения: {item.decision.reason}.{" "}
-                                {item.decision.actorId === null
-                                  ? "Обработчик"
-                                  : "Автор (текущее имя)"}
-                                : {item.decision.displayName} ·{" "}
-                                {date(item.decision.decidedAt)}
+                            {item.status === "pending" && item.expiresAt ? (
+                              <p className="notification-note">
+                                Ответ до {deadlineDate(item.expiresAt)} МСК
                               </p>
-                            )}
-                            {item.fulfillment && (
-                              <p>
-                                Основание выдачи: {item.fulfillment.reason}.
-                                Автор (текущее имя):{" "}
-                                {item.fulfillment.displayName} ·{" "}
-                                {date(item.fulfillment.fulfilledAt)}. Косметика
-                                в вашей коллекции; служебных привилегий не даёт.
+                            ) : null}
+                            {why ? (
+                              <p className="notification-note">
+                                Причина: {why}
                               </p>
-                            )}
+                            ) : null}
+                            {item.decision?.actorId === null ? (
+                              <p className="notification-note">
+                                Закрыто автоматически
+                              </p>
+                            ) : null}
+                            {(first?.scopes.length ?? 0) > 1 ? (
+                              <p className="notification-note">
+                                {item.scope.name}
+                              </p>
+                            ) : null}
                           </div>
                           {item.status === "pending" && (
                             <button
@@ -756,9 +720,9 @@ export function RewardCatalog() {
                               Отменить заявку
                             </button>
                           )}
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                   </ul>
                   {mine.hasNextPage && (
                     <button

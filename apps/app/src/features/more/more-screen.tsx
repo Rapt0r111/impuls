@@ -1,7 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { actionNames, scopeNames } from "@/features/auth/permission-labels";
 import { useParticipantProfile } from "@/features/profile/participant-profile";
 import { initials } from "@/shared/ui/initials";
@@ -53,6 +56,7 @@ export function MoreScreen({
   destinations: MoreDestination[];
   onOpen: (id: string) => void;
 }) {
+  const manyScopes = useManyScopes();
   const { user, permissions } = useAuthorizedSession();
   const profile = useParticipantProfile();
   const level = profile.data?.progression.level?.level;
@@ -112,7 +116,9 @@ export function MoreScreen({
               <li key={`${permission.action}:${permission.scope.id}:${index}`}>
                 <strong>{actionNames[permission.action]}</strong>
                 <span>
-                  {scopeNames[permission.scope.kind]} · {permission.scope.name}
+                  {manyScopes
+                    ? `${scopeNames[permission.scope.kind]} · ${permission.scope.name}`
+                    : null}
                 </span>
               </li>
             ))}

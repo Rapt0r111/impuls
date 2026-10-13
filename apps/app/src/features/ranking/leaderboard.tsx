@@ -108,7 +108,7 @@ export function Leaderboard() {
       <div className="tasks-heading">
         <div>
           <h2 id="ranking-title">Рейтинг</h2>
-          <p>XP участников вашей области за месяц.</p>
+          <p>XP участников за месяц.</p>
         </div>
         <button
           type="button"
@@ -191,9 +191,8 @@ export function Leaderboard() {
                 )}
               </select>
             </label>
-          ) : (
-            <p className="ranking-scope-name">{first.scopes[0]?.name}</p>
-          )}
+          ) : // Одна область — её название ничего не добавляет.
+          null}
         </>
       )}
       {query.isPending && (
@@ -208,7 +207,7 @@ export function Leaderboard() {
             : accessError
               ? "Доступ изменился. Повторите вход."
               : hidden
-                ? "Область больше недоступна. Откройте рейтинг заново."
+                ? "Рейтинг больше недоступен. Откройте его заново."
                 : changed
                   ? "Рейтинг изменился между страницами. Обновите список с начала."
                   : !navigator.onLine
@@ -228,7 +227,7 @@ export function Leaderboard() {
             } else void query.refetch();
           }}
         >
-          Открыть доступные области
+          Открыть рейтинг заново
         </button>
       )}
       {first && (
@@ -244,8 +243,7 @@ export function Leaderboard() {
             </p>
           ) : (
             <p className="tasks-state">
-              Рейтинг виден участникам области. Вас пока не включили ни в одну
-              область.
+              Рейтинг виден участникам. Вас пока не добавили в участники.
             </p>
           )}
           {first.scope &&

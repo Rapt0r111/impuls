@@ -8,6 +8,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { RewardBadge } from "../rewards/reward-visual";
 
 // «Новое поощрение» за один шаг: создать позицию, включить её и открыть места.
 // Это три существующие серверные операции подряд, каждая со своим ключом
@@ -335,6 +336,18 @@ export function RewardQuickCreate({
         <p className="notification-note">
           Заявки принимаются до конца дня {dateText(`${until}T12:00:00`)}.
         </p>
+      ) : null}
+      {title.trim() ? (
+        <div className="reward-preview" aria-label="Так увидят участники">
+          <RewardBadge title={title} />
+          <div>
+            <strong>{title.trim()}</strong>
+            <span>
+              {/^[1-9]\d*$/.test(price) ? `${price} баллов` : "Цена не задана"}
+              {/^[1-9]\d*$/.test(capacity) ? ` · ${capacity} шт.` : ""}
+            </span>
+          </div>
+        </div>
       ) : null}
       <button
         type="submit"
