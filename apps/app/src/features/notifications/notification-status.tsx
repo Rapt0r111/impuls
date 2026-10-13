@@ -83,7 +83,7 @@ export function NotificationStatus() {
     ? "Доступ изменился. Повторите вход через Telegram."
     : hidden
       ? error.code === "NOTIFICATION_STATUS_DISABLED"
-        ? "Просмотр симуляции выключен."
+        ? "Просмотр уведомлений выключен."
         : "Состояние уведомлений в этой области недоступно."
       : "Не удалось загрузить состояние уведомлений. Проверьте соединение и нажмите «Обновить».";
   return (
@@ -93,7 +93,7 @@ export function NotificationStatus() {
       aria-busy={query.isFetching}
     >
       <div className="tasks-heading">
-        <h2 id="notification-status-title">Симуляция уведомлений</h2>
+        <h2 id="notification-status-title">Состояние уведомлений</h2>
         <button
           type="button"
           className="tasks-action"
@@ -108,7 +108,7 @@ export function NotificationStatus() {
         </button>
       </div>
       <p className="notification-intro">
-        Только тестовая обработка. Сообщения в Telegram не отправляются.
+        Что бот отправил участникам в Telegram и что не удалось доставить.
       </p>
       {query.isPending ? (
         <p className="tasks-state" role="status">
@@ -137,13 +137,12 @@ export function NotificationStatus() {
             </select>
           </label>
           <p className="notification-asof">
-            Прочитано {date(data.updatedAt)} МСК. Обновляйте вручную; это не
-            проверка работающего процесса.
+            Обновлено {date(data.updatedAt)} МСК.
           </p>
           {empty ? (
             <p className="tasks-state">
-              В этой области нет сохранённых событий для симуляции. Они
-              появляются после действий с задачами и заявками.
+              В этой области уведомлений пока не было. Они появляются после
+              действий с задачами и заявками.
             </p>
           ) : (
             <>
@@ -156,8 +155,9 @@ export function NotificationStatus() {
                 ))}
               </dl>
               <p className="notification-note">
-                Успешная симуляция не подтверждает доставку. «В обработке»
-                сохраняется до завершения попытки или восстановления после сбоя.
+                «Доставлено в Telegram» — сообщение принято Telegram. Если
+                получатель ни разу не открывал бота, Telegram сообщение не
+                примет.
               </p>
             </>
           )}

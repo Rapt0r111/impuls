@@ -389,7 +389,7 @@ async function fillCreateForm(page, setTitle = title) {
 
 async function createAndAssign(page, calls, dialogs, keyboard = false) {
   const createButton = page.getByRole("button", {
-    name: "Создать черновик",
+    name: "Создать задачу",
     exact: true,
   });
   if (keyboard) await createButton.press("Enter");
@@ -407,9 +407,12 @@ async function createAndAssign(page, calls, dialogs, keyboard = false) {
   if (keyboard) await assignButton.press("Space");
   else await assignButton.click();
   await page
-    .getByText("Задача назначена участнику Синтетический исполнитель.", {
-      exact: true,
-    })
+    .getByText(
+      "Задача назначена: Синтетический исполнитель. Исполнитель увидит её в разделе «Задачи».",
+      {
+        exact: true,
+      },
+    )
     .waitFor();
   assert.equal(calls[1].action, "assign");
   assert.deepEqual(calls[1].body, { assigneeId: memberId, expectedVersion: 1 });
@@ -563,7 +566,7 @@ async function dbFlow() {
       await page.getByLabel("Фонд XP", { exact: true }).fill("17");
       await page.getByLabel("Фонд баллов", { exact: true }).fill("9");
       await page
-        .getByRole("button", { name: "Создать черновик", exact: true })
+        .getByRole("button", { name: "Создать задачу", exact: true })
         .click();
       await page.getByRole("status").filter({ hasText: "создан" }).waitFor();
       const taskRow = page.getByRole("listitem").filter({ hasText: dbTitle });
@@ -594,7 +597,7 @@ async function dbFlow() {
       await page
         .getByRole("button", { name: "Назначить", exact: true })
         .click();
-      await page.getByText(new RegExp("Задача назначена участнику")).waitFor();
+      await page.getByText(new RegExp("Задача назначена:")).waitFor();
       assert.match(
         confirmText,
         /Synthetic task participant browser|Синтетический/,
@@ -741,7 +744,9 @@ try {
       width === 320 ? "dirty-nav-dismiss" : "success",
     );
     await page
-      .getByText("Фонд XP и баллов вы задаёте сами", { exact: false })
+      .getByText("XP и баллы исполнитель получит после приёмки", {
+        exact: false,
+      })
       .waitFor();
     await fillCreateForm(page);
     assert.equal(await page.evaluate(() => window.closingCalls.at(-1)), true);
@@ -819,7 +824,7 @@ try {
     } else {
       await fillCreateForm(page);
       await page
-        .getByRole("button", { name: "Создать черновик", exact: true })
+        .getByRole("button", { name: "Создать задачу", exact: true })
         .click();
     }
     const retry = page.getByRole("button", {
@@ -851,9 +856,12 @@ try {
     await retry.click();
     if (mode.startsWith("assign"))
       await page
-        .getByText("Задача назначена участнику Синтетический исполнитель.", {
-          exact: true,
-        })
+        .getByText(
+          "Задача назначена: Синтетический исполнитель. Исполнитель увидит её в разделе «Задачи».",
+          {
+            exact: true,
+          },
+        )
         .waitFor();
     else await page.getByRole("status").filter({ hasText: "создан" }).waitFor();
     assert.equal(calls.length, mode.includes("lost-rate-limited") ? 3 : 2);
@@ -868,7 +876,7 @@ try {
     const { page, releaseCreate } = await pageFixture(390, "create-pending");
     await fillCreateForm(page);
     await page
-      .getByRole("button", { name: "Создать черновик", exact: true })
+      .getByRole("button", { name: "Создать задачу", exact: true })
       .click();
     await page.getByRole("button", { name: "Создаём…", exact: true }).waitFor();
     assert.equal(
@@ -895,7 +903,7 @@ try {
     if (mode.startsWith("create")) {
       await fillCreateForm(page);
       await page
-        .getByRole("button", { name: "Создать черновик", exact: true })
+        .getByRole("button", { name: "Создать задачу", exact: true })
         .click();
       await page
         .getByRole("alert")
@@ -954,7 +962,7 @@ try {
     if (mode.startsWith("create")) {
       await fillCreateForm(page);
       await page
-        .getByRole("button", { name: "Создать черновик", exact: true })
+        .getByRole("button", { name: "Создать задачу", exact: true })
         .click();
     } else if (mode.startsWith("assign")) {
       await page.getByLabel(/Активный участник области/).selectOption(memberId);
@@ -1038,7 +1046,7 @@ try {
         ".task-mgmt, .task-mgmt * { font-size: 20px !important; line-height: 1.6 !important; }",
     });
     await page
-      .locator(".task-mgmt__hint")
+      .locator(".task-mgmt__note")
       .first()
       .evaluate((element) => {
         element.textContent = "Область".repeat(10);
@@ -1051,7 +1059,7 @@ try {
     });
     await assertNoOverflow(page);
     await page
-      .getByRole("button", { name: "Создать черновик", exact: true })
+      .getByRole("button", { name: "Создать задачу", exact: true })
       .focus();
     await page.screenshot({
       path: `${captureDir}/f03-management-large-text-320.png`,

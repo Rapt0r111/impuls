@@ -448,7 +448,7 @@ try {
       f.page.once("dialog", (d) => d.accept());
       await f.page.getByLabel("Область", { exact: true }).selectOption(other);
       await f.page
-        .getByText("В этой области нет сохранённых позиций косметики.", {
+        .getByText("Поощрений пока нет.", {
           exact: true,
         })
         .waitFor();

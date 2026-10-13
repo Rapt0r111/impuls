@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
-import { mockHomeFallback } from "./home-fallback.mjs";
+import { mockHomeFallback, openReviewQueue } from "./home-fallback.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3000";
 const id = "11111111-1111-4111-8111-111111111111",
   sub = "22222222-2222-4222-8222-222222222222",
@@ -242,6 +242,7 @@ async function fixture(width, mode = "success") {
     },
   );
   await page.goto(origin);
+  await openReviewQueue(page);
   await page
     .getByRole("heading", { name: "Очередь проверки", exact: true })
     .waitFor();

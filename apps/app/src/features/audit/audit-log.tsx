@@ -29,7 +29,7 @@ const actionNames: Record<Action, string> = {
   "reward.cancel": "Отмена заявки",
   "reward.approve": "Одобрение заявки",
   "reward.reject": "Отказ по заявке",
-  "reward.fulfill": "Выдача косметики",
+  "reward.fulfill": "Выдача поощрений",
   "reward.expire": "Истечение резерва",
   "catalog.create": "Создание позиции каталога",
   "catalog.publish": "Публикация условий каталога",

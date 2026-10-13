@@ -428,11 +428,11 @@ try {
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     );
-    await f.page.getByText("Полномочия", { exact: true }).press("Enter");
+    await f.page.getByText("Мои права", { exact: true }).press("Enter");
     await f.page
       .getByText("Просмотр журнала действий", { exact: true })
       .waitFor();
-    await f.page.getByText("Полномочия", { exact: true }).press("Enter");
+    await f.page.getByText("Мои права", { exact: true }).press("Enter");
     assert.equal(
       await f.page.getByRole("button", { name: "Выйти", exact: true }).count(),
       0,
@@ -536,7 +536,7 @@ try {
         .locator(".audit-list > li")
         .getByRole("heading", {
           name: {
-            "reward.fulfill": "Выдача косметики",
+            "reward.fulfill": "Выдача поощрений",
             "reward.approve": "Одобрение заявки",
             "reward.reject": "Отказ по заявке",
             "reward.cancel": "Отмена заявки",

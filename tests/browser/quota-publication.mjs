@@ -428,9 +428,7 @@ try {
         .click();
       f.page.once("dialog", (d) => d.accept());
       await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-      await f.page
-        .getByText("В этой области нет сохранённых позиций косметики.")
-        .waitFor();
+      await f.page.getByText("Поощрений пока нет.").waitFor();
       await f.page.waitForTimeout(500);
       assert.equal(
         await f.page

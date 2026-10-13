@@ -5,7 +5,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
-import { leaveHome } from "./home-fallback.mjs";
+import { leaveHome, openReviewQueue } from "./home-fallback.mjs";
 
 // Negative F03/F04 paths through the real app and database (no API mocks):
 // own result is not reviewable, two reviewers race for one acceptance,
@@ -137,10 +137,12 @@ const state = async (taskId) =>
       [taskId],
     )
   ).rows[0];
-const queue = (s) =>
-  s.page
+const queue = async (s) => {
+  await openReviewQueue(s.page);
+  await s.page
     .getByRole("heading", { name: "Очередь проверки", exact: true })
     .waitFor();
+};
 
 // 1. Return, rework, resubmit, accept: no accrual until the final acceptance.
 {

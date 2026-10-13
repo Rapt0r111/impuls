@@ -1,0 +1,55 @@
+/* Настройки начислений: каждая группа полей — отдельная карточка. */
+.rules-form {
+  display: grid;
+  gap: 16px;
+  max-width: 640px;
+  min-width: 0;
+}
+.rules-form fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 18px;
+  background: var(--color-panel);
+}
+.rules-form legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.rules-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.rules-form label:has(> input[type="checkbox"]) {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--color-ink);
+  font-size: 15px;
+}
+.rules-form .notification-note {
+  margin: 0;
+}
+.rules-history {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.1em;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.rules-admin h3 {
+  margin: 8px 0 0;
+  font-size: 1rem;
+}

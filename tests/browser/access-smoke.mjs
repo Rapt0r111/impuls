@@ -174,7 +174,7 @@ async function main() {
     await loginPage
       .getByRole("heading", { name: "Доступ подтверждён" })
       .waitFor({ timeout: 5_000 });
-    await loginPage.getByText("Полномочия", { exact: true }).click();
+    await loginPage.getByText("Мои права", { exact: true }).click();
     await loginPage.getByText("Назначенных полномочий нет.").waitFor();
     if (sentInitData !== "synthetic") {
       throw new Error("Telegram initData was not sent to the login API");
@@ -355,7 +355,7 @@ async function main() {
     await permissionsPage.goto("http://localhost:3000", {
       waitUntil: "domcontentloaded",
     });
-    await permissionsPage.getByText("Полномочия", { exact: true }).click();
+    await permissionsPage.getByText("Мои права", { exact: true }).click();
     await permissionsPage.getByText("Проверка результатов").waitFor();
     await permissionsPage
       .getByText("Группа · Синтетическая группа с длинным названием")
@@ -406,7 +406,7 @@ async function main() {
     await pendingMigrationPage
       .getByRole("heading", { name: "Доступ подтверждён" })
       .waitFor();
-    await pendingMigrationPage.getByText("Полномочия", { exact: true }).click();
+    await pendingMigrationPage.getByText("Мои права", { exact: true }).click();
     await pendingMigrationPage
       .getByText("Не удалось загрузить полномочия. Обновите проверку позже.")
       .waitFor();

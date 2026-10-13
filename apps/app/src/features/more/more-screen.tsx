@@ -99,13 +99,14 @@ export function MoreScreen({
           <div className="more-group">{commander.map(row)}</div>
         </>
       ) : null}
-      <details className="more-permissions">
-        <summary>Полномочия</summary>
-        {permissions === null ? (
-          <p>Не удалось загрузить полномочия. Обновите проверку позже.</p>
-        ) : permissions.length === 0 ? (
-          <p>Назначенных полномочий нет.</p>
-        ) : (
+      {/* Участнику без прав этот раздел ничего не говорит, поэтому он скрыт. */}
+      {permissions === null ? (
+        <p className="more-permissions">
+          Не удалось загрузить полномочия. Обновите проверку позже.
+        </p>
+      ) : permissions.length > 0 ? (
+        <details className="more-permissions">
+          <summary>Мои права</summary>
           <ul>
             {permissions.map((permission, index) => (
               <li key={`${permission.action}:${permission.scope.id}:${index}`}>
@@ -116,8 +117,8 @@ export function MoreScreen({
               </li>
             ))}
           </ul>
-        )}
-      </details>
+        </details>
+      ) : null}
     </section>
   );
 }

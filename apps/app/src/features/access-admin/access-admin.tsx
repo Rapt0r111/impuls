@@ -20,10 +20,25 @@ const dateTime = new Intl.DateTimeFormat("ru-RU", {
   timeZone: "Europe/Moscow",
 });
 
+// Набор «Командир»: всё для работы с задачами и заявками, без управления доступом.
+const commanderActions = [
+  "task.view",
+  "task.create",
+  "task.assign",
+  "task.edit",
+  "task.cancel",
+  "task.review",
+  "reward.decide",
+  "reward.fulfill",
+] as const;
+const COMMANDER = "preset:commander";
+
 type Change =
   | {
       path: "grants";
       summary: string;
+      // Права выдаются по одному запросу на право; каждый со своим ключом.
+      actions: string[];
       body: {
         scope: string;
         subjectId: string;
@@ -55,7 +70,7 @@ export function AccessAdmin() {
   const id = useId();
   const [scope, setScope] = useState(accessScopes[0]?.id ?? "");
   const [subjectId, setSubjectId] = useState("");
-  const [action, setAction] = useState<string>(grantableActions[0]);
+  const [action, setAction] = useState<string>(COMMANDER);
   const [until, setUntil] = useState("");
   const [reason, setReason] = useState("");
   const [revokeId, setRevokeId] = useState<string | null>(null);
@@ -65,7 +80,11 @@ export function AccessAdmin() {
   const [submitted, setSubmitted] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [memberDirty, setMemberDirty] = useState(false);
-  const intent = useRef<{ key: string; change: Change } | null>(null);
+  const intent = useRef<{
+    keys: string[];
+    done: number;
+    change: Change;
+  } | null>(null);
   const running = useRef(false);
   const alive = useRef(true);
   const query = useQuery({
@@ -124,76 +143,102 @@ export function AccessAdmin() {
   }
   async function send() {
     if (running.current || blocked || !preview) return;
-    intent.current ??= { key: crypto.randomUUID(), change: preview };
-    const { key, change } = intent.current;
+    intent.current ??= {
+      keys: (preview.path === "grants" ? preview.actions : [""]).map(() =>
+        crypto.randomUUID(),
+      ),
+      done: 0,
+      change: preview,
+    };
+    const current = intent.current;
+    const { change } = current;
     setSubmitted(true);
     running.current = true;
     setPending(true);
     setStatus("Сохраняем изменение…");
-    const abort = new AbortController();
-    const timeout = setTimeout(() => abort.abort(), 15000);
     try {
-      const response = await fetch(`/api/v1/admin/access/${change.path}`, {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store",
-        signal: abort.signal,
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": csrfToken,
-          "Idempotency-Key": key,
-        },
-        body: JSON.stringify(change.body),
-      });
-      if (!alive.current) return;
-      if ([401, 403].includes(response.status)) {
-        loseAccess(response.status);
-        return;
+      const total = current.keys.length;
+      while (current.done < total) {
+        const body =
+          change.path === "grants"
+            ? { ...change.body, action: change.actions[current.done]! }
+            : change.body;
+        const abort = new AbortController();
+        const timeout = setTimeout(() => abort.abort(), 15000);
+        let response: Response;
+        try {
+          response = await fetch(`/api/v1/admin/access/${change.path}`, {
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store",
+            signal: abort.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRF-Token": csrfToken,
+              "Idempotency-Key": current.keys[current.done]!,
+            },
+            body: JSON.stringify(body),
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+        if (!alive.current) return;
+        if ([401, 403].includes(response.status)) {
+          loseAccess(response.status);
+          return;
+        }
+        if (response.status === 404) {
+          client.setQueriesData<AccessListResponse | null>(
+            { queryKey: ["admin-access"] },
+            () => null,
+          );
+          setBlocked(true);
+          setStatus("Управление доступом в этой области недоступно.");
+          return;
+        }
+        if (response.status === 429) {
+          setStatus(mutationLimitMessage(response));
+          return;
+        }
+        if ([400, 409, 413, 422].includes(response.status)) {
+          setBlocked(true);
+          setStatus(
+            `${current.done ? `Выдано прав: ${current.done} из ${total}. ` : ""}Изменение отклонено: право уже изменилось, срок неверен или получатель недопустим. Закройте форму и обновите список.`,
+          );
+          void query.refetch();
+          return;
+        }
+        if (!response.ok) throw Error("unconfirmed");
+        const saved = accessChangeResponseSchema.parse(await response.json());
+        if (!alive.current) return;
+        if (
+          saved.scope !== scope ||
+          (change.path === "grants"
+            ? saved.kind !== "grant" ||
+              saved.binding.subjectId !== change.body.subjectId ||
+              saved.binding.action !== change.actions[current.done]
+            : saved.kind !== "revoke" ||
+              saved.binding.id !== change.body.bindingId)
+        )
+          throw Error("unconfirmed");
+        current.done += 1;
       }
-      if (response.status === 404) {
-        client.setQueriesData<AccessListResponse | null>(
-          { queryKey: ["admin-access"] },
-          () => null,
-        );
-        setBlocked(true);
-        setStatus("Управление доступом в этой области недоступно.");
-        return;
-      }
-      if (response.status === 429) {
-        setStatus(mutationLimitMessage(response));
-        return;
-      }
-      if ([400, 409, 413, 422].includes(response.status)) {
-        setBlocked(true);
-        setStatus(
-          "Изменение отклонено: право уже изменилось, срок неверен или получатель недопустим. Закройте форму и обновите список.",
-        );
-        return;
-      }
-      if (!response.ok) throw Error("unconfirmed");
-      const saved = accessChangeResponseSchema.parse(await response.json());
-      if (!alive.current) return;
-      if (
-        saved.scope !== scope ||
-        (change.path === "grants"
-          ? saved.kind !== "grant" ||
-            saved.binding.subjectId !== change.body.subjectId ||
-            saved.binding.action !== change.body.action
-          : saved.kind !== "revoke" ||
-            saved.binding.id !== change.body.bindingId)
-      )
-        throw Error("unconfirmed");
       reportDirty(false);
       reset();
       void query.refetch();
-      setStatus(change.path === "grants" ? "Право выдано." : "Право отозвано.");
+      setStatus(
+        change.path === "revocations"
+          ? "Право отозвано."
+          : total > 1
+            ? `Выдано прав: ${total}. Участнику нужно заново открыть приложение.`
+            : "Право выдано.",
+      );
     } catch {
       if (alive.current)
         setStatus(
           "Результат не подтверждён. Основание сохранено. Повторите тот же запрос, чтобы получить подтверждение сервера.",
         );
     } finally {
-      clearTimeout(timeout);
       running.current = false;
       if (alive.current) setPending(false);
     }
@@ -257,8 +302,7 @@ export function AccessAdmin() {
         </button>
       </div>
       <p className="notification-intro">
-        Синтетические права участников области. Права управления доступом здесь
-        не выдаются. Свои права изменить нельзя.
+        Кто что может делать в области. Свои права изменить нельзя.
       </p>
       {accessScopes.length > 1 ? (
         <label className="tasks-filter notification-scope">
@@ -377,6 +421,7 @@ export function AccessAdmin() {
               </li>
             ))}
           </ul>
+          {status ? <p role={blocked ? "alert" : "status"}>{status}</p> : null}
           {data.canManage && !revokeId ? (
             preview ? (
               pendingForm
@@ -391,9 +436,27 @@ export function AccessAdmin() {
                     setStatus("Срок права должен быть в будущем.");
                     return;
                   }
+                  const held = new Set(
+                    subject?.bindings.map((binding) => binding.action) ?? [],
+                  );
+                  const actions =
+                    action === COMMANDER
+                      ? commanderActions.filter((a) => !held.has(a))
+                      : [action];
+                  if (!actions.length) {
+                    setStatus("У участника уже есть все права командира.");
+                    return;
+                  }
+                  const term = validUntil
+                    ? ` до ${dateTime.format(validUntil)} МСК`
+                    : " без срока";
                   stage({
                     path: "grants",
-                    summary: `Выдать «${actionLabels[action as (typeof grantableActions)[number]]}» участнику ${subject?.displayName ?? ""}${validUntil ? ` до ${dateTime.format(validUntil)} МСК` : " без срока"}.`,
+                    actions,
+                    summary:
+                      action === COMMANDER
+                        ? `Сделать ${subject?.displayName ?? ""} командиром${term}: ${actions.map((a) => actionLabels[a as (typeof grantableActions)[number]].toLowerCase()).join(", ")}.`
+                        : `Выдать «${actionLabels[action as (typeof grantableActions)[number]]}» участнику ${subject?.displayName ?? ""}${term}.`,
                     body: {
                       scope,
                       subjectId,
@@ -430,11 +493,16 @@ export function AccessAdmin() {
                     value={action}
                     onChange={(event) => setAction(event.target.value)}
                   >
-                    {grantableActions.map((a) => (
-                      <option key={a} value={a}>
-                        {actionLabels[a]}
-                      </option>
-                    ))}
+                    <option value={COMMANDER}>
+                      Командир: задачи, проверка, заявки
+                    </option>
+                    <optgroup label="Отдельное право">
+                      {grantableActions.map((a) => (
+                        <option key={a} value={a}>
+                          {actionLabels[a]}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
                 <div className="catalog-publication-field">
@@ -494,7 +562,9 @@ export function AccessAdmin() {
           ) : null}
         </>
       ) : null}
-      {status ? <p role={blocked ? "alert" : "status"}>{status}</p> : null}
+      {status && !data ? (
+        <p role={blocked ? "alert" : "status"}>{status}</p>
+      ) : null}
     </section>
   );
 }

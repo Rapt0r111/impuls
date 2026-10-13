@@ -142,6 +142,13 @@ const segments: readonly (readonly [Segment, string])[] = [
   ["review", "Проверка"],
   ["done", "Готово"],
 ];
+const emptyText: Record<Segment, string> = {
+  active:
+    "Задач в работе нет. Здесь появятся задачи, которые вам назначат или которые вы возьмёте сами.",
+  review: "На проверке ничего нет. Сюда попадают отправленные отчёты.",
+  done: "Принятых задач пока нет.",
+  open: "Свободных задач сейчас нет.",
+};
 const segmentOf = (status: TaskStatus): Segment =>
   status === "in_review"
     ? "review"
@@ -441,7 +448,7 @@ function TaskListContent() {
       ) : items.length === 0 ? (
         <p className="tasks-state">
           {complete
-            ? "По выбранному статусу задач нет."
+            ? emptyText[segment]
             : "Среди загруженных задач с этим статусом нет. Нажмите «Показать ещё»."}
         </p>
       ) : (
@@ -593,8 +600,8 @@ function TaskWorkspace() {
     canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
-  // Проверяющий начинает с очереди; вкладка «Ещё» при этом подсвечена.
-  const rootView: WorkspaceView = canReview ? "reviews" : "home";
+  // Все начинают с «Главной»: у проверяющего там карточка очереди проверки.
+  const rootView: WorkspaceView = "home";
   const [view, setView] = useState<WorkspaceView>(rootView);
   const inMore = moreViews.includes(view);
   const go = (next: WorkspaceView) => {

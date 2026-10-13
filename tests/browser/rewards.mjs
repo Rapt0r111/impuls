@@ -379,7 +379,7 @@ try {
       true,
     );
     await select(f);
-    await f.page.getByText(/Срок резерва: 3.?600 секунд с подачи/).waitFor();
+    await f.page.getByText(/Если решения не будет за 1 ч/).waitFor();
     await f.page
       .getByText("После резерва останется доступно: 90 баллов.", {
         exact: true,
@@ -429,15 +429,15 @@ try {
         .waitFor();
     } else if (mode === "disabled")
       await f.page
-        .getByText(/Синтетический каталог выключен/)
+        .getByText(/Каталог выключен/)
         .first()
         .waitFor();
     else if (mode === "error")
       await f.page.getByText(/Не удалось загрузить поощрения/).waitFor();
     else if (mode === "empty")
-      await f.page.getByText(/В этой области пока нет/).waitFor();
+      await f.page.getByText(/Поощрений пока нет/).waitFor();
     else if (mode === "no-scope")
-      await f.page.getByText(/Для каталога требуется членство/).waitFor();
+      await f.page.getByText(/Поощрения видны участникам области/).waitFor();
     else if (["full", "poor", "pending"].includes(mode)) {
       const name = {
         full: "Нет свободных мест",
@@ -687,7 +687,7 @@ try {
     await f.page
       .getByRole("button", { name: "Обновить поощрения", exact: true })
       .click();
-    await f.page.getByText(/Синтетический каталог выключен/).waitFor();
+    await f.page.getByText(/Каталог выключен/).waitFor();
     assert.equal(await f.page.locator(".reward-list").count(), 0);
     await close(f);
   }

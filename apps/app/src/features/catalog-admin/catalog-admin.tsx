@@ -15,6 +15,7 @@ import { CatalogCreate } from "./catalog-create";
 import { CatalogCancel } from "./catalog-cancel";
 import { CatalogPublish } from "./catalog-publish";
 import { QuotaPublish } from "./quota-publish";
+import { RewardQuickCreate } from "./reward-quick-create";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import {
   CatalogError,
@@ -123,8 +124,7 @@ export function CatalogAdmin() {
         </button>
       </div>
       <p className="notification-intro">
-        Сохранённые условия косметики. Публикация новой версии условий, периода
-        квоты и создание выключенной позиции доступны при отдельных правах.
+        Поощрения, которые участники могут получить за баллы.
       </p>
       {query.isPending ? (
         <p className="tasks-state" role="status">
@@ -165,13 +165,54 @@ export function CatalogAdmin() {
               ))}
             </select>
           </label>
-          <p className="notification-asof">
-            Прочитано {date(data.updatedAt)} МСК.{" "}
-            {query.isError
-              ? "Показаны ранее подтверждённые данные."
-              : "Состояние перечитывается вручную."}
-          </p>
-          {data.canCreate ? (
+          {query.isError ? (
+            <p className="notification-asof">
+              Показаны данные на {date(data.updatedAt)} МСК.
+            </p>
+          ) : null}
+          {data.canCreate && data.canPublish && data.canPublishQuota ? (
+            editing === "quick" ? (
+              <RewardQuickCreate
+                key={`quick|${data.scope.id}`}
+                scope={data.scope.id}
+                serverTime={data.updatedAt}
+                onClose={() => setEditing(null)}
+                onDone={(title) => {
+                  setEditing(null);
+                  setNotice(
+                    `Поощрение «${title}» добавлено. Участники увидят его примерно через минуту.`,
+                  );
+                  void client.invalidateQueries({ queryKey: ["admin-audit"] });
+                  void client.invalidateQueries({
+                    queryKey: ["reward-catalog"],
+                  });
+                  if (cursor) setCursor("");
+                  else void query.refetch();
+                }}
+                onDenied={() => {
+                  setEditing(null);
+                  setNotice(
+                    "Добавление в этой области недоступно. Обновите каталог.",
+                  );
+                  void query.refetch();
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="tasks-action admin-catalog-add"
+                disabled={query.isFetching || query.isError}
+                onClick={() => {
+                  if (confirmLeave()) {
+                    setEditing("quick");
+                    setNotice("");
+                  }
+                }}
+              >
+                Добавить поощрение
+              </button>
+            )
+          ) : data.canCreate ? (
             editing === "create" ? (
               <CatalogCreate
                 key={`create|${data.scope.id}`}
@@ -218,9 +259,7 @@ export function CatalogAdmin() {
             )
           ) : null}
           {!data.items.length ? (
-            <p className="tasks-state">
-              В этой области нет сохранённых позиций косметики.
-            </p>
+            <p className="tasks-state">Поощрений пока нет.</p>
           ) : (
             <ul className="admin-catalog-items">
               {data.items.map((item) => (
@@ -322,14 +361,10 @@ export function CatalogAdmin() {
                     </div>
                   ) : (
                     <p className="notification-note">
-                      Действующего периода квоты нет. Участник не сможет подать
-                      новую заявку.
+                      Сейчас участникам недоступно: период с местами ещё не
+                      начался или уже закончился.
                     </p>
                   )}
-                  <p className="notification-note">
-                    Включённая версия сама по себе не даёт доступа участнику:
-                    нужны действующая квота, членство и включённый каталог.
-                  </p>
                   {(data.canPublish || data.canSchedule) && item.current ? (
                     item.scheduled ? (
                       <p className="notification-note">

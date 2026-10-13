@@ -211,8 +211,8 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
         >
           <label htmlFor="task-report-text">Отчёт о выполнении</label>
           <p id="task-report-help">
-            Что сделано и как результат отвечает критериям. Сдача не начисляет
-            XP или баллы.
+            Что сделано и как результат отвечает критериям. XP и баллы начислят
+            после приёмки.
           </p>
           <textarea
             id="task-report-text"
@@ -237,7 +237,7 @@ export function TaskReport({ task }: { task: TaskDetailResponse["task"] }) {
             {pending ? "Отправляем…" : "Отправить на проверку"}
           </button>
         </form>
-      ) : task.status === "in_review" ? (
+      ) : task.status === "in_review" && !success ? (
         <p>Отчёт на проверке. Начисление появится после приёмки.</p>
       ) : null}
       {text && task.status !== "in_progress" && !uncertain && (

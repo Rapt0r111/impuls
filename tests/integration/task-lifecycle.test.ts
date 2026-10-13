@@ -653,7 +653,7 @@ const origin = process.env.TEST_APP_ORIGIN;
           expect(await row.locator(".task-timeline li").count()).toBe(8);
           expect(
             await page
-              .getByRole("button", { name: "Создать черновик", exact: true })
+              .getByRole("button", { name: "Создать задачу", exact: true })
               .count(),
           ).toBe(0);
           await row

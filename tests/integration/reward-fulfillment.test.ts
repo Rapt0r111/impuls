@@ -586,7 +586,7 @@ const url = process.env.TEST_DATABASE_URL,
             .getByRole("button", { name: "Поощрения", exact: true })
             .click();
           await page
-            .getByRole("button", { name: "Выдача косметики", exact: true })
+            .getByRole("button", { name: "Выдача поощрений", exact: true })
             .click();
           // Fixtures leave other approved requests; stable ID locates this request.
           await page

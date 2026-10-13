@@ -320,7 +320,7 @@ try {
       assert.match(await createdRow.innerText(), /Выключена/);
       assert.match(
         await createdRow.innerText(),
-        /Действующего периода квоты нет/,
+        /Сейчас участникам недоступно/,
       );
       await capture(f, `success-${width}`);
       if (width === 320 || width === 1280) {
@@ -434,9 +434,7 @@ try {
         .click();
       f.page.once("dialog", (d) => d.accept());
       await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-      await f.page
-        .getByText("В этой области нет сохранённых позиций косметики.")
-        .waitFor();
+      await f.page.getByText("Поощрений пока нет.").waitFor();
       await f.page.waitForTimeout(500);
       assert.equal(await f.page.locator(".catalog-publication").count(), 0);
       assert.equal(
@@ -545,9 +543,7 @@ try {
   {
     const f = await fixture(320, "empty");
     try {
-      await f.page
-        .getByText("В этой области нет сохранённых позиций косметики.")
-        .waitFor();
+      await f.page.getByText("Поощрений пока нет.").waitFor();
       await open(f);
       await fill(f);
       await preview(f);

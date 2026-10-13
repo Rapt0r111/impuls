@@ -187,7 +187,7 @@ export function ParticipantProfile() {
       <div className="tasks-heading">
         <div>
           <h2 id="profile-title">Мой профиль</h2>
-          <p>Синтетический режим · подтверждённые результаты.</p>
+          <p>Ваше имя, уровень и достижения.</p>
         </div>
         <button
           type="button"
@@ -202,7 +202,7 @@ export function ParticipantProfile() {
       {query.isError ? (
         <p className="tasks-state" role="alert">
           {query.error instanceof ProfileError && query.error.status === 404
-            ? "Синтетический профиль выключен."
+            ? "Профиль сейчас выключен."
             : !navigator.onLine
               ? "Нет соединения. Восстановите сеть и обновите профиль."
               : "Профиль недоступен. Повторите загрузку."}
@@ -217,9 +217,6 @@ export function ParticipantProfile() {
               <dd>{number(data.balance.lifetimeXp)} XP</dd>
             </div>
           </dl>
-          <p className="ledger-asof">
-            Подтверждено сервером: {date(data.asOf)} МСК
-          </p>
           <ProfileNameForm current={data.user.displayName} />
           <section
             className="profile-block"

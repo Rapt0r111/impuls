@@ -10,6 +10,7 @@ import {
 } from "@impuls/contracts";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import "./rules-admin.css";
 
 type BonusRow = { title: string; percent: string };
 const QUERY_KEY = ["admin-rules"];
@@ -97,13 +98,19 @@ export function RulesAdmin() {
       loseAccess(failure.status);
   }, [failure, loseAccess]);
   return (
-    <section className="tasks-section" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`}>Настройки начислений</h2>
-      <p className="notification-note">
-        Здесь задано, как считаются награды и уровни. Новые доли и бонусы
-        действуют для задач, созданных после сохранения: уже созданные задачи и
-        начисленное не меняются. Пороги уровней применяются сразу ко всем.
-      </p>
+    <section
+      className="tasks-section rules-admin"
+      aria-labelledby={`${id}-title`}
+    >
+      <div className="tasks-heading">
+        <div>
+          <h2 id={`${id}-title`}>Настройки начислений</h2>
+          <p>
+            Как проверяющий начисляет XP и баллы и с какого XP начинается каждый
+            уровень. Изменения долей и бонусов касаются только новых задач.
+          </p>
+        </div>
+      </div>
       {query.isPending ? <p role="status">Загружаем настройки…</p> : null}
       {failure && failure.status !== 401 && failure.status !== 403 ? (
         <p role="alert">
@@ -114,11 +121,9 @@ export function RulesAdmin() {
       ) : null}
       {query.data ? (
         <>
-          <p>
-            {current
-              ? `Действуют с ${dateText(current.effectiveFrom)}.`
-              : "Настроек ещё нет: первое сохранение создаст их."}
-          </p>
+          {current ? null : (
+            <p>Настроек ещё нет: первое сохранение создаст их.</p>
+          )}
           {current?.legacyOptions ? (
             <p className="notification-note">
               Сейчас часть настроек задана в абсолютных числах. Форма показывает
@@ -133,7 +138,7 @@ export function RulesAdmin() {
           />
           <h3>Кто и когда менял</h3>
           {query.data.history.length ? (
-            <ul>
+            <ul className="rules-history">
               {query.data.history.map((item) => (
                 <li key={item.versionNumber}>
                   {dateText(item.effectiveFrom)}
@@ -163,7 +168,8 @@ function RulesForm({
   const { csrfToken, reportDirty, loseAccess } = useAuthorizedSession();
   const client = useQueryClient();
   const id = useId();
-  const [zone, setZone] = useState(current?.timeZone ?? "Europe/Moscow");
+  // Часовой пояс месяца решён владельцем (Europe/Moscow, P-04) и в форме не меняется.
+  const zone = current?.timeZone ?? "Europe/Moscow";
   const [enabled, setEnabled] = useState(current?.acceptanceEnabled ?? true);
   const [adjust, setAdjust] = useState(current?.minPercent != null);
   const [minPercent, setMinPercent] = useState(
@@ -242,7 +248,7 @@ function RulesForm({
       (limited && !/^\d+$/.test(limit))
     ) {
       setStatus(
-        "Проверьте поля: часовой пояс из списка IANA, нижний предел от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля, предел задач от 1 до 50 и пояснение.",
+        "Проверьте поля: нижний предел от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля, предел задач от 1 до 50 и пояснение.",
       );
       return;
     }
@@ -315,7 +321,7 @@ function RulesForm({
   }
 
   return (
-    <form className="tasks-filter" onSubmit={review} aria-busy={pending}>
+    <form className="rules-form" onSubmit={review} aria-busy={pending}>
       {preview ? (
         <>
           <h3>Проверьте изменения</h3>
@@ -481,18 +487,6 @@ function RulesForm({
               Считаются задачи, которые участник взял сам и ещё не довёл до
               приёмки. Без галочки предела нет.
             </p>
-          </fieldset>
-          <fieldset>
-            <legend>Месяц</legend>
-            <label>
-              <span>Часовой пояс расчёта месяца</span>
-              <input
-                value={zone}
-                required
-                maxLength={80}
-                onChange={(e) => edit(setZone)(e.target.value)}
-              />
-            </label>
           </fieldset>
           <div className="catalog-publication-field">
             <label htmlFor={`${id}-reason`}>Что меняете и почему</label>

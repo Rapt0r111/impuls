@@ -71,12 +71,8 @@ async function open(leaderboardStatus, width = 390) {
 
 for (const width of [320, 390]) {
   const { context, page, errors } = await open(200, width);
-  await page.getByText("XP за 2026-10", { exact: true }).waitFor();
+  await page.getByText("XP за октябрь", { exact: true }).waitFor();
   assert.equal(await page.getByText("75", { exact: true }).count(), 1);
-  assert.match(
-    (await page.getByText(/^Данные на /).textContent()) ?? "",
-    /\d{2}:\d{2}$/,
-  );
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -91,8 +87,11 @@ for (const width of [320, 390]) {
 
 {
   const { context, page, errors } = await open(404);
-  await page.getByText(/^Данные на /).waitFor();
-  assert.equal(await page.getByText(/^XP за \d{4}-\d{2}$/).count(), 0);
+  await page.getByLabel("Доступно баллов").waitFor();
+  assert.equal(
+    await page.getByText("XP за октябрь", { exact: true }).count(),
+    0,
+  );
   assert.deepEqual(errors, []);
   await context.close();
   scenarios++;
@@ -103,7 +102,7 @@ for (const width of [320, 390]) {
   await page.getByRole("heading", { name: "Главная", exact: true }).waitFor({
     state: "detached",
   });
-  assert.equal(await page.getByText(/^Данные на /).count(), 0);
+  assert.equal(await page.getByLabel("Доступно баллов").count(), 0);
   await context.close();
   scenarios++;
 }
@@ -111,7 +110,7 @@ for (const width of [320, 390]) {
 {
   network.down = false;
   const { context, page, errors } = await open(200);
-  await page.getByText(/^Данные на /).waitFor();
+  await page.getByLabel("Доступно баллов").waitFor();
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   await page.getByRole("heading", { name: "Главная", exact: true }).waitFor({
     state: "detached",
@@ -125,7 +124,7 @@ for (const width of [320, 390]) {
     (await alert.textContent()) ?? "",
     /Показаны данные на .+\d{2}:\d{2}/,
   );
-  await page.getByText("XP за 2026-10", { exact: true }).waitFor();
+  await page.getByText("XP за октябрь", { exact: true }).waitFor();
   assert.equal(
     await page.evaluate(() => Object.keys(localStorage).length),
     0,

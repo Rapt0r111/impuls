@@ -5,7 +5,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
-import { leaveHome } from "./home-fallback.mjs";
+import { leaveHome, openReviewQueue } from "./home-fallback.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
@@ -145,14 +145,13 @@ const taskState = async () =>
   await p.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
   await p.getByLabel("Фонд XP", { exact: true }).fill("17");
   await p.getByLabel("Фонд баллов", { exact: true }).fill("9");
-  await p.getByLabel(/Свободная задача/).check();
   await p
-    .getByRole("button", { name: "Создать черновик", exact: true })
+    .getByLabel("Кто выполняет", { exact: true })
+    .selectOption(participant);
+  await p
+    .getByRole("button", { name: "Создать и назначить", exact: true })
     .click();
-  await p.getByRole("status").filter({ hasText: "создан" }).waitFor();
-  await p.getByLabel(/Активный участник области/).selectOption(participant);
-  await p.getByRole("button", { name: "Назначить", exact: true }).click();
-  await p.getByText("Задача назначена участнику").waitFor();
+  await p.getByText("Задача назначена:", { exact: false }).waitFor();
   assert.equal((await taskState()).status, "assigned");
   assert.equal(
     (
@@ -170,7 +169,8 @@ const taskState = async () =>
         [manager, title],
       )
     ).rows[0].open_for_claim,
-    true,
+    false,
+    "assigned directly from the create form, not a free task",
   );
   await done(s, "1-manager");
 }
@@ -199,6 +199,7 @@ const taskState = async () =>
 {
   const s = await open(2),
     p = s.page;
+  await openReviewQueue(p);
   await p
     .getByRole("heading", { name: "Очередь проверки", exact: true })
     .waitFor();
