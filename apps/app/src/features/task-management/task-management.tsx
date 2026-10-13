@@ -24,7 +24,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { TaskTimeline } from "@/features/tasks/task-timeline";
 import { TaskHistory } from "@/features/tasks/task-history";
 import "./task-management.css";
@@ -147,6 +150,7 @@ function requestMessage(error: Error | null): string {
 }
 
 export function TaskManagement() {
+  const manyScopes = useManyScopes();
   const { csrfToken, reportDirty, confirmLeave, loseAccess } =
     useAuthorizedSession();
   const client = useQueryClient();
@@ -189,9 +193,10 @@ export function TaskManagement() {
   const createScopes = availableScopes.filter((scope) => scope.canCreate);
   // Новая задача всегда берёт действующие настройки начислений: сервер отдаёт их первыми.
   const currentRuleSetId = options.data?.ruleSets[0]?.id ?? "";
-  const currentScope = availableScopes.find(
-    (scope) => scope.id === draft.scopeId,
-  );
+  // Одна область — поле не показываем, задача создаётся в ней.
+  const singleScope = createScopes.length === 1;
+  const scopeId = draft.scopeId || (singleScope ? createScopes[0]!.id : "");
+  const currentScope = availableScopes.find((scope) => scope.id === scopeId);
   const hasDraft = Boolean(
     draft.scopeId ||
     draft.title ||
@@ -261,13 +266,14 @@ export function TaskManagement() {
         }
         const parsed = taskCreateRequestSchema.safeParse({
           ...draft,
+          scopeId,
           ruleSetId: currentRuleSetId,
           categoryCode: draft.categoryCode.trim() || NO_CATEGORY,
           dueAt: dueAt ? dueAt.toISOString() : "",
         });
         if (!parsed.success) {
           setError(
-            "Заполните область, название, критерии и срок. Суммы должны быть целыми неотрицательными числами.",
+            "Заполните название, критерии и срок. Суммы должны быть целыми неотрицательными числами.",
           );
           return;
         }
@@ -290,7 +296,7 @@ export function TaskManagement() {
           return;
         }
         const accepted = window.confirm(
-          `Назначить задачу «${task.title}» участнику ${recipient.displayName} в области «${task.scope.name}»?\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
+          `Назначить задачу «${task.title}» участнику ${recipient.displayName}${manyScopes ? ` в области «${task.scope.name}»` : ""}?\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
         );
         if (!accepted) return;
         nextAttempt = {
@@ -564,25 +570,27 @@ export function TaskManagement() {
                 XP и баллы исполнитель получит после приёмки отчёта.
               </p>
               <div className="task-mgmt__fields">
-                <label>
-                  <span id="task-mgmt-scope-label">Область</span>
-                  <select
-                    aria-labelledby="task-mgmt-scope-label"
-                    value={draft.scopeId}
-                    disabled={pending || uncertain}
-                    onChange={(event) =>
-                      setField("scopeId", event.target.value)
-                    }
-                    required
-                  >
-                    <option value="">Выберите область</option>
-                    {createScopes.map((scope) => (
-                      <option key={scope.id} value={scope.id}>
-                        {scope.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {singleScope ? null : (
+                  <label>
+                    <span id="task-mgmt-scope-label">Область</span>
+                    <select
+                      aria-labelledby="task-mgmt-scope-label"
+                      value={scopeId}
+                      disabled={pending || uncertain}
+                      onChange={(event) =>
+                        setField("scopeId", event.target.value)
+                      }
+                      required
+                    >
+                      <option value="">Выберите область</option>
+                      {createScopes.map((scope) => (
+                        <option key={scope.id} value={scope.id}>
+                          {scope.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label className="task-mgmt__wide">
                   <span id="task-mgmt-title-label">Название</span>
                   <input
@@ -904,6 +912,7 @@ function TaskRow({
   onChange(action: "edit" | "cancel"): void;
   changeForm: React.ReactNode;
 }) {
+  const manyScopes = useManyScopes();
   const canAssign = task.status === "draft" && Boolean(scope?.canAssign);
   const { historyScopeIds } = useAuthorizedSession();
   return (
@@ -918,8 +927,8 @@ function TaskRow({
           </span>
         </div>
         <p className="task-mgmt__item-meta">
-          {task.scope.name} · {priorityNames[task.priority]} · до{" "}
-          {formatDate(task.dueAt)}
+          {manyScopes ? `${task.scope.name} · ` : ""}
+          {priorityNames[task.priority]} · до {formatDate(task.dueAt)}
         </p>
         <p className="task-mgmt__criteria">{task.criteria}</p>
         <p className="task-mgmt__item-meta">
@@ -946,7 +955,9 @@ function TaskRow({
             <>
               <label>
                 <span id={`task-mgmt-assignee-label-${task.id}`}>
-                  Активный участник области «{scope.name}»
+                  {manyScopes
+                    ? `Участник области «${scope.name}»`
+                    : "Кому назначить"}
                 </span>
                 <select
                   aria-labelledby={`task-mgmt-assignee-label-${task.id}`}

@@ -122,20 +122,22 @@ export function NotificationStatus() {
       ) : null}
       {data ? (
         <>
-          <label className="tasks-filter notification-scope">
-            <span id="notification-scope-label">Область</span>
-            <select
-              aria-labelledby="notification-scope-label"
-              value={scope || data.scope.id}
-              onChange={(event) => setScope(event.target.value)}
-            >
-              {data.scopes.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {data.scopes.length > 1 ? (
+            <label className="tasks-filter notification-scope">
+              <span id="notification-scope-label">Область</span>
+              <select
+                aria-labelledby="notification-scope-label"
+                value={scope || data.scope.id}
+                onChange={(event) => setScope(event.target.value)}
+              >
+                {data.scopes.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <p className="notification-asof">
             Обновлено {date(data.updatedAt)} МСК.
           </p>

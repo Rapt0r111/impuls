@@ -200,20 +200,22 @@ export function AuditLog() {
       {first ? (
         <>
           <div className="audit-filters">
-            <label className="tasks-filter">
-              <span id="audit-scope-label">Область</span>
-              <select
-                aria-labelledby="audit-scope-label"
-                value={scope || first.scope.id}
-                onChange={(e) => setScope(e.target.value)}
-              >
-                {first.scopes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {first.scopes.length > 1 ? (
+              <label className="tasks-filter">
+                <span id="audit-scope-label">Область</span>
+                <select
+                  aria-labelledby="audit-scope-label"
+                  value={scope || first.scope.id}
+                  onChange={(e) => setScope(e.target.value)}
+                >
+                  {first.scopes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="tasks-filter">
               <span id="audit-action-label">Действие</span>
               <select

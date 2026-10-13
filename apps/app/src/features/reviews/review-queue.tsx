@@ -11,7 +11,10 @@ import {
 } from "@impuls/contracts";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import { TaskTimeline } from "@/features/tasks/task-timeline";
 import { TaskHistory } from "@/features/tasks/task-history";
@@ -49,6 +52,7 @@ function ReturnForm({
   item: ReviewQueueItem;
   onClose(): void;
 }) {
+  const manyScopes = useManyScopes();
   const { csrfToken, reportDirty, loseAccess, historyScopeIds } =
     useAuthorizedSession();
   const client = useQueryClient();
@@ -257,10 +261,12 @@ function ReturnForm({
           <dt>Исполнитель</dt>
           <dd>{item.author.displayName}</dd>
         </div>
-        <div>
-          <dt>Область</dt>
-          <dd>{item.task.scope.name}</dd>
-        </div>
+        {manyScopes ? (
+          <div>
+            <dt>Область</dt>
+            <dd>{item.task.scope.name}</dd>
+          </div>
+        ) : null}
       </dl>
       <div className="task-report">
         <h4>Критерии</h4>
@@ -464,6 +470,7 @@ function ReturnForm({
 }
 
 function QueueContent() {
+  const manyScopes = useManyScopes();
   const { confirmLeave, loseAccess } = useAuthorizedSession();
   const [selected, setSelected] = useState<ReviewQueueItem | null>(null);
   const queue = useInfiniteQuery({
@@ -539,7 +546,8 @@ function QueueContent() {
                 <span className="tasks-row-main">
                   <strong>{item.task.title}</strong>
                   <span>
-                    {item.author.displayName} · {item.task.scope.name}
+                    {item.author.displayName}
+                    {manyScopes ? ` · ${item.task.scope.name}` : ""}
                   </span>
                 </span>
                 <span className="tasks-row-fund">

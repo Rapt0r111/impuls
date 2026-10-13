@@ -145,26 +145,28 @@ export function CatalogAdmin() {
       {notice ? <p role="status">{notice}</p> : null}
       {data ? (
         <>
-          <label className="tasks-filter notification-scope">
-            <span id="admin-catalog-scope-label">Область</span>
-            <select
-              aria-labelledby="admin-catalog-scope-label"
-              value={scope || data.scope.id}
-              onChange={(event) => {
-                if (!confirmLeave()) return;
-                setEditing(null);
-                setNotice("");
-                setScope(event.target.value);
-                setCursor("");
-              }}
-            >
-              {data.scopes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {data.scopes.length > 1 ? (
+            <label className="tasks-filter notification-scope">
+              <span id="admin-catalog-scope-label">Область</span>
+              <select
+                aria-labelledby="admin-catalog-scope-label"
+                value={scope || data.scope.id}
+                onChange={(event) => {
+                  if (!confirmLeave()) return;
+                  setEditing(null);
+                  setNotice("");
+                  setScope(event.target.value);
+                  setCursor("");
+                }}
+              >
+                {data.scopes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           {query.isError ? (
             <p className="notification-asof">
               Показаны данные на {date(data.updatedAt)} МСК.

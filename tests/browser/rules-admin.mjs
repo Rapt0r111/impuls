@@ -113,46 +113,70 @@ for (const width of [320, 360, 390]) {
   // Fields are filled with the current settings.
   // The month time zone is fixed by the owner (P-04) and not shown.
   assert.equal(await page.getByLabel("Часовой пояс расчёта месяца").count(), 0);
-  assert.equal(
-    await page.getByLabel("Название бонуса 2").inputValue(),
-    "Бонус +25 %",
+  // Current settings in plain words, on a 100 XP example.
+  await page.getByRole("heading", { name: "Как сейчас" }).waitFor();
+  assert.ok(
+    await page
+      .getByText(
+        "За задачу на 100 XP исполнитель получит от 50 до 100 XP — на выбор проверяющего.",
+      )
+      .isVisible(),
   );
-  assert.equal(await page.getByLabel(/Пороги уровней/).inputValue(), "");
+  assert.ok(
+    await page
+      .getByText(
+        "За отличную работу проверяющий может добавить +10 XP или +25 XP.",
+      )
+      .isVisible(),
+  );
+  // Fields are filled with the current settings.
+  assert.equal(
+    await page.getByLabel("Минимум, который получит исполнитель").inputValue(),
+    "50",
+  );
+  assert.equal(await page.getByLabel("Бонус 2, %").inputValue(), "25");
+  assert.equal(await page.getByLabel(/уровень — с XP/).count(), 0);
+  // The rare acceptance switch and the comment are folded away.
+  assert.equal(
+    await page.getByLabel("Начислять XP и баллы при приёмке").isVisible(),
+    false,
+  );
   // No horizontal scroll at narrow widths.
   assert.ok(
     (await page.evaluate(() => document.documentElement.scrollWidth)) <= width,
     `horizontal overflow at ${width}`,
   );
-  // Invalid thresholds are refused before any request.
-  await page.getByLabel(/Пороги уровней/).fill("5, 10");
-  await page.getByLabel("Что меняете и почему").fill("Пороги уровней");
+  // Invalid level thresholds are refused before any request.
+  await page.getByRole("button", { name: "Добавить уровень" }).click();
+  await page.getByLabel("2-й уровень — с XP").fill("0");
   await page.getByRole("button", { name: "Проверить изменения" }).click();
   assert.ok(await page.getByText(/Проверьте поля/).isVisible());
   assert.equal(posts.length, 0);
   // Nothing changed: no request and no preview.
-  await page.getByLabel(/Пороги уровней/).fill("");
+  await page.getByRole("button", { name: "Убрать 2-й уровень" }).click();
   await page.getByRole("button", { name: "Проверить изменения" }).click();
   await page.getByText("Вы ничего не изменили.").waitFor();
   assert.equal(posts.length, 0);
   // Valid change: the preview lists only what changes, then save once.
-  await page.getByLabel(/Пороги уровней/).fill("0, 100, 250");
-  // The free-task limit is off by default and appears with its checkbox.
-  assert.equal(await page.getByLabel(/Не больше незавершённых/).count(), 0);
-  await page.getByLabel(/Ограничить число взятых задач/).check();
-  await page.getByLabel(/Не больше незавершённых/).fill("3");
+  await page.getByRole("button", { name: "Добавить уровень" }).click();
+  assert.equal(await page.getByLabel("2-й уровень — с XP").inputValue(), "100");
+  await page.getByRole("button", { name: "Добавить уровень" }).click();
+  await page.getByLabel("3-й уровень — с XP").fill("250");
+  await page.getByLabel("Сколько можно держать одновременно").fill("3");
   await page.getByRole("button", { name: "Проверить изменения" }).click();
   await page.getByRole("heading", { name: "Проверьте изменения" }).waitFor();
   assert.ok(
     await page
-      .getByText("Предел взятых свободных задач: без предела → 3")
+      .getByText("Свободных задач на человека: без предела → не больше 3")
       .isVisible(),
   );
   assert.ok(
     await page
-      .getByText("Пороги уровней, XP: не настроены → 0, 100, 250")
+      .getByText("Уровни: не заданы → 2-й с 100 XP, 3-й с 250 XP")
       .isVisible(),
   );
   assert.equal(await page.getByText(/Часовой пояс месяца:/).count(), 0);
+  assert.equal(await page.getByText(/Минимальная награда:/).count(), 0);
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   await page.getByText("Настройки сохранены.").waitFor();
   assert.equal(posts.length, 1);
@@ -161,11 +185,13 @@ for (const width of [320, 360, 390]) {
   assert.deepEqual(posts[0].body.levelThresholds, [0, 100, 250]);
   assert.equal(posts[0].body.minPercent, 50);
   assert.equal(posts[0].body.openTaskLimit, 3);
+  assert.equal(posts[0].body.reason, "Изменение настроек начислений");
+  // Existing bonus titles are kept while their share is unchanged.
   assert.deepEqual(
-    posts[0].body.bonuses.map((b) => [b.code, b.percent]),
+    posts[0].body.bonuses.map((b) => [b.code, b.title, b.percent]),
     [
-      ["plus_10", 10],
-      ["plus_25", 25],
+      ["plus_10", "Бонус +10 %", 10],
+      ["plus_25", "Бонус +25 %", 25],
     ],
   );
   assert.deepEqual(errors, []);
@@ -183,8 +209,9 @@ for (const width of [320, 360, 390]) {
 }
 {
   const { page, context, posts } = await open(390, "rejected");
-  await page.getByLabel(/Пороги уровней/).fill("0, 100");
-  await page.getByLabel("Что меняете и почему").fill("Проверка отказа");
+  await page.getByRole("button", { name: "Добавить уровень" }).click();
+  await page.getByText("Дополнительно").click();
+  await page.getByLabel("Комментарий для журнала").fill("Проверка отказа");
   await page.getByRole("button", { name: "Проверить изменения" }).click();
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   await page

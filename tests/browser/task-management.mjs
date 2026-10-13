@@ -369,7 +369,10 @@ async function pageFixture(width, mode = "success") {
 }
 
 async function fillCreateForm(page, setTitle = title) {
-  await page.getByLabel("Область", { exact: true }).selectOption(scopeId);
+  // Одна область — поля нет, задача создаётся в ней.
+  await page.getByLabel("Название", { exact: true }).waitFor();
+  if (await page.getByLabel("Область", { exact: true }).count())
+    await page.getByLabel("Область", { exact: true }).selectOption(scopeId);
   await page.getByLabel("Название", { exact: true }).fill(setTitle);
   await page.getByLabel("Критерии результата", { exact: true }).fill(criteria);
   await page.getByLabel("Категория", { exact: true }).fill("synthetic-check");
@@ -399,7 +402,9 @@ async function createAndAssign(page, calls, dialogs, keyboard = false) {
   assert.equal(calls[0].action, "create");
   assert.match(calls[0].key, /^[0-9a-f-]{36}$/i);
   assert.equal(calls[0].key, calls[0].key.toLowerCase());
-  await page.getByLabel(/Активный участник области/).selectOption(memberId);
+  await page
+    .getByLabel(/Кому назначить|Участник области/)
+    .selectOption(memberId);
   const assignButton = page.getByRole("button", {
     name: "Назначить",
     exact: true,
@@ -553,7 +558,10 @@ async function dbFlow() {
       await page
         .getByRole("button", { name: "Постановка задач", exact: true })
         .click();
-      await page.getByLabel("Область", { exact: true }).selectOption(scope);
+      // Одна область — поля нет, задача создаётся в ней.
+      await page.getByLabel("Название", { exact: true }).waitFor();
+      if (await page.getByLabel("Область", { exact: true }).count())
+        await page.getByLabel("Область", { exact: true }).selectOption(scope);
       await page.getByLabel("Название", { exact: true }).fill(dbTitle);
       await page
         .getByLabel("Критерии результата", { exact: true })
@@ -587,7 +595,7 @@ async function dbFlow() {
       );
 
       await page
-        .getByLabel(/Активный участник области/)
+        .getByLabel(/Кому назначить|Участник области/)
         .selectOption(participant);
       let confirmText;
       page.once("dialog", async (dialog) => {
@@ -755,12 +763,14 @@ try {
       fullPage: true,
     });
     await assertNoOverflow(page);
-    const firstField = page.getByLabel("Область", { exact: true });
+    // Единственная область не показывается полем выбора.
+    assert.equal(await page.getByLabel("Область", { exact: true }).count(), 0);
+    const firstField = page.getByLabel("Название", { exact: true });
     await firstField.focus();
     await page.keyboard.press("Tab");
     assert.equal(
       await page
-        .getByLabel("Название", { exact: true })
+        .getByLabel("Критерии результата", { exact: true })
         .evaluate((el) => el === document.activeElement),
       true,
     );
@@ -817,7 +827,9 @@ try {
   ]) {
     const { page, calls, errors } = await pageFixture(360, mode);
     if (mode.startsWith("assign")) {
-      await page.getByLabel(/Активный участник области/).selectOption(memberId);
+      await page
+        .getByLabel(/Кому назначить|Участник области/)
+        .selectOption(memberId);
       await page
         .getByRole("button", { name: "Назначить", exact: true })
         .click();
@@ -845,7 +857,7 @@ try {
     const frozen = calls.at(-1);
     if (mode.startsWith("assign"))
       assert.equal(
-        await page.getByLabel(/Активный участник области/).isDisabled(),
+        await page.getByLabel(/Кому назначить|Участник области/).isDisabled(),
         true,
       );
     else
@@ -925,7 +937,9 @@ try {
         criteria,
       );
     } else {
-      await page.getByLabel(/Активный участник области/).selectOption(memberId);
+      await page
+        .getByLabel(/Кому назначить|Участник области/)
+        .selectOption(memberId);
       await page
         .getByRole("button", { name: "Назначить", exact: true })
         .click();
@@ -941,7 +955,7 @@ try {
       assert.equal(await page.getByText(title, { exact: true }).count(), 1);
       if (mode === "assign-inactive")
         assert.equal(
-          await page.getByLabel(/Активный участник области/).inputValue(),
+          await page.getByLabel(/Кому назначить|Участник области/).inputValue(),
           memberId,
         );
     }
@@ -965,7 +979,9 @@ try {
         .getByRole("button", { name: "Создать задачу", exact: true })
         .click();
     } else if (mode.startsWith("assign")) {
-      await page.getByLabel(/Активный участник области/).selectOption(memberId);
+      await page
+        .getByLabel(/Кому назначить|Участник области/)
+        .selectOption(memberId);
       await page
         .getByRole("button", { name: "Назначить", exact: true })
         .click();
@@ -1028,7 +1044,7 @@ try {
         0,
       );
       assert.equal(
-        await page.getByLabel(/Активный участник области/).count(),
+        await page.getByLabel(/Кому назначить|Участник области/).count(),
         0,
       );
     }

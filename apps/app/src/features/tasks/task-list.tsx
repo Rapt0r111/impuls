@@ -13,7 +13,10 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { useAuthorizedSession } from "@/features/auth/session-context";
+import {
+  useAuthorizedSession,
+  useManyScopes,
+} from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 import { TaskReport } from "./task-report";
 import { OpenTaskList, useOpenTasks } from "./open-tasks";
@@ -204,6 +207,7 @@ function DueIcon({ tone }: { tone: "late" | "today" | "soon" | "later" }) {
 }
 
 function TaskListContent() {
+  const manyScopes = useManyScopes();
   const { confirmLeave, loseAccess } = useAuthorizedSession();
   // Пока участник не выбрал раздел сам, открывается первый непустой.
   const [chosen, setChosen] = useState<Segment | null>(null);
@@ -337,10 +341,12 @@ function TaskListContent() {
                   <dt>Приоритет</dt>
                   <dd>{priorityNames[detail.data.task.priority]}</dd>
                 </div>
-                <div>
-                  <dt>Область</dt>
-                  <dd>{detail.data.task.scope.name}</dd>
-                </div>
+                {manyScopes ? (
+                  <div>
+                    <dt>Область</dt>
+                    <dd>{detail.data.task.scope.name}</dd>
+                  </div>
+                ) : null}
               </dl>
               <TaskReport key={selectedId} task={detail.data.task} />
               <TaskTimeline

@@ -191,9 +191,8 @@ export function Leaderboard() {
                 )}
               </select>
             </label>
-          ) : (
-            <p className="ranking-scope-name">{first.scopes[0]?.name}</p>
-          )}
+          ) : // Одна область — её название ничего не добавляет.
+          null}
         </>
       )}
       {query.isPending && (

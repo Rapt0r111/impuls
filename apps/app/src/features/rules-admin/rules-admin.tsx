@@ -12,7 +12,8 @@ import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import "./rules-admin.css";
 
-type BonusRow = { title: string; percent: string };
+// Бонус задаётся одной долей фонда; название прежнего бонуса сохраняется, пока доля та же.
+type BonusRow = { title: string; percent: string; original: number | null };
 const QUERY_KEY = ["admin-rules"];
 const dateText = (value: string) =>
   new Intl.DateTimeFormat("ru-RU", {
@@ -33,15 +34,17 @@ async function load(): Promise<RulesResponse> {
   return rulesResponseSchema.parse(await response.json());
 }
 
-// «0, 100, 250» → [0, 100, 250]; пусто → null (уровни не настроены).
-function parseThresholds(text: string): number[] | null | "invalid" {
-  const parts = text.split(/[\s,;]+/).filter(Boolean);
-  if (!parts.length) return null;
-  const numbers = parts.map((part) =>
-    /^\d+$/.test(part) ? Number(part) : NaN,
-  );
-  return numbers.some(Number.isNaN) ? "invalid" : numbers;
+// Поля уровней 2…N → [0, …]; нет полей — уровни не настроены (null).
+function parseLevels(rows: string[]): number[] | null | "invalid" {
+  if (!rows.length) return null;
+  if (rows.some((row) => !/^\d+$/.test(row.trim()))) return "invalid";
+  return [0, ...rows.map((row) => Number(row.trim()))];
 }
+const wholeOrEmpty = (text: string) => /^\d*$/.test(text.trim());
+// Варианты нижнего предела; нестандартное действующее значение добавляется отдельно.
+const MIN_CHOICES = [100, 90, 75, 50, 25];
+const DEFAULT_REASON = "Изменение настроек начислений";
+const EXAMPLE_FUND = 100;
 
 type Settings = {
   timeZone: string;
@@ -60,23 +63,33 @@ const labels: [string, (value: Settings) => string][] = [
     (v) => (v.acceptanceEnabled ? "включено" : "выключено"),
   ],
   [
-    "Проверяющий может снизить награду до",
-    (v) => (v.minPercent === null ? "нельзя" : `${v.minPercent} % фонда`),
+    "Минимальная награда",
+    (v) =>
+      v.minPercent === null
+        ? "вся награда, снижать нельзя"
+        : `${v.minPercent} % награды`,
   ],
   [
     "Бонусы",
     (v) =>
       v.bonuses.length
-        ? v.bonuses.map((b) => `${b.title} (+${b.percent} %)`).join(", ")
+        ? v.bonuses.map((b) => `+${b.percent} %`).join(", ")
         : "нет",
   ],
   [
-    "Пороги уровней, XP",
-    (v) => (v.levelThresholds ? v.levelThresholds.join(", ") : "не настроены"),
+    "Уровни",
+    (v) =>
+      v.levelThresholds && v.levelThresholds.length > 1
+        ? v.levelThresholds
+            .slice(1)
+            .map((t, i) => `${i + 2}-й с ${t} XP`)
+            .join(", ")
+        : "не заданы",
   ],
   [
-    "Предел взятых свободных задач",
-    (v) => (v.openTaskLimit === null ? "без предела" : String(v.openTaskLimit)),
+    "Свободных задач на человека",
+    (v) =>
+      v.openTaskLimit === null ? "без предела" : `не больше ${v.openTaskLimit}`,
   ],
 ];
 const changesBetween = (before: Settings | null, after: Settings) =>
@@ -85,6 +98,36 @@ const changesBetween = (before: Settings | null, after: Settings) =>
     const now = text(after);
     return was === now ? [] : [{ title, was, now }];
   });
+
+// Действующие настройки простыми словами на примере задачи с фондом 100 XP.
+function plainSummary(v: Settings): string[] {
+  const lines: string[] = [];
+  if (!v.acceptanceEnabled)
+    lines.push("При приёмке отчёта XP и баллы сейчас не начисляются.");
+  else {
+    const low =
+      v.minPercent === null || v.minPercent === 100
+        ? `ровно ${EXAMPLE_FUND} XP`
+        : `от ${Math.floor((EXAMPLE_FUND * v.minPercent) / 100)} до ${EXAMPLE_FUND} XP — на выбор проверяющего`;
+    lines.push(`За задачу на ${EXAMPLE_FUND} XP исполнитель получит ${low}.`);
+    if (v.bonuses.length)
+      lines.push(
+        `За отличную работу проверяющий может добавить ${v.bonuses.map((b) => `+${Math.floor((EXAMPLE_FUND * b.percent) / 100)} XP`).join(" или ")}.`,
+      );
+    lines.push("Баллы считаются так же.");
+  }
+  lines.push(
+    v.levelThresholds && v.levelThresholds.length > 1
+      ? `Уровни: ${v.levelThresholds.map((t, i) => `${i + 1}-й с ${t} XP`).join(", ")}.`
+      : "Уровни не заданы.",
+  );
+  lines.push(
+    v.openTaskLimit === null
+      ? "Свободных задач один человек может взять сколько угодно."
+      : `Свободных задач один человек может держать не больше ${v.openTaskLimit}.`,
+  );
+  return lines;
+}
 
 export function RulesAdmin() {
   const { loseAccess } = useAuthorizedSession();
@@ -106,8 +149,8 @@ export function RulesAdmin() {
         <div>
           <h2 id={`${id}-title`}>Настройки начислений</h2>
           <p>
-            Как проверяющий начисляет XP и баллы и с какого XP начинается каждый
-            уровень. Изменения долей и бонусов касаются только новых задач.
+            Сколько XP и баллов получает исполнитель после проверки. Изменения
+            касаются только новых задач.
           </p>
         </div>
       </div>
@@ -129,6 +172,16 @@ export function RulesAdmin() {
               Сейчас часть настроек задана в абсолютных числах. Форма показывает
               только доли фонда; сохранение заменит их долями.
             </p>
+          ) : null}
+          {current ? (
+            <div className="rules-summary">
+              <h3>Как сейчас</h3>
+              <ul>
+                {plainSummary(current).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           {done ? <p role="status">Настройки сохранены.</p> : null}
           <RulesForm
@@ -171,22 +224,28 @@ function RulesForm({
   // Часовой пояс месяца решён владельцем (Europe/Moscow, P-04) и в форме не меняется.
   const zone = current?.timeZone ?? "Europe/Moscow";
   const [enabled, setEnabled] = useState(current?.acceptanceEnabled ?? true);
-  const [adjust, setAdjust] = useState(current?.minPercent != null);
+  // «100» — снижать нельзя (на сервере это null).
   const [minPercent, setMinPercent] = useState(
-    String(current?.minPercent ?? 50),
+    String(current?.minPercent ?? 100),
   );
+  const minChoices = [
+    ...new Set([...MIN_CHOICES, current?.minPercent ?? 100]),
+  ].sort((x, y) => y - x);
   const [bonuses, setBonuses] = useState<BonusRow[]>(
     () =>
       current?.bonuses.map((b) => ({
         title: b.title,
         percent: String(b.percent),
+        original: b.percent,
       })) ?? [],
   );
-  const [levels, setLevels] = useState(
-    current?.levelThresholds?.join(", ") ?? "",
+  // Пороги со второго уровня: первый всегда начинается с 0 XP.
+  const [levels, setLevels] = useState<string[]>(
+    () => current?.levelThresholds?.slice(1).map(String) ?? [],
   );
-  const [limited, setLimited] = useState(current?.openTaskLimit != null);
-  const [limit, setLimit] = useState(String(current?.openTaskLimit ?? 3));
+  const [limit, setLimit] = useState(
+    current?.openTaskLimit == null ? "" : String(current.openTaskLimit),
+  );
   const [reason, setReason] = useState("");
   const [preview, setPreview] = useState<RulesPublishRequest | null>(null);
   const [status, setStatus] = useState("");
@@ -222,33 +281,33 @@ function RulesForm({
 
   function review(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const thresholds = parseThresholds(levels);
+    const thresholds = parseLevels(levels);
     const percents = bonuses.map((b) => Number(b.percent));
+    const min = Number(minPercent);
     const parsed =
-      thresholds === "invalid"
+      thresholds === "invalid" ||
+      !wholeOrEmpty(limit) ||
+      bonuses.some((b) => !/^\d+$/.test(b.percent.trim()))
         ? null
         : rulesPublishRequestSchema.safeParse({
             timeZone: zone.trim(),
             acceptanceEnabled: enabled,
-            minPercent:
-              adjust && /^\d+$/.test(minPercent) ? Number(minPercent) : null,
+            minPercent: min >= 100 ? null : min,
             bonuses: bonuses.map((b, i) => ({
               code: `plus_${percents[i]}`,
-              title: b.title,
+              title:
+                b.original === percents[i] && b.title.trim()
+                  ? b.title
+                  : `Бонус +${percents[i]} %`,
               percent: percents[i],
             })),
             levelThresholds: thresholds,
-            openTaskLimit:
-              limited && /^\d+$/.test(limit) ? Number(limit) : null,
-            reason,
+            openTaskLimit: limit.trim() ? Number(limit) : null,
+            reason: reason.trim() || DEFAULT_REASON,
           });
-    if (
-      !parsed?.success ||
-      (adjust && !/^\d+$/.test(minPercent)) ||
-      (limited && !/^\d+$/.test(limit))
-    ) {
+    if (!parsed?.success) {
       setStatus(
-        "Проверьте поля: нижний предел от 0 до 100, бонусы с разными целыми процентами, пороги уровней по возрастанию с нуля, предел задач от 1 до 50 и пояснение.",
+        "Проверьте поля: бонусы — разные целые проценты от 1 до 100, каждый следующий уровень больше предыдущего, свободных задач от 1 до 50 или пусто.",
       );
       return;
     }
@@ -332,9 +391,11 @@ function RulesForm({
               </li>
             ))}
           </ul>
-          <p className="admin-catalog-conditions">
-            Пояснение: {preview.reason}
-          </p>
+          {preview.reason !== DEFAULT_REASON ? (
+            <p className="admin-catalog-conditions">
+              Комментарий: {preview.reason}
+            </p>
+          ) : null}
           {!sent ? (
             <button
               type="button"
@@ -360,58 +421,36 @@ function RulesForm({
       ) : (
         <>
           <fieldset>
-            <legend>Проверка отчёта</legend>
+            <legend>Награда при приёмке</legend>
             <label>
-              <input
-                type="checkbox"
-                checked={enabled}
-                onChange={(e) => edit(setEnabled)(e.target.checked)}
-              />
-              <span>Начислять XP и баллы при приёмке</span>
+              <span>Минимум, который получит исполнитель</span>
+              <select
+                value={minPercent}
+                onChange={(e) => edit(setMinPercent)(e.target.value)}
+              >
+                {minChoices.map((value) => (
+                  <option key={value} value={String(value)}>
+                    {value === 100
+                      ? "Вся награда — снижать нельзя"
+                      : `${value} % награды`}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={adjust}
-                onChange={(e) => edit(setAdjust)(e.target.checked)}
-              />
-              <span>Проверяющий может снижать награду</span>
-            </label>
-            {adjust ? (
-              <label>
-                <span>Не ниже, % от фонда задачи</span>
-                <input
-                  inputMode="numeric"
-                  value={minPercent}
-                  onChange={(e) => edit(setMinPercent)(e.target.value)}
-                />
-              </label>
-            ) : null}
-          </fieldset>
-          <fieldset>
-            <legend>Бонусы проверяющего (не более семи)</legend>
             <p className="notification-note">
-              Проверяющий может добавить к награде один бонус — долю фонда
+              Проверяющий выбирает сумму от этого минимума до полной награды
               задачи.
             </p>
+          </fieldset>
+          <fieldset>
+            <legend>Бонусы за отличную работу</legend>
+            <p className="notification-note">
+              Проверяющий может добавить один бонус — процент от награды задачи.
+            </p>
             {bonuses.map((row, index) => (
-              <div key={index} className="catalog-publication-field">
+              <div key={index} className="rules-row">
                 <label>
-                  <span>Название бонуса {index + 1}</span>
-                  <input
-                    value={row.title}
-                    maxLength={80}
-                    onChange={(e) =>
-                      edit(setBonuses)(
-                        bonuses.map((b, i) =>
-                          i === index ? { ...b, title: e.target.value } : b,
-                        ),
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  <span>Доля фонда, %</span>
+                  <span>Бонус {index + 1}, %</span>
                   <input
                     inputMode="numeric"
                     value={row.percent}
@@ -427,11 +466,12 @@ function RulesForm({
                 <button
                   type="button"
                   className="tasks-action"
+                  aria-label={`Убрать бонус ${index + 1}`}
                   onClick={() =>
                     edit(setBonuses)(bonuses.filter((_, i) => i !== index))
                   }
                 >
-                  Убрать бонус {index + 1}
+                  Убрать
                 </button>
               </div>
             ))}
@@ -440,7 +480,10 @@ function RulesForm({
                 type="button"
                 className="tasks-action"
                 onClick={() =>
-                  edit(setBonuses)([...bonuses, { title: "", percent: "" }])
+                  edit(setBonuses)([
+                    ...bonuses,
+                    { title: "", percent: "", original: null },
+                  ])
                 }
               >
                 Добавить бонус
@@ -449,56 +492,97 @@ function RulesForm({
           </fieldset>
           <fieldset>
             <legend>Уровни</legend>
-            <label>
-              <span>Пороги уровней, XP через запятую</span>
-              <input
-                value={levels}
-                placeholder="0, 100, 250, 500"
-                onChange={(e) => edit(setLevels)(e.target.value)}
-              />
-            </label>
             <p className="notification-note">
-              Это XP, с которого начинается каждый уровень. Первый порог — 0,
-              каждый следующий больше предыдущего. Пусто — уровни не настроены,
-              профиль скажет об этом.
+              {levels.length
+                ? "Уровень растёт, когда у участника набирается указанный XP."
+                : "Уровни не заданы: в профиле уровень не показывается."}
             </p>
+            {levels.length ? (
+              <p className="rules-fixed">1-й уровень — с 0 XP</p>
+            ) : null}
+            {levels.map((value, index) => (
+              <div key={index} className="rules-row">
+                <label>
+                  <span>{index + 2}-й уровень — с XP</span>
+                  <input
+                    inputMode="numeric"
+                    value={value}
+                    onChange={(e) =>
+                      edit(setLevels)(
+                        levels.map((v, i) =>
+                          i === index ? e.target.value : v,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+                {index === levels.length - 1 ? (
+                  <button
+                    type="button"
+                    className="tasks-action"
+                    aria-label={`Убрать ${index + 2}-й уровень`}
+                    onClick={() => edit(setLevels)(levels.slice(0, -1))}
+                  >
+                    Убрать
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            {levels.length < 99 ? (
+              <button
+                type="button"
+                className="tasks-action"
+                onClick={() => {
+                  const last = Number(levels.at(-1) ?? 0);
+                  edit(setLevels)([
+                    ...levels,
+                    String(Number.isFinite(last) && last > 0 ? last * 2 : 100),
+                  ]);
+                }}
+              >
+                Добавить уровень
+              </button>
+            ) : null}
           </fieldset>
           <fieldset>
             <legend>Свободные задачи</legend>
             <label>
+              <span>Сколько можно держать одновременно</span>
               <input
-                type="checkbox"
-                checked={limited}
-                onChange={(e) => edit(setLimited)(e.target.checked)}
+                inputMode="numeric"
+                value={limit}
+                placeholder="Без предела"
+                onChange={(e) => edit(setLimit)(e.target.value)}
               />
-              <span>Ограничить число взятых задач у одного участника</span>
             </label>
-            {limited ? (
-              <label>
-                <span>Не больше незавершённых взятых задач</span>
-                <input
-                  inputMode="numeric"
-                  value={limit}
-                  onChange={(e) => edit(setLimit)(e.target.value)}
-                />
-              </label>
-            ) : null}
             <p className="notification-note">
-              Считаются задачи, которые участник взял сам и ещё не довёл до
-              приёмки. Без галочки предела нет.
+              Считаются задачи, которые человек взял сам и ещё не сдал. Пусто —
+              без предела.
             </p>
           </fieldset>
-          <div className="catalog-publication-field">
-            <label htmlFor={`${id}-reason`}>Что меняете и почему</label>
+          <details className="rules-more">
+            <summary>Дополнительно</summary>
+            <label>
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => edit(setEnabled)(e.target.checked)}
+              />
+              <span>Начислять XP и баллы при приёмке</span>
+            </label>
+            <p className="notification-note">
+              Если снять галочку, принятые задачи перестанут давать XP и баллы.
+            </p>
+            <label htmlFor={`${id}-reason`}>Комментарий для журнала</label>
             <textarea
               id={`${id}-reason`}
-              required
               maxLength={2000}
-              rows={3}
+              rows={2}
               value={reason}
+              placeholder={DEFAULT_REASON}
               onChange={(e) => edit(setReason)(e.target.value)}
             />
-          </div>
+          </details>
           <button type="submit" className="tasks-action">
             Проверить изменения
           </button>

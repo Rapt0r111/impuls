@@ -135,7 +135,10 @@ const taskState = async () =>
   await p
     .getByRole("button", { name: "Постановка задач", exact: true })
     .click();
-  await p.getByLabel("Область", { exact: true }).selectOption(scope);
+  // Одна область — поля нет, задача создаётся в ней.
+  await p.getByLabel("Название", { exact: true }).waitFor();
+  if (await p.getByLabel("Область", { exact: true }).count())
+    await p.getByLabel("Область", { exact: true }).selectOption(scope);
   await p.getByLabel("Название", { exact: true }).fill(title);
   await p
     .getByLabel("Критерии результата", { exact: true })
