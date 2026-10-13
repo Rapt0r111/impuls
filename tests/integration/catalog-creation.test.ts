@@ -582,7 +582,12 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
-          await page.getByLabel("Область", { exact: true }).selectOption(scope);
+          // При одной области списка нет: каталог сразу открыт в ней.
+          await page
+            .locator('.admin-catalog-section[aria-busy="false"]')
+            .waitFor();
+          const scopeField = page.getByLabel("Область", { exact: true });
+          if (await scopeField.count()) await scopeField.selectOption(scope);
           // С правами создания, публикации и квоты открывается быстрая форма:
           // три существующие операции подряд — выключенная позиция, включённые
           // условия и период мест.

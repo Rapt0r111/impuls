@@ -857,7 +857,12 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
-          await page.getByLabel("Область", { exact: true }).selectOption(scope);
+          // При одной области списка нет: каталог сразу открыт в ней.
+          await page
+            .locator('.admin-catalog-section[aria-busy="false"]')
+            .waitFor();
+          const scopeField = page.getByLabel("Область", { exact: true });
+          if (await scopeField.count()) await scopeField.selectOption(scope);
           const row = page
             .locator(".admin-catalog-items > li")
             .filter({ hasText: body.title });
@@ -1019,7 +1024,12 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
-          await page.getByLabel("Область", { exact: true }).selectOption(scope);
+          // При одной области списка нет: каталог сразу открыт в ней.
+          await page
+            .locator('.admin-catalog-section[aria-busy="false"]')
+            .waitFor();
+          const scopeField = page.getByLabel("Область", { exact: true });
+          if (await scopeField.count()) await scopeField.selectOption(scope);
           const row = page.locator(".admin-catalog-items > li").filter({
             has: page.getByRole("heading", {
               name: uiTerms.title,
