@@ -235,7 +235,7 @@ export function TaskManagement() {
 
   function recoverableMessage(status: number, code?: string): string {
     if (status === 404)
-      return "Задача или область больше недоступна. Введённые данные сохранены; список и варианты обновлены.";
+      return "Задача больше недоступна. Введённые данные сохранены; список и варианты обновлены.";
     if (status === 409)
       return "Данные задачи изменились. Черновик сохранён; список обновлён. Проверьте актуальные сведения перед новым действием.";
     if (status === 422 && (code?.includes("RULE") || code?.includes("rule")))
@@ -244,7 +244,7 @@ export function TaskManagement() {
       status === 422 &&
       (code?.includes("ASSIGNEE") || code?.includes("assignee"))
     )
-      return "Исполнитель больше не активен в этой области. Выберите другого участника; критерии и поля сохранены.";
+      return "Исполнитель больше не участвует. Выберите другого участника; критерии и поля сохранены.";
     if (status === 400 || status === 422)
       return "Проверьте поля задачи или доступность исполнителя. Введённые значения сохранены.";
     return "Сервер не подтвердил результат. Повторите тот же запрос с сохранённым ключом.";
@@ -292,7 +292,7 @@ export function TaskManagement() {
           (person) => person.id === assigneeId,
         );
         if (!scope?.canAssign || !recipient) {
-          setError("Выберите активного исполнителя в этой области.");
+          setError("Выберите исполнителя.");
           return;
         }
         const accepted = window.confirm(
@@ -413,7 +413,7 @@ export function TaskManagement() {
         setNewAssignee("");
         setSuccess(
           result.task.openForClaim
-            ? `Свободная задача «${result.task.title}» создана. Участники области увидят её в разделе «Задачи».`
+            ? `Свободная задача «${result.task.title}» создана. Участники увидят её в разделе «Задачи».`
             : `Черновик «${result.task.title}» создан.`,
         );
         // Исполнитель выбран в форме: назначение уходит отдельным запросом
@@ -518,13 +518,13 @@ export function TaskManagement() {
           role="alert"
         >
           Не удалось обновить варианты. Используются последние подтверждённые
-          области и настройки начислений.
+          участники и настройки начислений.
         </p>
       )}
 
       {options.isPending ? (
         <p className="task-mgmt__state" role="status">
-          Загружаем области и настройки начислений…
+          Загружаем участников и настройки начислений…
         </p>
       ) : accessLost ? (
         <p className="task-mgmt__state" role="alert">
@@ -744,7 +744,7 @@ export function TaskManagement() {
             aria-labelledby="task-mgmt-list-title"
           >
             <div className="task-mgmt__section-heading">
-              <h3 id="task-mgmt-list-title">Задачи в доступных областях</h3>
+              <h3 id="task-mgmt-list-title">Все задачи</h3>
               <button
                 type="button"
                 className="task-mgmt__button"
@@ -984,7 +984,7 @@ function TaskRow({
             </>
           ) : (
             <p className="task-mgmt__hint">
-              В этой области пока нет доступных активных участников.
+              Пока нет участников, которым можно назначить задачу.
             </p>
           )}
         </div>
@@ -1070,7 +1070,7 @@ function TaskChangeForm({
       </h3>
       <p className="task-mgmt__note">
         {change.action === "edit"
-          ? "После назначения условия заморожены. Область и версия правил сохраняются."
+          ? "После назначения условия заморожены."
           : "Отчёты и история сохранятся. Задача выйдет из очереди проверки. Начислений при отмене нет."}{" "}
         Версия {f.expectedVersion} ·{" "}
         {change.task.assignee?.displayName ?? "Исполнитель не назначен"} ·{" "}

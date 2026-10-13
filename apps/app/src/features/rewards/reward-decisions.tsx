@@ -449,11 +449,14 @@ export function RewardDecisions({
                 </label>
               )}
               <p className="ledger-asof">
-                {first.scope?.name ??
-                  (fulfilling
-                    ? "Нет области для выдачи косметики"
-                    : "Нет области для решений по заявкам")}{" "}
-                · подтверждено {date(first.updatedAt)}
+                {first.scope
+                  ? first.scopes.length > 1
+                    ? `${first.scope.name} · `
+                    : ""
+                  : fulfilling
+                    ? "Нет права на выдачу поощрений · "
+                    : "Нет права на решения по заявкам · "}
+                Обновлено {date(first.updatedAt)}
               </p>
               {items.length === 0 ? (
                 <p className="tasks-state">
@@ -461,7 +464,7 @@ export function RewardDecisions({
                     ? fulfilling
                       ? "Согласованных чужих заявок на выдачу нет. Собственную косметику выдаёт другой уполномоченный."
                       : "Ожидающих чужих заявок нет. Собственную заявку решает другой уполномоченный."
-                    : `Для ${fulfilling ? "выдачи" : "решений"} требуется отдельное полномочие в точной области.`}
+                    : `Для ${fulfilling ? "выдачи" : "решений"} требуется отдельное право.`}
                 </p>
               ) : (
                 <ul className="tasks-list">

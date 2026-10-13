@@ -370,7 +370,7 @@ const confirm = (f) =>
   f.page.getByRole("button", { name: "Подтвердить изменение" }).click();
 for (const width of [320, 360, 390]) {
   const f = await fixture(width, { canManageMembers: true });
-  await f.page.getByRole("heading", { name: "Состав области" }).waitFor();
+  await f.page.getByRole("heading", { name: "Участники" }).waitFor();
   assert.equal(
     await f.page
       .getByRole("button", { name: "Допустить", exact: true })
@@ -386,7 +386,7 @@ for (const width of [320, 360, 390]) {
 {
   const f = await fixture(320);
   assert.equal(
-    await f.page.getByRole("heading", { name: "Состав области" }).count(),
+    await f.page.getByRole("heading", { name: "Участники" }).count(),
     0,
     "no section without the members right",
   );
@@ -421,7 +421,7 @@ for (const width of [320, 360, 390]) {
     reason: "Синтетический допуск",
   });
   await f.page
-    .getByRole("list", { name: "Участники области" })
+    .getByRole("list", { name: "Участники" })
     .getByText("Новый участник")
     .waitFor();
   assert.equal(
@@ -484,11 +484,9 @@ for (const width of [320, 360, 390]) {
   const f = await fixture(320, { canManageMembers: true, memberPost: [404] });
   await admitForm(f);
   await confirm(f);
-  await f.page
-    .getByText("Управление составом в этой области недоступно.")
-    .waitFor();
+  await f.page.getByText("Управление составом недоступно.").waitFor();
   assert.equal(
-    await f.page.getByRole("list", { name: "Участники области" }).count(),
+    await f.page.getByRole("list", { name: "Участники" }).count(),
     0,
     "the list is cleared on 404",
   );
@@ -511,9 +509,7 @@ for (const width of [320, 360, 390]) {
     .last()
     .fill("Синтетический отзыв допуска");
   await f.page.getByRole("button", { name: "Проверить отзыв" }).last().click();
-  await f.page
-    .getByText("Отозвать допуск к области у Учебный участник.")
-    .waitFor();
+  await f.page.getByText("Отозвать допуск у Учебный участник.").waitFor();
   await f.page.getByText("сессии закроются").waitFor();
   assert.equal(f.memberPosts.length, 0);
   await confirm(f);
@@ -527,7 +523,7 @@ for (const width of [320, 360, 390]) {
   });
   assert.equal(
     await f.page
-      .getByRole("list", { name: "Участники области" })
+      .getByRole("list", { name: "Участники" })
       .getByText("Учебный участник")
       .count(),
     0,

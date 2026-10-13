@@ -158,7 +158,7 @@ export function AuditLog() {
     : hidden
       ? error.code === "AUDIT_DISABLED"
         ? "Синтетический журнал выключен."
-        : "Журнал в этой области недоступен."
+        : "Журнал недоступен."
       : error instanceof AuditError && error.code === "INVALID_CURSOR"
         ? "Страница недоступна. Обновите журнал с начала."
         : "Не удалось загрузить журнал. Проверьте соединение и повторите загрузку.";
@@ -194,9 +194,7 @@ export function AuditLog() {
           Обновить
         </button>
       </div>
-      <p className="audit-intro">
-        Действия по задачам, заявкам и условиям каталога в вашей области.
-      </p>
+      <p className="audit-intro">Действия по задачам, заявкам и поощрениям.</p>
       {first ? (
         <>
           <div className="audit-filters">

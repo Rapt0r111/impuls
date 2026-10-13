@@ -158,7 +158,7 @@ for (const width of [320, 360, 390]) {
       },
     );
     await page
-      .getByRole("list", { name: "Участники области" })
+      .getByRole("list", { name: "Участники" })
       .getByText("Допущенный участник")
       .waitFor();
     await page

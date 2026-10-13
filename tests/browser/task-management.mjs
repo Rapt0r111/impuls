@@ -949,7 +949,7 @@ try {
           hasText:
             mode === "assign-stale"
               ? "Данные задачи изменились"
-              : "Исполнитель больше не активен",
+              : "Исполнитель больше не участвует",
         })
         .waitFor();
       assert.equal(await page.getByText(title, { exact: true }).count(), 1);
@@ -1011,7 +1011,7 @@ try {
     if (mode === "options-loading") {
       await page
         .getByRole("status")
-        .filter({ hasText: "Загружаем области" })
+        .filter({ hasText: "Загружаем участников" })
         .waitFor();
       releaseOptions();
       await page

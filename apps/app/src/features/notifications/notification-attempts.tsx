@@ -141,7 +141,7 @@ export function NotificationAttempts({
               {error instanceof StatusError && error.status === 400
                 ? "Страница журнала изменилась. Обновите журнал с первой страницы."
                 : error instanceof StatusError && error.status === 404
-                  ? "Журнал в этой области недоступен."
+                  ? "Журнал недоступен."
                   : "Не удалось загрузить журнал. Нажмите «Обновить журнал»."}
             </p>
           ) : null}

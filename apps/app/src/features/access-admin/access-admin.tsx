@@ -193,7 +193,7 @@ export function AccessAdmin() {
             () => null,
           );
           setBlocked(true);
-          setStatus("Управление доступом в этой области недоступно.");
+          setStatus("Управление доступом недоступно.");
           return;
         }
         if (response.status === 429) {
@@ -302,7 +302,7 @@ export function AccessAdmin() {
         </button>
       </div>
       <p className="notification-intro">
-        Кто что может делать в области. Свои права изменить нельзя.
+        Кто что может делать. Свои права изменить нельзя.
       </p>
       {accessScopes.length > 1 ? (
         <label className="tasks-filter notification-scope">
@@ -337,7 +337,7 @@ export function AccessAdmin() {
       ) : null}
       {data ? (
         <>
-          <ul className="admin-catalog-items" aria-label="Участники области">
+          <ul className="admin-catalog-items" aria-label="Участники">
             {members.map((m) => (
               <li key={m.userId}>
                 <strong>
@@ -556,7 +556,7 @@ export function AccessAdmin() {
                   () => null,
                 );
                 setBlocked(true);
-                setStatus("Управление составом в этой области недоступно.");
+                setStatus("Управление составом недоступно.");
               }}
             />
           ) : null}

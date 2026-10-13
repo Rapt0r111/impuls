@@ -506,9 +506,7 @@ try {
     } else if (source === "parent") {
       f.setFail(404);
       await refresh(f).click();
-      await f.page
-        .getByText("Каталог управления в этой области недоступен.")
-        .waitFor();
+      await f.page.getByText("Каталог управления недоступен.").waitFor();
       f.setFail(0);
       await refresh(f).click();
       await ready(f);
@@ -647,9 +645,7 @@ try {
     await capture(f, "history-retained-503-320.png");
     f.setHistoryFail(404);
     await historyRefresh(f).click();
-    await historyPanel(f)
-      .getByText("История позиции в этой области недоступна.")
-      .waitFor();
+    await historyPanel(f).getByText("История позиции недоступна.").waitFor();
     assert.equal(
       await historyPanel(f).locator(".admin-catalog-versions > li").count(),
       0,
@@ -676,9 +672,7 @@ try {
     await historyReady(f);
     f.setFail(404);
     await refresh(f).click();
-    await f.page
-      .getByText("Каталог управления в этой области недоступен.")
-      .waitFor();
+    await f.page.getByText("Каталог управления недоступен.").waitFor();
     f.setFail(0);
     f.setHistoryFail(503);
     await refresh(f).click();
@@ -749,7 +743,7 @@ try {
           : mode === "disabled"
             ? "Просмотр управления каталогом выключен."
             : mode === "denied"
-              ? "Каталог управления в этой области недоступен."
+              ? "Каталог управления недоступен."
               : "Не удалось загрузить конфигурацию. Нажмите «Обновить».",
       )
       .waitFor();
@@ -797,9 +791,7 @@ try {
     await capture(f, "catalog-retained-503-320.png");
     f.setFail(404);
     await refresh(f).click();
-    await f.page
-      .getByText("Каталог управления в этой области недоступен.")
-      .waitFor();
+    await f.page.getByText("Каталог управления недоступен.").waitFor();
     assert.equal(await f.page.locator(".admin-catalog-items > li").count(), 0);
     f.setFail(503);
     await f.page

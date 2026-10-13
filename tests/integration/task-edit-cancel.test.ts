@@ -789,7 +789,7 @@ const url = process.env.TEST_DATABASE_URL;
           .click();
         await page
           .getByRole("heading", {
-            name: "Задачи в доступных областях",
+            name: "Все задачи",
             exact: true,
           })
           .waitFor();

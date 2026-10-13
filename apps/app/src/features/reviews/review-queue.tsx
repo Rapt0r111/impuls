@@ -502,7 +502,7 @@ function QueueContent() {
       <div className="tasks-heading">
         <div>
           <h2 id="reviews-title">Очередь проверки</h2>
-          <p>Отчёты в вашей области. Собственные результаты исключены.</p>
+          <p>Отчёты участников. Собственные результаты исключены.</p>
         </div>
         <button
           className="tasks-action"

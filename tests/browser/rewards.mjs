@@ -437,7 +437,7 @@ try {
     else if (mode === "empty")
       await f.page.getByText(/Поощрений пока нет/).waitFor();
     else if (mode === "no-scope")
-      await f.page.getByText(/Поощрения видны участникам области/).waitFor();
+      await f.page.getByText(/Поощрения видны участникам/).waitFor();
     else if (["full", "poor", "pending"].includes(mode)) {
       const name = {
         full: "Нет свободных мест",

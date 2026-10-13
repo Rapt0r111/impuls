@@ -136,7 +136,7 @@ export function CatalogAdmin() {
           {error instanceof CatalogError && error.status === 404
             ? error.code === "ADMIN_CATALOG_DISABLED"
               ? "Просмотр управления каталогом выключен."
-              : "Каталог управления в этой области недоступен."
+              : "Каталог управления недоступен."
             : error instanceof CatalogError && error.status === 400
               ? "Страница изменилась. Обновите каталог с первой страницы."
               : "Не удалось загрузить конфигурацию. Нажмите «Обновить»."}
@@ -193,9 +193,7 @@ export function CatalogAdmin() {
                 }}
                 onDenied={() => {
                   setEditing(null);
-                  setNotice(
-                    "Добавление в этой области недоступно. Обновите каталог.",
-                  );
+                  setNotice("Добавление недоступно. Обновите каталог.");
                   void query.refetch();
                 }}
               />
@@ -239,9 +237,7 @@ export function CatalogAdmin() {
                     void client.cancelQueries({ queryKey: [key] });
                     client.setQueriesData({ queryKey: [key] }, () => null);
                   }
-                  setNotice(
-                    "Создание в этой области недоступно. Обновите каталог.",
-                  );
+                  setNotice("Создание недоступно. Обновите каталог.");
                 }}
               />
             ) : (
@@ -317,9 +313,7 @@ export function CatalogAdmin() {
                               () => null,
                             );
                           }
-                          setNotice(
-                            "Отмена в этой области недоступна. Обновите каталог.",
-                          );
+                          setNotice("Отмена недоступна. Обновите каталог.");
                         }}
                       />
                     ) : (
@@ -409,9 +403,7 @@ export function CatalogAdmin() {
                               () => null,
                             );
                           }
-                          setNotice(
-                            "Публикация в этой области недоступна. Обновите каталог.",
-                          );
+                          setNotice("Публикация недоступна. Обновите каталог.");
                         }}
                       />
                     ) : (

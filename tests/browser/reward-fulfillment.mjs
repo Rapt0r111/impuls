@@ -310,7 +310,7 @@ try {
     else if (mode === "empty")
       await f.page.getByText(/Согласованных чужих заявок/).waitFor();
     else if (mode === "no-scope")
-      await f.page.getByText(/отдельное полномочие/).waitFor();
+      await f.page.getByText(/отдельное право/).waitFor();
     else await f.page.locator(".reward-catalog").getByRole("alert").waitFor();
     await capture(f, `${mode}-320.png`);
     await f.context.close();

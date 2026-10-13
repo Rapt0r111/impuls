@@ -131,7 +131,7 @@ export function MemberAdmin({
       }
       if (response.status === 404) {
         setBlocked(true);
-        setStatus("Управление составом в этой области недоступно.");
+        setStatus("Управление составом недоступно.");
         onUnavailable();
         return;
       }
@@ -164,7 +164,7 @@ export function MemberAdmin({
           ? "Участник допущен."
           : saved.userDeactivated
             ? "Допуск отозван. Сессии участника закрыты."
-            : "Участник выведен из области.",
+            : "Участник исключён.",
       );
     } catch {
       if (alive.current)
@@ -207,10 +207,10 @@ export function MemberAdmin({
       className="catalog-publication tasks-filter"
       aria-labelledby={`${id}-title`}
     >
-      <h3 id={`${id}-title`}>Состав области</h3>
+      <h3 id={`${id}-title`}>Участники</h3>
       <p className="notification-note">
-        Допуск и отзыв участников. Свой допуск и допуск администраторов области
-        здесь изменить нельзя. Журнал изменений неизменяем.
+        Допуск и отзыв участников. Свой допуск и допуск администраторов здесь
+        изменить нельзя. Журнал изменений неизменяем.
       </p>
       {!preview ? (
         <div role="group" aria-label="Действие над составом">
@@ -245,8 +245,7 @@ export function MemberAdmin({
           </p>
           {preview.path === "removals" ? (
             <p className="notification-note">
-              Права участника в области будут отозваны. Если он больше не
-              состоит ни в одной области, допуск прекратится, а его сессии
+              Права участника будут отозваны, допуск прекратится, а его сессии
               закроются.
             </p>
           ) : null}
@@ -339,7 +338,7 @@ export function MemberAdmin({
             if (!member) return;
             stage({
               path: "removals",
-              summary: `Отозвать допуск к области у ${member.displayName}.`,
+              summary: `Отозвать допуск у ${member.displayName}.`,
               body: {
                 scope,
                 membershipId: member.membershipId,

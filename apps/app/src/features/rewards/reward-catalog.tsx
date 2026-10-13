@@ -58,7 +58,7 @@ const errorText = (error: Error | null) =>
   error instanceof RewardError && [400, 409].includes(error.status)
     ? "Каталог или список заявок изменился; страница устарела. Нажмите «Обновить поощрения», чтобы начать с первой страницы."
     : error instanceof RewardError && error.status === 404
-      ? "Каталог выключен или область больше недоступна. Обновите поощрения."
+      ? "Каталог выключен или недоступен. Обновите поощрения."
       : "Не удалось загрузить поощрения. Проверьте соединение и повторите загрузку.";
 
 // «за 1 ч», «за 3 дн.»: срок резерва словами вместо секунд.
@@ -544,7 +544,7 @@ export function RewardCatalog() {
                     <p className="tasks-state">
                       {first.scope
                         ? "Поощрений пока нет. Их добавляет командир."
-                        : "Поощрения видны участникам области. Вас пока не включили ни в одну область."}
+                        : "Поощрения видны участникам. Вас пока не добавили в участники."}
                     </p>
                   ) : (
                     <ul className="tasks-list reward-list">
@@ -708,8 +708,10 @@ export function RewardCatalog() {
                             </p>
                             <p>{item.conditions}</p>
                             <p>
-                              {item.scope.name} · условия {item.rewardVersion} ·
-                              квота до {date(item.periodEnd)}
+                              {(first?.scopes.length ?? 0) > 1
+                                ? `${item.scope.name} · `
+                                : ""}
+                              Места до {date(item.periodEnd)}
                             </p>
                             <p>
                               {item.expiresAt
