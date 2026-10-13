@@ -913,7 +913,7 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Завершить резерв", exact: true })
             .click();
-          await page.getByText(/Резерв завершён по истечению срока/).waitFor();
+          await page.getByText(/Срок заявки истёк\. Баллы вернулись/).waitFor();
           expect(await projection(f2)).toMatchObject({
             status: "expired",
             available_points: "120",

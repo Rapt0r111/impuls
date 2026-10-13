@@ -290,7 +290,7 @@ try {
     await select(f);
     await f.page.getByLabel("Решение", { exact: true }).selectOption("expire");
     await confirm(f);
-    await f.page.getByText(/Достижение срока проверяет сервер/).waitFor();
+    await f.page.getByText(/Срок резерва:/).waitFor();
     await capture(f, `expiry-${width}.png`);
     const button = f.page.getByRole("button", {
       name: "Завершить резерв",
@@ -298,7 +298,7 @@ try {
     });
     await button.focus();
     await f.page.keyboard.press("Enter");
-    await f.page.getByText(/Резерв завершён по истечению срока/).waitFor();
+    await f.page.getByText(/Срок заявки истёк\. Баллы вернулись/).waitFor();
     assert.equal(JSON.parse(f.posts[0].body).decision, "expire");
     await close(f);
   }
@@ -311,9 +311,7 @@ try {
       .getByRole("button", { name: "Завершить резерв", exact: true })
       .click();
     if (mode === "expiry-premature") {
-      await f.page
-        .getByText(/Срок резерва не задан или ещё не достигнут/)
-        .waitFor();
+      await f.page.getByText(/Срок заявки ещё не истёк/).waitFor();
       assert.equal(
         await f.page
           .getByRole("button", { name: "Завершить резерв", exact: true })
@@ -324,7 +322,7 @@ try {
       await f.page
         .getByRole("button", { name: "Повторить то же решение", exact: true })
         .click();
-      await f.page.getByText(/Резерв завершён по истечению срока/).waitFor();
+      await f.page.getByText(/Срок заявки истёк\. Баллы вернулись/).waitFor();
       assert.deepEqual(f.posts[0], f.posts[1]);
     }
     await close(f);
@@ -410,7 +408,7 @@ try {
     await f.page
       .getByRole("button", { name: "Отказать в заявке", exact: true })
       .click();
-    await f.page.getByText(/Баллы и место в квоте возвращены/).waitFor();
+    await f.page.getByText(/Баллы вернулись участнику/).waitFor();
     assert.equal(JSON.parse(f.posts[0].body).decision, "reject");
     await close(f);
   }
@@ -447,7 +445,7 @@ try {
     await f.page
       .getByRole("button", { name: "Одобрить заявку", exact: true })
       .click();
-    await f.page.getByText(/Решение не принято/).waitFor();
+    await f.page.getByText(/Решение не сохранено/).waitFor();
     assert.equal(await f.page.getByRole("checkbox").isChecked(), false);
     assert.equal(
       await f.page.getByLabel("Причина решения").inputValue(),
