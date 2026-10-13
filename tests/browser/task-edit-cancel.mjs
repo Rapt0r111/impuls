@@ -23,6 +23,15 @@ async function fixture(width, mode = "success") {
   const errors = [],
     calls = [];
   page.setDefaultTimeout(8000);
+  // Редкие действия строки задачи свёрнуты в «Подробнее»; сценарию нужны кнопки.
+  await page.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const d of document.querySelectorAll(
+        "details.task-mgmt__details:not([open])",
+      ))
+        d.open = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("dialog", (d) =>
     mode === "dismiss-navigation" &&

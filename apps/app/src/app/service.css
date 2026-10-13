@@ -26,8 +26,7 @@
     .admin-catalog-versions,
     .admin-catalog-periods,
     .notification-events,
-    .task-history-list,
-    .ledger-list
+    .task-history-list
   )
   > li {
   padding: 16px;
@@ -45,8 +44,7 @@
     .admin-catalog-versions,
     .admin-catalog-periods,
     .notification-events,
-    .task-history-list,
-    .ledger-list
+    .task-history-list
   ) {
   display: grid;
   gap: 12px;
@@ -60,6 +58,31 @@
   :is(.profile-block, .task-mgmt__form)
   > :first-child {
   margin-top: 0;
+}
+
+/* Журнал баланса — одна карточка со строками, как выписка, а не стопка
+   отдельных карточек на каждое начисление. */
+.tasks-section .tasks-list.ledger-list {
+  gap: 0;
+  margin: 16px 0;
+  padding: 0 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 22px;
+  background:
+    linear-gradient(155deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02)),
+    var(--color-panel);
+}
+.tasks-section .tasks-list.ledger-list > li {
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--color-edge);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  animation: none;
+}
+.tasks-section .tasks-list.ledger-list > li:first-child {
+  border-top: 0;
 }
 
 /* Сводка: «Всего мест / В резерве …» — одна карточка со строками. */

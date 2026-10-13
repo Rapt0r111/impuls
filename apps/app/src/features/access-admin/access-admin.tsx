@@ -58,6 +58,18 @@ type Change =
       };
     };
 
+const rightsCount = (n: number) => {
+  const mod10 = n % 10,
+    mod100 = n % 100;
+  return `${n} ${
+    mod10 === 1 && mod100 !== 11
+      ? "право"
+      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+        ? "права"
+        : "прав"
+  }`;
+};
+
 export function AccessAdmin() {
   const {
     accessScopes = [],
@@ -338,88 +350,100 @@ export function AccessAdmin() {
       {data ? (
         <>
           <ul className="admin-catalog-items" aria-label="Участники">
-            {members.map((m) => (
-              <li key={m.userId}>
-                <strong>
-                  {m.displayName}
-                  {m.isSelf ? " (вы)" : ""}
-                </strong>
-                {m.bindings.length ? (
-                  <ul>
-                    {m.bindings.map((b) => (
-                      <li key={b.id} className="access-binding">
-                        <span>
-                          {actionLabels[b.action]}
-                          {b.validUntil
-                            ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
-                            : " · без срока"}
-                        </span>
-                        {data.canManage && !m.isSelf ? (
-                          <button
-                            type="button"
-                            className="tasks-action"
-                            aria-label={`Отозвать: ${actionLabels[b.action]}, ${m.displayName}`}
-                            disabled={Boolean(preview)}
-                            onClick={() => {
-                              if (revokeId === b.id) setRevokeId(null);
-                              else {
-                                setRevokeId(b.id);
-                                setReason("");
+            {members.map((m) => {
+              const bindings = m.bindings.length ? (
+                <ul>
+                  {m.bindings.map((b) => (
+                    <li key={b.id} className="access-binding">
+                      <span>
+                        {actionLabels[b.action]}
+                        {b.validUntil
+                          ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
+                          : " · без срока"}
+                      </span>
+                      {data.canManage && !m.isSelf ? (
+                        <button
+                          type="button"
+                          className="tasks-action"
+                          aria-label={`Отозвать: ${actionLabels[b.action]}, ${m.displayName}`}
+                          disabled={Boolean(preview)}
+                          onClick={() => {
+                            if (revokeId === b.id) setRevokeId(null);
+                            else {
+                              setRevokeId(b.id);
+                              setReason("");
+                            }
+                          }}
+                        >
+                          {revokeId === b.id ? "Не отзывать" : "Отозвать"}
+                        </button>
+                      ) : null}
+                      {revokeId === b.id && !preview ? (
+                        <form
+                          className="catalog-publication tasks-filter"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            stage({
+                              path: "revocations",
+                              summary: `Отозвать «${actionLabels[b.action]}» у ${m.displayName}.`,
+                              body: {
+                                scope,
+                                bindingId: b.id,
+                                expectedVersion: b.version,
+                                reason: reason.trim(),
+                              },
+                            });
+                          }}
+                        >
+                          <div className="catalog-publication-field">
+                            <label htmlFor={`${id}-rr-${b.id}`}>
+                              Основание отзыва
+                            </label>
+                            <textarea
+                              id={`${id}-rr-${b.id}`}
+                              required
+                              maxLength={500}
+                              rows={2}
+                              value={reason}
+                              onChange={(event) =>
+                                setReason(event.target.value)
                               }
-                            }}
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="tasks-action"
+                            disabled={!reason.trim()}
                           >
-                            {revokeId === b.id ? "Не отзывать" : "Отозвать"}
+                            Проверить отзыв
                           </button>
-                        ) : null}
-                        {revokeId === b.id && !preview ? (
-                          <form
-                            className="catalog-publication tasks-filter"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              stage({
-                                path: "revocations",
-                                summary: `Отозвать «${actionLabels[b.action]}» у ${m.displayName}.`,
-                                body: {
-                                  scope,
-                                  bindingId: b.id,
-                                  expectedVersion: b.version,
-                                  reason: reason.trim(),
-                                },
-                              });
-                            }}
-                          >
-                            <div className="catalog-publication-field">
-                              <label htmlFor={`${id}-rr-${b.id}`}>
-                                Основание отзыва
-                              </label>
-                              <textarea
-                                id={`${id}-rr-${b.id}`}
-                                required
-                                maxLength={500}
-                                rows={2}
-                                value={reason}
-                                onChange={(event) =>
-                                  setReason(event.target.value)
-                                }
-                              />
-                            </div>
-                            <button
-                              type="submit"
-                              className="tasks-action"
-                              disabled={!reason.trim()}
-                            >
-                              Проверить отзыв
-                            </button>
-                          </form>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="notification-note">Выданных прав нет.</p>
-                )}
-              </li>
-            ))}
+                        </form>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null;
+              return (
+                <li key={m.userId}>
+                  <strong>
+                    {m.displayName}
+                    {m.isSelf ? " (вы)" : ""}
+                  </strong>
+                  {!bindings ? (
+                    <p className="notification-note">Выданных прав нет.</p>
+                  ) : m.bindings.length > 3 ? (
+                    // Длинный список прав свёрнут, чтобы карточки участников
+                    // оставались короткими.
+                    <details className="access-bindings">
+                      <summary>{rightsCount(m.bindings.length)}</summary>
+                      {bindings}
+                    </details>
+                  ) : (
+                    bindings
+                  )}
+                </li>
+              );
+            })}
           </ul>
           {status ? <p role={blocked ? "alert" : "status"}>{status}</p> : null}
           {data.canManage && !revokeId ? (

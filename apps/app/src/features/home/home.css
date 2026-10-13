@@ -358,7 +358,9 @@
   min-height: 44px;
   padding: 0 16px;
 }
-@media (max-width: 360px) {
+/* На телефонах заголовок и кнопка не помещаются в строку без переноса
+   «Очередь / проверки», поэтому кнопка уходит под текст. */
+@media (max-width: 420px) {
   .home-review {
     flex-direction: column;
     align-items: stretch;

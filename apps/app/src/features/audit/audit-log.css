@@ -101,3 +101,23 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* «Подробности» — тихая ссылка внизу записи, а не вложенная карточка. */
+.tasks-section .audit-list > li > details.audit-evidence {
+  margin: 4px 0 0;
+  border: 0;
+  background: none;
+}
+.tasks-section .audit-list > li > details.audit-evidence > summary {
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 0;
+  color: var(--color-mint);
+  font-size: 14px;
+}
+.tasks-section .audit-list > li > details.audit-evidence > :not(summary) {
+  margin-inline: 0;
+}
+.tasks-section .audit-list > li > p {
+  margin: 4px 0;
+}

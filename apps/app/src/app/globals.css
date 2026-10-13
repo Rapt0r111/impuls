@@ -1125,8 +1125,11 @@ body::after {
   padding: 18px 0;
   border-block: 1px solid var(--color-line);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5em, 1fr));
-  gap: 16px 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 12px;
+}
+.ledger-balances:has(> div:only-child) {
+  grid-template-columns: minmax(0, 1fr);
 }
 .ledger-balances div {
   display: flex;
@@ -1141,11 +1144,11 @@ body::after {
   color: var(--color-muted);
 }
 .ledger-balances dt {
-  font-size: 14px;
+  font-size: 13px;
 }
 .ledger-balances dd {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -1158,27 +1161,34 @@ body::after {
 .ledger-asof {
   font-size: 14px;
 }
+/* Строка журнала: что и когда слева, сумма справа — как выписка по счёту. */
 .ledger-entry {
-  padding: 16px;
-}
-.ledger-entry-heading {
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
-.ledger-entry-heading strong {
+.ledger-entry-text {
   min-width: 0;
+}
+.ledger-entry-text strong {
+  display: block;
   overflow-wrap: anywhere;
 }
-.ledger-entry-heading span {
+.ledger-amount {
   flex-shrink: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  max-width: 45%;
+  text-align: right;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.ledger-spent,
+.ledger-zero {
+  color: var(--color-muted);
 }
 .ledger-entry p {
-  margin-bottom: 0;
+  margin: 2px 0 0;
   font-size: 14px;
   overflow-wrap: anywhere;
 }

@@ -410,10 +410,13 @@
   padding: 0;
   list-style: none;
 }
+/* Значок и название в одну строку, остальное — на всю ширину карточки. */
 .reward-card {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-content: start;
-  gap: 8px;
+  align-items: center;
+  gap: 8px 12px;
   min-width: 0;
   padding: 16px;
   border: 1px solid var(--color-edge);
@@ -421,7 +424,20 @@
   background: var(--color-panel);
 }
 .reward-catalog .reward-card h3 {
-  margin: 4px 0 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.reward-card > :not(.reward-badge, h3) {
+  grid-column: 1 / -1;
+}
+.reward-catalog .reward-card .reward-card-state {
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 600;
 }
 .reward-catalog .reward-card p {
   margin: 0;
@@ -524,6 +540,9 @@
 }
 .reward-catalog .reward-request-body p {
   margin: 2px 0 0;
+}
+.reward-request-body .reward-price {
+  white-space: nowrap;
 }
 .reward-request-body .task-chip--status {
   margin-inline-start: 0;

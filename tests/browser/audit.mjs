@@ -384,11 +384,9 @@ try {
   {
     const f = await fixture("catalog-capture", 320);
     await ready(f);
-    await f.page
-      .getByText("Версия 1 → 2. Сохранённые условия на момент публикации.", {
-        exact: true,
-      })
-      .waitFor();
+    await f.page.getByText(/Версия 1 → 2\./).waitFor();
+    // Полные условия свёрнуты в «Подробности» записи.
+    await f.page.locator(".audit-evidence summary").first().click();
     assert.equal(
       await f.page
         .getByRole("heading", {

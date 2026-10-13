@@ -275,30 +275,20 @@ export function AuditLog() {
                 </time>
               </p>
               {item.creation ? (
-                <div>
-                  <p>
-                    Первоначальные выключенные условия, версия 1. Квота при
-                    создании не задаётся.
-                  </p>
-                  <CatalogTerms
-                    value={item.creation.initial}
-                    history
-                    label="Условия при создании"
-                  />
-                </div>
+                <p className="audit-task">
+                  «{item.creation.initial.title}» ·{" "}
+                  {item.creation.initial.price.toLocaleString("ru-RU")} баллов.
+                  Создана выключенной, без мест.
+                </p>
               ) : null}
               {item.catalog ? (
-                <div className="audit-task">
-                  <p>
-                    Версия {item.catalog.previousVersion} →{" "}
-                    {item.catalog.published.version}. Сохранённые условия на
-                    момент публикации.
-                  </p>
-                  <CatalogTerms
-                    value={item.catalog.published}
-                    label="Опубликованные условия"
-                  />
-                </div>
+                <p className="audit-task">
+                  «{item.catalog.published.title}» ·{" "}
+                  {item.catalog.published.price.toLocaleString("ru-RU")} баллов
+                  · {item.catalog.published.enabled ? "включена" : "выключена"}.
+                  Версия {item.catalog.previousVersion} →{" "}
+                  {item.catalog.published.version}.
+                </p>
               ) : null}
               {item.access ? (
                 <div className="audit-task">
@@ -342,29 +332,17 @@ export function AuditLog() {
                 </div>
               ) : null}
               {item.cancellation ? (
-                <div className="audit-task">
-                  <p>
-                    Будущая версия {item.cancellation.cancelled.version}{" "}
-                    отменена. Её условия не вступят в силу.
-                  </p>
-                  <CatalogTerms
-                    value={item.cancellation.cancelled}
-                    history
-                    label="Отменённые условия"
-                  />
-                </div>
+                <p className="audit-task">
+                  «{item.cancellation.cancelled.title}»: будущая версия{" "}
+                  {item.cancellation.cancelled.version} отменена и не вступит в
+                  силу.
+                </p>
               ) : null}
               {item.quota ? (
-                <div className="audit-task">
-                  <p>
-                    Опубликованный период: {date(item.quota.startsAt)} —{" "}
-                    {date(item.quota.endsAt)} МСК.
-                  </p>
-                  <p>
-                    Всего мест при публикации: {item.quota.capacity}. Это
-                    сохранённые параметры, без текущих резервов и выдач.
-                  </p>
-                </div>
+                <p className="audit-task">
+                  Всего мест при публикации: {item.quota.capacity} ·{" "}
+                  {date(item.quota.startsAt)} — {date(item.quota.endsAt)} МСК.
+                </p>
               ) : null}
               {item.task ? (
                 <p className="audit-task">
@@ -385,7 +363,28 @@ export function AuditLog() {
                 <strong>Основание:</strong> {item.reason}
               </p>
               <details className="audit-evidence">
-                <summary>Сохранённые значения и идентификаторы</summary>
+                <summary>Подробности</summary>
+                {item.creation ? (
+                  <CatalogTerms
+                    value={item.creation.initial}
+                    history
+                    label="Условия при создании"
+                  />
+                ) : null}
+                {item.catalog ? (
+                  <CatalogTerms
+                    value={item.catalog.published}
+                    history
+                    label="Опубликованные условия"
+                  />
+                ) : null}
+                {item.cancellation ? (
+                  <CatalogTerms
+                    value={item.cancellation.cancelled}
+                    history
+                    label="Отменённые условия"
+                  />
+                ) : null}
                 {item.reward ? (
                   <dl aria-label="Условия при подаче заявки">
                     <div>

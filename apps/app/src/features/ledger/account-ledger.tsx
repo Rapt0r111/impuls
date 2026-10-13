@@ -29,16 +29,6 @@ const date = (value: string) =>
   }).format(new Date(value));
 const number = (value: number) => new Intl.NumberFormat("ru-RU").format(value);
 
-const monthLabel = (key: string) => {
-  const match = /^(\d{4})-(\d{2})$/.exec(key);
-  if (!match) return key;
-  const month = new Intl.DateTimeFormat("ru-RU", {
-    month: "long",
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)));
-  return `${month} ${match[1]}`;
-};
-
 export function AccountLedger() {
   const { loseAccess, canCorrectLedger } = useAuthorizedSession();
   const query = useInfiniteQuery({
@@ -89,11 +79,11 @@ export function AccountLedger() {
             <>
               <dl className="ledger-balances">
                 <div>
-                  <dt>XP за всё время</dt>
+                  <dt>XP всего</dt>
                   <dd>{number(first.balance.lifetimeXp)} XP</dd>
                 </div>
                 <div>
-                  <dt>Доступные баллы</dt>
+                  <dt>Баллы</dt>
                   <dd>{number(first.balance.availablePoints)}</dd>
                 </div>
                 <div>
@@ -110,41 +100,52 @@ export function AccountLedger() {
                   {entries.map((entry) => (
                     <li key={entry.id}>
                       <div className="ledger-entry">
-                        <div className="ledger-entry-heading">
+                        <div className="ledger-entry-text">
                           <strong>
                             {entry.task?.title ?? entry.reward?.title}
                           </strong>
-                          <span
-                            className={
-                              entry.currency === "xp" ? "ledger-xp" : undefined
-                            }
-                          >
-                            {entry.amount >= 0 ? "+" : ""}
-                            {number(entry.amount)}{" "}
-                            {entry.currency === "xp" ? "XP" : "баллов"}
-                          </span>
+                          <p>
+                            {entry.reward
+                              ? entry.kind === "reward_reservation"
+                                ? "Отложено под заявку"
+                                : entry.kind === "reward_approval"
+                                  ? "Списано после одобрения"
+                                  : "Возвращено"
+                              : entry.reason}
+                          </p>
+                          {entry.reward &&
+                            entry.kind !== "reward_reservation" && (
+                              <p>{entry.reason}</p>
+                            )}
+                          {entry.correction && (
+                            <p>
+                              Начисление отменено ·{" "}
+                              {entry.correction.actor.displayName}
+                            </p>
+                          )}
+                          <p>
+                            <time dateTime={entry.createdAt}>
+                              {date(entry.createdAt)}
+                            </time>
+                          </p>
                         </div>
-                        <p>
-                          {date(entry.createdAt)} ·{" "}
-                          {monthLabel(entry.seasonKey)}
-                        </p>
-                        <p className="tasks-detail-criteria">{entry.reason}</p>
-                        {entry.reward && (
-                          <p>
-                            {entry.kind === "reward_reservation"
-                              ? "Отложено под заявку"
-                              : entry.kind === "reward_approval"
-                                ? "Списано после одобрения"
-                                : "Возвращено"}
-                            : {number(Math.abs(entry.reservedDelta))} баллов.
-                          </p>
-                        )}
-                        {entry.correction && (
-                          <p>
-                            Начисление отменено ·{" "}
-                            {entry.correction.actor.displayName}
-                          </p>
-                        )}
+                        <span
+                          className={`ledger-amount${
+                            entry.currency === "xp"
+                              ? " ledger-xp"
+                              : entry.amount < 0
+                                ? " ledger-spent"
+                                : entry.amount === 0
+                                  ? " ledger-zero"
+                                  : ""
+                          }`}
+                        >
+                          {entry.reward && entry.amount === 0
+                            ? `−${number(Math.abs(entry.reservedDelta))} из резерва`
+                            : `${entry.amount >= 0 ? "+" : ""}${number(entry.amount)} ${
+                                entry.currency === "xp" ? "XP" : "баллов"
+                              }`}
+                        </span>
                       </div>
                     </li>
                   ))}
