@@ -731,13 +731,11 @@ const url = process.env.TEST_DATABASE_URL,
             await nextResponse;
           }
           await row
-            .getByRole("button", { name: "Оформить заявку", exact: true })
+            .getByRole("button", { name: "Получить", exact: true })
             .click();
-          await page.getByRole("checkbox").check();
           await page
             .getByRole("button", {
-              name: "Создать заявку и резерв",
-              exact: true,
+              name: /^Получить за \d+ баллов$/,
             })
             .click();
           await page.getByText(/Заявка сохранена/).waitFor();
@@ -753,7 +751,6 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByLabel("Причина отмены", { exact: true })
             .fill("Browser cancellation evidence");
-          await page.getByRole("checkbox").check();
           await page
             .getByRole("button", {
               name: "Отменить и вернуть баллы",

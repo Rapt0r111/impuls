@@ -555,6 +555,15 @@ const url = process.env.TEST_DATABASE_URL,
               viewport: { width: 390, height: 844 },
             }),
             page = await context.newPage();
+          // Подробности карточки каталога свёрнуты; сценарию нужны все кнопки.
+          await page.addInitScript(() => {
+            new MutationObserver(() => {
+              for (const d of document.querySelectorAll<HTMLDetailsElement>(
+                "details.admin-catalog-more:not([open])",
+              ))
+                d.open = true;
+            }).observe(document, { childList: true, subtree: true });
+          });
           await context.addCookies([
             { name: "impuls_session", value: tokens[0]!, url: origin! },
           ]);

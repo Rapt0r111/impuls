@@ -51,6 +51,15 @@ async function fixture(mode = "ready", width = 320) {
     historyCalls = [],
     quotaCalls = [];
   page.setDefaultTimeout(8000);
+  // Подробности карточки каталога свёрнуты; сценарию нужны все кнопки.
+  await page.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const d of document.querySelectorAll(
+        "details.admin-catalog-more:not([open])",
+      ))
+        d.open = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
   page.on("pageerror", (e) => errors.push(e.message));
   let fail = 0,
     delay = 0,

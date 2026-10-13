@@ -471,14 +471,12 @@ try {
   await hidden.context.close();
   scenarios++;
   const owned = await fixture("owned", 320);
-  await owned.page.getByRole("button", { name: "Уже в коллекции" }).waitFor();
+  await owned.page.getByRole("button", { name: "Уже получено" }).waitFor();
   assert.equal(
-    await owned.page
-      .getByRole("button", { name: "Уже в коллекции" })
-      .isDisabled(),
+    await owned.page.getByRole("button", { name: "Уже получено" }).isDisabled(),
     true,
   );
-  await owned.page.getByText(/Основание выдачи: Предмет выдан/).waitFor();
+  await owned.page.getByText(/^Получено$/).waitFor();
   await capture(owned, "owned-320.png");
   await owned.context.close();
   scenarios++;

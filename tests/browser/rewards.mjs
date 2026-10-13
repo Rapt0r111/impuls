@@ -316,11 +316,9 @@ async function close(f) {
   scenarios++;
 }
 async function select(f) {
+  await f.page.getByRole("button", { name: "Получить", exact: true }).click();
   await f.page
-    .getByRole("button", { name: "Оформить заявку", exact: true })
-    .click();
-  await f.page
-    .getByRole("heading", { name: "Подтвердите резерв", exact: true })
+    .getByRole("heading", { name: "Получить поощрение?", exact: true })
     .waitFor();
 }
 async function capture(f, name) {
@@ -343,11 +341,9 @@ async function keyboardRefresh(f) {
 try {
   for (const width of [320, 360, 390]) {
     const f = await fixture("expired", width);
-    await f.page
-      .getByText(/Срок резерва истёк, баллы и место возвращены/)
-      .waitFor();
-    await f.page.getByText(/Срок резерва:.*14:00 МСК/).waitFor();
-    await f.page.getByText(/Истечение срока/).waitFor();
+    await f.page.getByText(/Срок истёк, баллы вернулись/).waitFor();
+    await f.page.getByText(/Причина: Истечение срока/).waitFor();
+    assert.equal(await f.page.getByText(/Ответ до/).count(), 0);
     assert.equal(
       await f.page
         .getByRole("button", { name: "Отменить заявку", exact: true })
@@ -379,9 +375,11 @@ try {
       true,
     );
     await select(f);
-    await f.page.getByText(/Если решения не будет за 1 ч/).waitFor();
     await f.page
-      .getByText("После резерва останется доступно: 90 баллов.", {
+      .getByText(/Если откажет или не ответит за 1 ч, баллы вернутся/)
+      .waitFor();
+    await f.page
+      .getByText("После заявки останется 90 баллов.", {
         exact: true,
       })
       .waitFor();
@@ -390,11 +388,10 @@ try {
       "reward-confirm-title",
     );
     const submit = f.page.getByRole("button", {
-      name: "Создать заявку и резерв",
+      name: "Получить за 30 баллов",
       exact: true,
     });
-    assert.equal(await submit.isEnabled(), false);
-    await f.page.getByRole("checkbox").check();
+    assert.equal(await f.page.getByRole("checkbox").count(), 0);
     assert.equal(await submit.isEnabled(), true);
     if (width === 320) await capture(f, "reserve-320.png");
     assert.ok((await submit.boundingBox()).height >= 44);
@@ -440,9 +437,9 @@ try {
       await f.page.getByText(/Поощрения видны участникам/).waitFor();
     else if (["full", "poor", "pending"].includes(mode)) {
       const name = {
-        full: "Нет свободных мест",
+        full: "Закончились",
         poor: "Недостаточно баллов",
-        pending: "Заявка уже есть",
+        pending: "Ждёт решения",
       }[mode];
       await f.page.getByRole("button", { name, exact: true }).waitFor();
       assert.equal(
@@ -451,7 +448,7 @@ try {
       );
     } else
       await f.page
-        .getByRole("button", { name: "Оформить заявку", exact: true })
+        .getByRole("button", { name: "Получить", exact: true })
         .waitFor();
     if (["empty", "disabled", "long"].includes(mode))
       await capture(f, `${mode}-320.png`);
@@ -460,9 +457,8 @@ try {
   for (const mode of ["lost", "rate"]) {
     const f = await fixture(mode);
     await select(f);
-    await f.page.getByRole("checkbox").check();
     await f.page
-      .getByRole("button", { name: "Создать заявку и резерв", exact: true })
+      .getByRole("button", { name: "Получить за 30 баллов", exact: true })
       .click();
     const retry = f.page.getByRole("button", {
       name: "Повторить тот же запрос",
@@ -480,15 +476,14 @@ try {
   {
     const f = await fixture("conflict");
     await select(f);
-    await f.page.getByRole("checkbox").check();
     await f.page
-      .getByRole("button", { name: "Создать заявку и резерв", exact: true })
+      .getByRole("button", { name: "Получить за 30 баллов", exact: true })
       .click();
     await f.page
-      .getByRole("button", { name: "Обновить условия", exact: true })
+      .locator(".reward-confirmation")
+      .getByRole("button", { name: "Обновить поощрения", exact: true })
       .click();
     await select(f);
-    assert.equal(await f.page.getByRole("checkbox").isChecked(), false);
     await close(f);
   }
   {
@@ -501,11 +496,10 @@ try {
       exact: true,
     });
     await f.page
-      .getByText("После отмены останется доступно: 120 баллов.", {
+      .getByText("После отмены останется 120 баллов.", {
         exact: true,
       })
       .waitFor();
-    await f.page.getByRole("checkbox").check();
     assert.equal(await submit.isEnabled(), false);
     await f.page
       .getByLabel("Причина отмены", { exact: true })
@@ -527,7 +521,7 @@ try {
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
     await f.page
-      .getByRole("heading", { name: "Подтвердите резерв", exact: true })
+      .getByRole("heading", { name: "Получить поощрение?", exact: true })
       .waitFor();
     await close(f);
   }
@@ -543,7 +537,7 @@ try {
     await f.page.getByText(/последние подтверждённые данные/).waitFor();
     assert.equal(
       await f.page
-        .getByRole("button", { name: "Оформить заявку", exact: true })
+        .getByRole("button", { name: "Получить", exact: true })
         .isEnabled(),
       false,
     );
@@ -609,7 +603,7 @@ try {
       assert.match(await alert.innerText(), /страница устарела/);
       assert.equal(
         await f.page
-          .getByRole("button", { name: "Оформить заявку", exact: true })
+          .getByRole("button", { name: "Получить", exact: true })
           .isEnabled(),
         false,
       );
@@ -643,7 +637,7 @@ try {
     await keyboardRefresh(f);
     await f.page
       .locator("button:enabled")
-      .filter({ hasText: /^Оформить заявку$/ })
+      .filter({ hasText: /^Получить$/ })
       .waitFor();
     assert.equal(f.catalogReads.at(-1), null);
     assert.equal(
@@ -681,7 +675,7 @@ try {
       .click();
     await f.page
       .locator("button:enabled")
-      .filter({ hasText: /^Оформить заявку$/ })
+      .filter({ hasText: /^Получить$/ })
       .waitFor();
     f.setFail(404);
     await f.page
