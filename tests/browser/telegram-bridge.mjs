@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
-import { homeFallbackProfile, mockHomeFallback } from "./home-fallback.mjs";
+import {
+  homeFallbackProfile,
+  mockHomeFallback,
+  openReviewQueue,
+} from "./home-fallback.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3101";
 const id = "11111111-1111-4111-8111-111111111111";
@@ -470,6 +474,7 @@ try {
   for (const role of ["reviewer", "manager", "corrector"]) {
     const f = await fixture(390, "modern", role);
     if (role === "reviewer") {
+      await openReviewQueue(f.page);
       await f.page
         .getByRole("button", { name: new RegExp(task.title) })
         .click();
@@ -481,6 +486,13 @@ try {
       f.page.once("dialog", (dialog) => dialog.accept());
       await nativeBack(f.page);
       await reason.waitFor({ state: "detached" });
+      // Очередь открыта с «Главной», поэтому «Назад» ведёт на неё.
+      assert.equal(await backVisible(f.page), true);
+      f.page.once("dialog", (dialog) => dialog.accept());
+      await nativeBack(f.page);
+      await f.page
+        .getByRole("heading", { name: "Главная", exact: true })
+        .waitFor();
       assert.equal(await backVisible(f.page), false);
     } else if (role === "manager") {
       await f.page.getByRole("button", { name: "Ещё", exact: true }).click();
