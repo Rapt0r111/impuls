@@ -275,12 +275,12 @@ try {
     await select(f);
     assert.equal(
       await f.page
-        .getByRole("button", { name: "Выдать косметику", exact: true })
+        .getByRole("button", { name: "Выдать поощрение", exact: true })
         .isDisabled(),
       true,
     );
     await f.page.getByText(/Согласовал \(текущее имя\)/).waitFor();
-    await f.page.getByText(/Повторного списания баллов/).waitFor();
+    await f.page.getByText(/повторно они не спишутся/).waitFor();
     assert.equal(
       await f.page.locator("textarea").getAttribute("maxlength"),
       "2000",
@@ -288,9 +288,9 @@ try {
     await confirm(f);
     await capture(f, `form-${width}.png`);
     await f.page
-      .getByRole("button", { name: "Выдать косметику", exact: true })
+      .getByRole("button", { name: "Выдать поощрение", exact: true })
       .click();
-    await f.page.getByText(/Косметика выдана\. Право владения/).waitFor();
+    await f.page.getByText(/Поощрение выдано\./).waitFor();
     assert.deepEqual(JSON.parse(f.posts[0].body), {
       expectedVersion: 2,
       reason: "Предмет выдан",
@@ -321,7 +321,7 @@ try {
     await select(f);
     await confirm(f);
     await f.page
-      .getByRole("button", { name: "Выдать косметику", exact: true })
+      .getByRole("button", { name: "Выдать поощрение", exact: true })
       .click();
     await f.page
       .getByRole("button", { name: "Повторить ту же выдачу", exact: true })
@@ -341,7 +341,7 @@ try {
     await f.page
       .getByRole("button", { name: "Повторить ту же выдачу", exact: true })
       .click();
-    await f.page.getByText(/Косметика выдана\. Право владения/).waitFor();
+    await f.page.getByText(/Поощрение выдано\./).waitFor();
     assert.deepEqual(f.posts[1], f.posts[0]);
     await f.context.close();
     scenarios++;
@@ -350,7 +350,7 @@ try {
   await select(conflict);
   await confirm(conflict);
   await conflict.page
-    .getByRole("button", { name: "Выдать косметику", exact: true })
+    .getByRole("button", { name: "Выдать поощрение", exact: true })
     .click();
   await conflict.page.locator(".reward-catalog").getByRole("alert").waitFor();
   assert.equal(
@@ -359,7 +359,7 @@ try {
   );
   assert.equal(
     await conflict.page
-      .getByRole("button", { name: "Выдать косметику", exact: true })
+      .getByRole("button", { name: "Выдать поощрение", exact: true })
       .isDisabled(),
     true,
   );
@@ -447,7 +447,7 @@ try {
       await select(f);
       await confirm(f);
       await f.page
-        .getByRole("button", { name: "Выдать косметику", exact: true })
+        .getByRole("button", { name: "Выдать поощрение", exact: true })
         .click();
     }
     await f.page
@@ -492,7 +492,7 @@ try {
   await keyboard.page.keyboard.press("Tab");
   assert.equal(
     await keyboard.page
-      .getByRole("button", { name: "Выдать косметику", exact: true })
+      .getByRole("button", { name: "Выдать поощрение", exact: true })
       .evaluate((el) => el === document.activeElement),
     true,
   );
