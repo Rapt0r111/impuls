@@ -58,8 +58,16 @@ const errorText = (error: Error | null) =>
   error instanceof RewardError && [400, 409].includes(error.status)
     ? "Каталог или список заявок изменился; страница устарела. Нажмите «Обновить поощрения», чтобы начать с первой страницы."
     : error instanceof RewardError && error.status === 404
-      ? "Синтетический каталог выключен или область больше недоступна. Обновите поощрения, чтобы проверить доступ."
+      ? "Каталог выключен или область больше недоступна. Обновите поощрения."
       : "Не удалось загрузить поощрения. Проверьте соединение и повторите загрузку.";
+
+// «за 1 ч», «за 3 дн.»: срок резерва словами вместо секунд.
+function durationText(seconds: number) {
+  const hours = Math.round(seconds / 3600);
+  if (seconds < 3600) return `за ${Math.max(1, Math.round(seconds / 60))} мин`;
+  if (hours < 48) return `за ${hours} ч`;
+  return `за ${Math.round(hours / 24)} дн.`;
+}
 
 export function RewardCatalog() {
   const {
@@ -321,10 +329,7 @@ export function RewardCatalog() {
       <div className="tasks-heading">
         <div>
           <h2 id="rewards-title">Поощрения</h2>
-          <p>
-            Синтетическая косметика. Баллы резервируются до решения; XP остаётся
-            прежним.
-          </p>
+          <p>Обменяйте баллы на поощрение. XP при этом не уменьшается.</p>
         </div>
         <button
           className="tasks-action"
@@ -361,7 +366,7 @@ export function RewardCatalog() {
                 if (confirmLeave()) setFulfilling(true);
               }}
             >
-              Выдача косметики
+              Выдача поощрений
             </button>
           )}
         </div>
@@ -386,18 +391,17 @@ export function RewardCatalog() {
           </h3>
           <strong>{selection.item.title}</strong>
           <p>{selection.item.conditions}</p>
-          <p>
-            {selection.action === "reserve"
-              ? selection.item.reservationSeconds === null
-                ? "Срок резерва не задан."
-                : `Срок резерва: ${number(selection.item.reservationSeconds)} секунд с подачи.`
-              : selection.item.expiresAt
-                ? `Срок резерва: ${deadlineDate(selection.item.expiresAt)} МСК.`
-                : "Срок резерва не задан."}{" "}
-            По истечении срока баллы и место возвращаются после серверной
-            обработки или решения уполномоченного. Возврат подтверждает статус
-            заявки, а не часы устройства.
-          </p>
+          {selection.action === "reserve" ? (
+            selection.item.reservationSeconds !== null ? (
+              <p>
+                Если решения не будет{" "}
+                {durationText(selection.item.reservationSeconds)}, баллы
+                вернутся.
+              </p>
+            ) : null
+          ) : selection.item.expiresAt ? (
+            <p>Срок резерва: {deadlineDate(selection.item.expiresAt)} МСК.</p>
+          ) : null}
           <p className="reward-price">
             {number(selection.item.price)} баллов{" "}
             {selection.action === "reserve"
@@ -407,37 +411,23 @@ export function RewardCatalog() {
           {first && (
             <div className="reward-balance-preview">
               <p>
-                Последний подтверждённый доступный баланс:{" "}
-                {number(first.balance.availablePoints)} баллов.
+                Сейчас доступно: {number(first.balance.availablePoints)} баллов.
               </p>
               <p>
                 {insufficientPreview
                   ? "Недостаточно доступных баллов. Обновите условия."
                   : `После ${selection.action === "reserve" ? "резерва" : "отмены"} останется доступно: ${number(projectedAvailable!)} баллов.`}
               </p>
-              <p>
-                Предварительный расчёт по данным от {date(first.updatedAt)}.
-                Итоговый баланс подтвердит сервер.
-              </p>
             </div>
           )}
           {selection.action === "reserve" ? (
             <p>
-              Квота: {date(selection.item.quota.startsAt)} –{" "}
-              {date(selection.item.quota.endsAt)}.{" "}
               {outcome === "conflict"
                 ? "Данные устарели, обновите условия."
-                : `Свободно: ${selection.item.quota.available}.`}{" "}
-              Условия версии {selection.item.version}. Резерв не означает
-              выдачу.
+                : `Осталось: ${selection.item.quota.available}. Если заявку отклонят, баллы вернутся.`}
             </p>
           ) : (
             <>
-              <p>
-                Исходная квота: {date(selection.item.periodStart)} –{" "}
-                {date(selection.item.periodEnd)}. Условия версии{" "}
-                {selection.item.rewardVersion} сохраняются.
-              </p>
               <label className="reward-reason">
                 Причина отмены
                 <textarea
@@ -550,15 +540,11 @@ export function RewardCatalog() {
                       </select>
                     </label>
                   )}
-                  <p className="ledger-asof">
-                    {first.scope?.name ?? "Нет области каталога"} · подтверждено{" "}
-                    {date(first.updatedAt)}
-                  </p>
                   {items.length === 0 ? (
                     <p className="tasks-state">
                       {first.scope
-                        ? "В этой области пока нет доступных косметических позиций с действующей квотой."
-                        : "Для каталога требуется членство в области. Ваши прежние заявки остаются ниже."}
+                        ? "Поощрений пока нет. Их добавляет командир."
+                        : "Поощрения видны участникам области. Вас пока не включили ни в одну область."}
                     </p>
                   ) : (
                     <ul className="tasks-list reward-list">
@@ -582,7 +568,7 @@ export function RewardCatalog() {
                                 </div>
                                 <p>{item.conditions}</p>
                                 <p>
-                                  Квота до {date(item.quota.endsAt)} · свободно{" "}
+                                  До {date(item.quota.endsAt)} · осталось{" "}
                                   {item.quota.available}
                                 </p>
                                 {item.hasPendingRequest ? (

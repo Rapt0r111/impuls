@@ -231,7 +231,7 @@ async function fixture(mode = "populated", width = 390) {
   await page.getByRole("button", { name: "Поощрения", exact: true }).click();
   if (!["no-permission", "owned", "dual"].includes(mode))
     await page
-      .getByRole("button", { name: "Выдача косметики", exact: true })
+      .getByRole("button", { name: "Выдача поощрений", exact: true })
       .click();
   return {
     page,
@@ -303,7 +303,7 @@ try {
   for (const mode of ["empty", "no-scope", "disabled", "error", "loading"]) {
     const f = await fixture(mode, 320);
     await f.page
-      .getByRole("heading", { name: "Выдача косметики", exact: true })
+      .getByRole("heading", { name: "Выдача поощрений", exact: true })
       .waitFor();
     if (mode === "loading")
       await f.page.getByText("Загружаем заявки…").waitFor();
@@ -464,7 +464,7 @@ try {
   const hidden = await fixture("no-permission");
   assert.equal(
     await hidden.page
-      .getByRole("button", { name: "Выдача косметики", exact: true })
+      .getByRole("button", { name: "Выдача поощрений", exact: true })
       .count(),
     0,
   );
@@ -505,7 +505,7 @@ try {
         exact: true,
       }),
       b = dual.page.getByRole("button", {
-        name: "Выдача косметики",
+        name: "Выдача поощрений",
         exact: true,
       });
     await a.waitFor();

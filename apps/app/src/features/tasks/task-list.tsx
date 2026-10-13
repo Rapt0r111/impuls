@@ -142,6 +142,13 @@ const segments: readonly (readonly [Segment, string])[] = [
   ["review", "Проверка"],
   ["done", "Готово"],
 ];
+const emptyText: Record<Segment, string> = {
+  active:
+    "Задач в работе нет. Здесь появятся задачи, которые вам назначат или которые вы возьмёте сами.",
+  review: "На проверке ничего нет. Сюда попадают отправленные отчёты.",
+  done: "Принятых задач пока нет.",
+  open: "Свободных задач сейчас нет.",
+};
 const segmentOf = (status: TaskStatus): Segment =>
   status === "in_review"
     ? "review"
@@ -441,7 +448,7 @@ function TaskListContent() {
       ) : items.length === 0 ? (
         <p className="tasks-state">
           {complete
-            ? "По выбранному статусу задач нет."
+            ? emptyText[segment]
             : "Среди загруженных задач с этим статусом нет. Нажмите «Показать ещё»."}
         </p>
       ) : (
@@ -593,16 +600,21 @@ function TaskWorkspace() {
     canSetTasks,
     confirmLeave,
   } = useAuthorizedSession();
-  // Проверяющий начинает с очереди; вкладка «Ещё» при этом подсвечена.
-  const rootView: WorkspaceView = canReview ? "reviews" : "home";
+  // Все начинают с «Главной»: у проверяющего там карточка очереди проверки.
+  const rootView: WorkspaceView = "home";
   const [view, setView] = useState<WorkspaceView>(rootView);
   const inMore = moreViews.includes(view);
+  // Экран, открытый карточкой на «Главной», возвращает туда же, а не в «Ещё».
+  const [fromHome, setFromHome] = useState(false);
   const go = (next: WorkspaceView) => {
-    if (confirmLeave()) setView(next);
+    if (confirmLeave()) {
+      setFromHome(false);
+      setView(next);
+    }
   };
   useTelegramBack(
     view !== rootView,
-    () => go(inMore && view !== "more" ? "more" : rootView),
+    () => go(inMore && view !== "more" && !fromHome ? "more" : rootView),
     10,
   );
   const tabs: { id: WorkspaceView; label: string; accessibleLabel: string }[] =
@@ -685,13 +697,13 @@ function TaskWorkspace() {
         <button
           type="button"
           className="screen-back"
-          aria-label="Назад в раздел «Ещё»"
-          onClick={() => go("more")}
+          aria-label={fromHome ? "Назад на «Главную»" : "Назад в раздел «Ещё»"}
+          onClick={() => go(fromHome ? rootView : "more")}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m14.5 6-6 6 6 6" />
           </svg>
-          Ещё
+          {fromHome ? "Главная" : "Ещё"}
         </button>
       ) : null}
       {view === "rewards" ? (
@@ -713,7 +725,12 @@ function TaskWorkspace() {
       ) : view === "ranking" ? (
         <Leaderboard />
       ) : view === "home" ? (
-        <Home onNavigate={setView} />
+        <Home
+          onNavigate={(next) => {
+            setFromHome(true);
+            setView(next);
+          }}
+        />
       ) : view === "ledger" ? (
         <AccountLedger />
       ) : view === "reviews" && canReview ? (

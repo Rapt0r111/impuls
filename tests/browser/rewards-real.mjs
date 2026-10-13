@@ -217,7 +217,7 @@ let winner, loser;
 // 3. No scope membership: no catalog item and no balance change.
 {
   const s = await open("outsider");
-  await s.page.getByText(/Для каталога требуется членство/).waitFor();
+  await s.page.getByText(/Поощрения видны участникам области/).waitFor();
   assert.equal(
     await s.page.getByRole("heading", { name: title, exact: true }).count(),
     0,

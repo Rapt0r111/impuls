@@ -6,7 +6,7 @@ import {
   taskListResponseSchema,
 } from "@impuls/contracts";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { initials } from "@/shared/ui/initials";
 import {
@@ -70,6 +70,52 @@ const isOpen = (status: string): status is OpenStatus => status in statusNames;
 
 type HomeTarget = "tasks" | "ledger" | "reviews";
 
+// «2026-10» → «в октябре»: месяц рейтинга словами, без технического кода.
+const seasonLabel = (season: string) => {
+  const [year, month] = season.split("-").map(Number);
+  if (!year || !month) return season;
+  const name = new Intl.DateTimeFormat("ru-RU", {
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 15)));
+  return `XP за ${name}`;
+};
+
+// Подсказка новичку видна, пока нет ни одного начисления; её можно скрыть.
+const GUIDE_KEY = "impuls.home.guide.hidden";
+function readGuideHidden() {
+  try {
+    return window.localStorage.getItem(GUIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function HowItWorks({ onHide }: { onHide: () => void }) {
+  return (
+    <section className="home-guide" aria-labelledby="home-guide-title">
+      <h3 id="home-guide-title">Как это работает</h3>
+      <ol>
+        <li>
+          Командир назначает вам задачу, или вы берёте свободную в разделе
+          «Задачи».
+        </li>
+        <li>
+          Откройте задачу, нажмите «Начать работу», затем отправьте отчёт.
+        </li>
+        <li>Проверяющий принимает отчёт, и вы получаете XP и баллы.</li>
+        <li>
+          XP поднимает вас в рейтинге, а баллы можно обменять в разделе
+          «Поощрения».
+        </li>
+      </ol>
+      <button type="button" className="home-guide-hide" onClick={onHide}>
+        Понятно, скрыть
+      </button>
+    </section>
+  );
+}
+
 export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
   const { loseAccess, user, canReview } = useAuthorizedSession();
   // Проверяющему очередь видна сразу на главной: сколько отчётов ждёт и кнопка входа.
@@ -89,6 +135,16 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
     },
   });
   const profile = useParticipantProfile();
+  // «Главная» появляется только после входа на клиенте, поэтому хранилище читается сразу.
+  const [guideHidden, setGuideHidden] = useState(readGuideHidden);
+  const hideGuide = () => {
+    setGuideHidden(true);
+    try {
+      window.localStorage.setItem(GUIDE_KEY, "1");
+    } catch {
+      // Без хранилища подсказка просто вернётся при следующем запуске.
+    }
+  };
   const tasks = useQuery({
     queryKey: ["home-tasks"],
     retry: false,
@@ -176,6 +232,10 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
         </p>
       ) : null}
 
+      {!guideHidden && data && data.balance.lifetimeXp === 0 ? (
+        <HowItWorks onHide={hideGuide} />
+      ) : null}
+
       {canReview ? (
         <section className="home-review" aria-labelledby="home-review-title">
           <div>
@@ -242,7 +302,8 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
         ) : (
           <>
             <p className="home-next-empty">
-              Открытых задач нет. Новые назначения появятся в разделе «Задачи».
+              Открытых задач нет. Новые назначения и свободные задачи — в
+              разделе «Задачи».
             </p>
             <button
               type="button"
@@ -337,11 +398,10 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
           </div>
           {season.data?.self ? (
             <dl className="home-season">
-              <dt>XP за {season.data.season}</dt>
+              <dt>{seasonLabel(season.data.season)}</dt>
               <dd>{number(season.data.self.xp)}</dd>
             </dl>
           ) : null}
-          <p className="home-caption">Данные на {asOfLabel(data.asOf)}</p>
         </>
       ) : null}
 

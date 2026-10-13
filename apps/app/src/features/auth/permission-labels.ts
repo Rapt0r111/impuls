@@ -14,7 +14,7 @@ export const actionNames: Record<Permission["action"], string> = {
   "admin.access": "Управление доступом",
   "admin.access.manage": "Выдача и отзыв прав",
   "admin.members.manage": "Допуск и отзыв участников",
-  "admin.rules": "Управление правилами",
+  "admin.rules": "Настройки начислений",
   "admin.catalog": "Управление каталогом",
   "admin.catalog.create": "Создание позиции каталога",
   "admin.catalog.publish": "Публикация условий каталога",
@@ -22,7 +22,7 @@ export const actionNames: Record<Permission["action"], string> = {
   "admin.catalog.schedule.cancel": "Отмена будущих условий каталога",
   "admin.catalog.quota.publish": "Публикация периодов квоты",
   "admin.audit": "Просмотр журнала действий",
-  "admin.notifications": "Просмотр симуляции уведомлений",
+  "admin.notifications": "Состояние уведомлений",
   "ledger.correct": "Исправление журнала",
 };
 

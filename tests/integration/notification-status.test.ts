@@ -627,7 +627,7 @@ const url = process.env.TEST_DATABASE_URL,
           .getByRole("button", { name: "Состояние уведомлений", exact: true })
           .click();
         await page
-          .getByRole("heading", { name: "Симуляция уведомлений" })
+          .getByRole("heading", { name: "Состояние уведомлений" })
           .waitFor();
         // Two permitted scopes are sorted; explicitly select the populated scope.
         const selector = page.getByLabel("Область", { exact: true });

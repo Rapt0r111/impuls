@@ -163,7 +163,7 @@ export function NotificationEvents({
                   ))}
                 </ol>
               ) : (
-                <p>На этой странице нет сохранённых событий для симуляции.</p>
+                <p>На этой странице событий нет.</p>
               )}
               {data.nextCursor ? (
                 <button

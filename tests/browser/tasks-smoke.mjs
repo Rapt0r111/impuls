@@ -129,7 +129,7 @@ async function main() {
     await empty
       .getByRole("button", { name: "Мои задачи", exact: true })
       .click();
-    await empty.getByText("По выбранному статусу задач нет.").waitFor();
+    await empty.getByText("Задач в работе нет.", { exact: false }).waitFor();
     await empty.close();
 
     const unavailable = await browser.newPage({

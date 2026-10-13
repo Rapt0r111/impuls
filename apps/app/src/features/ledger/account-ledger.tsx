@@ -52,7 +52,7 @@ export function AccountLedger() {
       <div className="tasks-heading">
         <div>
           <h2 id="ledger-title">Баланс и журнал</h2>
-          <p>Синтетический режим · XP и баллы учитываются отдельно.</p>
+          <p>XP растёт за принятые задачи, баллы тратятся на поощрения.</p>
         </div>
         <button
           type="button"
@@ -91,9 +91,6 @@ export function AccountLedger() {
                   <dd>{number(first.balance.reservedPoints)}</dd>
                 </div>
               </dl>
-              <p className="ledger-asof">
-                Подтверждено сервером: {date(first.asOf)}
-              </p>
               {entries.length === 0 ? (
                 <p className="tasks-state">
                   Начислений пока нет. Они появятся после приёмки результата.

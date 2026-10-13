@@ -367,3 +367,34 @@
     width: 100%;
   }
 }
+.home-guide {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-line, rgb(255 255 255 / 0.12));
+  border-radius: 18px;
+  background: var(--color-panel);
+}
+.home-guide h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.home-guide ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.25em;
+  font-size: 0.875rem;
+  color: var(--color-muted, inherit);
+}
+.home-guide-hide {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--color-mint, inherit);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

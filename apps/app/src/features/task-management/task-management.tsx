@@ -152,6 +152,8 @@ export function TaskManagement() {
   const client = useQueryClient();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [assignees, setAssignees] = useState<Record<string, string>>({});
+  // Кому сразу назначить новую задачу: id участника или пусто (черновик).
+  const [newAssignee, setNewAssignee] = useState("");
   const [pending, setPending] = useState(false);
   const [pendingAction, setPendingAction] = useState<
     Attempt["action"] | ChangeAttempt["action"] | null
@@ -198,7 +200,8 @@ export function TaskManagement() {
     draft.dueAt ||
     draft.fundXp ||
     draft.fundPoints ||
-    draft.openForClaim,
+    draft.openForClaim ||
+    newAssignee,
   );
 
   useEffect(() => {
@@ -219,6 +222,7 @@ export function TaskManagement() {
   }, [options.error, list.error, loseAccess]);
 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
+    if (key === "scopeId") setNewAssignee("");
     setDraft((current) => ({ ...current, [key]: value }));
     setError(null);
     setSuccess(null);
@@ -322,7 +326,7 @@ export function TaskManagement() {
         }
         if (
           !window.confirm(
-            `${action === "edit" ? "Сохранить черновик" : "Отменить задачу"} «${change.task.title}»?\nИсполнитель: ${change.task.assignee?.displayName ?? "не назначен"}\nФонд: ${action === "edit" ? `${change.fields.fundXp} XP · ${change.fields.fundPoints} баллов` : formatFunds(change.task)} · синтетические значения\nПричина: ${parsed.data.reason}`,
+            `${action === "edit" ? "Сохранить черновик" : "Отменить задачу"} «${change.task.title}»?\nИсполнитель: ${change.task.assignee?.displayName ?? "не назначен"}\nФонд: ${action === "edit" ? `${change.fields.fundXp} XP · ${change.fields.fundPoints} баллов` : formatFunds(change.task)}\nПричина: ${parsed.data.reason}`,
           )
         )
           return;
@@ -336,6 +340,7 @@ export function TaskManagement() {
       attempt.current = nextAttempt;
     }
     const currentAttempt = nextAttempt;
+    let followUp: Attempt | null = null;
 
     running.current = true;
     setPending(true);
@@ -395,14 +400,37 @@ export function TaskManagement() {
       attempt.current = null;
       setUncertain(false);
       if (currentAttempt.action === "create") {
+        const recipient = currentScope?.assignees.find(
+          (person) => person.id === newAssignee,
+        );
         setDraft(emptyDraft());
-        setSuccess(`Черновик «${result.task.title}» создан.`);
+        setNewAssignee("");
+        setSuccess(
+          result.task.openForClaim
+            ? `Свободная задача «${result.task.title}» создана. Участники области увидят её в разделе «Задачи».`
+            : `Черновик «${result.task.title}» создан.`,
+        );
+        // Исполнитель выбран в форме: назначение уходит отдельным запросом
+        // с собственным ключом, как кнопка «Назначить» в списке.
+        if (recipient && currentScope?.canAssign && !result.task.openForClaim)
+          followUp = {
+            action: "assign",
+            key: crypto.randomUUID(),
+            taskId: result.task.id,
+            recipient: recipient.displayName,
+            body: JSON.stringify({
+              assigneeId: recipient.id,
+              expectedVersion: result.task.version,
+            }),
+          };
       } else if (currentAttempt.action === "assign") {
         setAssignees((current) => ({
           ...current,
           [currentAttempt.taskId]: "",
         }));
-        setSuccess(`Задача назначена участнику ${currentAttempt.recipient}.`);
+        setSuccess(
+          `Задача назначена: ${currentAttempt.recipient}. Исполнитель увидит её в разделе «Задачи».`,
+        );
       } else {
         setChange(null);
         setSuccess(
@@ -429,6 +457,10 @@ export function TaskManagement() {
       setPending(false);
       setPendingAction(null);
     }
+    if (followUp) {
+      attempt.current = followUp;
+      await send("assign");
+    }
   }
 
   function retryAttempt() {
@@ -454,10 +486,7 @@ export function TaskManagement() {
       <header className="task-mgmt__heading">
         <div>
           <h2 id="task-mgmt-title">Управление задачами</h2>
-          <p>
-            Задачи ваших областей. Действия и история доступны по назначенным
-            полномочиям.
-          </p>
+          <p>Создавайте задачи и следите за ними.</p>
         </div>
       </header>
 
@@ -530,12 +559,9 @@ export function TaskManagement() {
             >
               <div className="task-mgmt__section-heading">
                 <h3>Новая задача</h3>
-                <span>Черновик</span>
               </div>
               <p className="task-mgmt__note">
-                Фонд XP и баллов вы задаёте сами. Проверяющий сможет снизить
-                награду и добавить бонус в пределах настроек начислений на
-                момент создания задачи.
+                XP и баллы исполнитель получит после приёмки отчёта.
               </p>
               <div className="task-mgmt__fields">
                 <label>
@@ -645,26 +671,33 @@ export function TaskManagement() {
                   </label>
                 </div>
               </div>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={draft.openForClaim}
-                  disabled={pending || uncertain}
-                  onChange={(event) =>
-                    setField("openForClaim", event.target.checked)
-                  }
-                />
-                <span>
-                  Свободная задача: любой участник области сможет взять её сам
-                </span>
-              </label>
-              {currentScope && (
-                <p className="task-mgmt__hint">
-                  Создание разрешено в области «{currentScope.name}». Назначение
-                  доступно отдельно, если для области выдано соответствующее
-                  право.
-                </p>
-              )}
+              {currentScope ? (
+                <label className="task-mgmt__wide">
+                  <span id="task-mgmt-who-label">Кто выполняет</span>
+                  <select
+                    aria-labelledby="task-mgmt-who-label"
+                    value={draft.openForClaim ? "open" : newAssignee}
+                    disabled={pending || uncertain}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setField("openForClaim", value === "open");
+                      setNewAssignee(value === "open" ? "" : value);
+                    }}
+                  >
+                    <option value="">Назначу позже (черновик)</option>
+                    <option value="open">
+                      Любой участник: свободная задача
+                    </option>
+                    {currentScope.canAssign
+                      ? currentScope.assignees.map((person) => (
+                          <option key={person.id} value={person.id}>
+                            {person.displayName}
+                          </option>
+                        ))
+                      : null}
+                  </select>
+                </label>
+              ) : null}
               <button
                 className="task-mgmt__button task-mgmt__button--primary"
                 type="submit"
@@ -674,7 +707,11 @@ export function TaskManagement() {
               >
                 {pending && pendingAction === "create"
                   ? "Создаём…"
-                  : "Создать черновик"}
+                  : pending && pendingAction === "assign"
+                    ? "Назначаем…"
+                    : newAssignee && !draft.openForClaim
+                      ? "Создать и назначить"
+                      : "Создать задачу"}
               </button>
               {hasDraft && (
                 <button
@@ -684,6 +721,7 @@ export function TaskManagement() {
                   onClick={() => {
                     if (!confirmLeave()) return;
                     setDraft(emptyDraft());
+                    setNewAssignee("");
                     setError(null);
                   }}
                 >
@@ -885,7 +923,10 @@ function TaskRow({
         </p>
         <p className="task-mgmt__criteria">{task.criteria}</p>
         <p className="task-mgmt__item-meta">
-          Фонд: {formatFunds(task)} · категория {task.categoryCode}
+          Фонд: {formatFunds(task)}
+          {task.categoryCode !== NO_CATEGORY
+            ? ` · категория ${task.categoryCode}`
+            : ""}
         </p>
         {task.assignee && (
           <p className="task-mgmt__item-meta">

@@ -583,37 +583,37 @@ const url = process.env.TEST_DATABASE_URL,
             .getByRole("button", { name: "Управление каталогом", exact: true })
             .click();
           await page.getByLabel("Область", { exact: true }).selectOption(scope);
+          // С правами создания, публикации и квоты открывается быстрая форма:
+          // три существующие операции подряд — выключенная позиция, включённые
+          // условия и период мест.
           await page
-            .getByRole("button", {
-              name: "Создать позицию косметики",
-              exact: true,
-            })
+            .getByRole("button", { name: "Добавить поощрение", exact: true })
             .click();
           await page
             .getByLabel("Название", { exact: true })
             .fill("Actual synthetic browser creation");
           await page
-            .getByLabel("Условия", { exact: true })
+            .getByLabel("Что получит участник", { exact: true })
             .fill("Actual synthetic conditions");
           await page.getByLabel("Цена в баллах", { exact: true }).fill("23");
           await page
-            .getByLabel("Основание создания", { exact: true })
-            .fill("Actual browser evidence");
+            .getByLabel("Сколько штук можно получить", { exact: true })
+            .fill("4");
           await page
-            .getByRole("button", { name: "Проверить позицию", exact: true })
-            .click();
-          await page
-            .getByRole("button", { name: "Подтвердить создание", exact: true })
+            .getByRole("button", { name: "Добавить поощрение", exact: true })
             .click();
           await page
             .getByText(
-              "Позиция создана и выключена. Квота не задана. Перечитываем каталог.",
+              "Поощрение «Actual synthetic browser creation» добавлено",
+              {
+                exact: false,
+              },
             )
             .waitFor();
           expect(
             (
               await owner.query(
-                "SELECT version,enabled,price,reservation_seconds FROM impuls.reward_versions WHERE scope_id=$1 AND title='Actual synthetic browser creation'",
+                "SELECT version,enabled,price,reservation_seconds FROM impuls.reward_versions WHERE scope_id=$1 AND title='Actual synthetic browser creation' ORDER BY version",
                 [scope],
               )
             ).rows,
@@ -624,7 +624,20 @@ const url = process.env.TEST_DATABASE_URL,
               price: 23,
               reservation_seconds: null,
             },
+            {
+              version: 2,
+              enabled: true,
+              price: 23,
+              reservation_seconds: null,
+            },
           ]);
+          const [period] = (
+            await owner.query(
+              "SELECT q.capacity, q.starts_at > clock_timestamp() - interval '5 minutes' AS fresh, q.ends_at > q.starts_at + interval '1 day' AS long FROM impuls.quota_periods q JOIN impuls.reward_versions v ON v.reward_id=q.reward_id WHERE q.scope_id=$1 AND v.title='Actual synthetic browser creation' AND v.version=1",
+              [scope],
+            )
+          ).rows;
+          expect(period).toEqual({ capacity: 4, fresh: true, long: true });
         } finally {
           await browser.close();
         }
@@ -639,12 +652,17 @@ const url = process.env.TEST_DATABASE_URL,
         for (const table of [
           "catalog_creations",
           "catalog_publications",
+          "quota_publications",
           "idempotency_records",
         ])
           await client.query(
             `DELETE FROM impuls.${table} WHERE actor_id=ANY($1::uuid[])`,
             [users],
           );
+        await client.query(
+          "DELETE FROM impuls.quota_periods WHERE scope_id=$1",
+          [scope],
+        );
         await client.query(
           "DELETE FROM impuls.reward_versions WHERE scope_id=$1",
           [scope],

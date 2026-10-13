@@ -490,9 +490,7 @@ try {
     await openQuotas(f);
     await quotaPanel(f).getByRole("status").waitFor();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page
-      .getByText("В этой области нет сохранённых позиций косметики.")
-      .waitFor();
+    await f.page.getByText("Поощрений пока нет.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await quotaPanel(f).count(), 0);
     await close(f);
@@ -712,9 +710,7 @@ try {
     await openHistory(f);
     await historyPanel(f).getByRole("status").waitFor();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page
-      .getByText("В этой области нет сохранённых позиций косметики.")
-      .waitFor();
+    await f.page.getByText("Поощрений пока нет.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".admin-catalog-history").count(), 0);
     await close(f);
@@ -749,7 +745,7 @@ try {
     await f.page
       .getByText(
         mode === "empty"
-          ? "В этой области нет сохранённых позиций косметики."
+          ? "Поощрений пока нет."
           : mode === "disabled"
             ? "Просмотр управления каталогом выключен."
             : mode === "denied"
@@ -839,9 +835,7 @@ try {
     f.setDelay(700);
     await refresh(f).click();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page
-      .getByText("В этой области нет сохранённых позиций косметики.")
-      .waitFor();
+    await f.page.getByText("Поощрений пока нет.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".admin-catalog-items > li").count(), 0);
     await f.page.evaluate(() => window.__back?.());

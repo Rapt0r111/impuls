@@ -154,7 +154,7 @@ async function open(key, tab) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await page
       .getByRole("heading", {
-        name: tab === "Выдача косметики" ? tab : "Решения по заявкам",
+        name: tab === "Выдача поощрений" ? tab : "Решения по заявкам",
         exact: true,
       })
       .waitFor();
@@ -230,7 +230,7 @@ async function review(s, title, decision) {
   assert.deepEqual(s.balance, [90, 0]);
   await finish(d, "1-approved");
 
-  const f = await open("fulfiller", "Выдача косметики");
+  const f = await open("fulfiller", "Выдача поощрений");
   await f.page
     .locator("li", { hasText: r.title })
     .getByRole("button", { name: "Подготовить выдачу", exact: true })

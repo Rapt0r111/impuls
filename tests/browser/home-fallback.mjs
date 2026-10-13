@@ -50,7 +50,7 @@ export async function mockHomeFallback(page) {
   );
 }
 
-// Участник открывается на «Главной», проверяющий — на очереди проверки:
+// Все открываются на «Главной» (у проверяющего там карточка очереди):
 // переходим к списку задач только тогда, когда открыта «Главная».
 export async function leaveHome(page) {
   await page.getByRole("button", { name: "Мои задачи", exact: true }).waitFor();
@@ -60,4 +60,14 @@ export async function leaveHome(page) {
       .isVisible()
   )
     await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
+}
+
+// Проверяющий тоже начинает с «Главной»: очередь открывается её карточкой.
+export async function openReviewQueue(page) {
+  const home = page.getByRole("heading", { name: "Главная", exact: true });
+  if (!(await home.isVisible()))
+    await page.getByRole("button", { name: "Главная", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Открыть очередь", exact: true })
+    .click();
 }

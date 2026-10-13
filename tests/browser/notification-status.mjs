@@ -404,7 +404,7 @@ try {
       .click();
     await list.getByText("Назначение задачи", { exact: true }).waitFor();
     assert.ok(f.eventCalls[1].cursor);
-    assert.match(await list.innerText(), /Симуляция успешна/);
+    assert.match(await list.innerText(), /Обработано без отправки \(тест\)/);
     await f.page
       .getByRole("button", { name: "Обновить события", exact: true })
       .click();
@@ -416,7 +416,7 @@ try {
       false,
     );
     await f.page
-      .getByRole("heading", { name: "Симуляция уведомлений" })
+      .getByRole("heading", { name: "Состояние уведомлений" })
       .waitFor();
     await close(f);
   }
@@ -570,13 +570,11 @@ try {
       .getByRole("button", { name: "Обновить события", exact: true })
       .click();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByText(/В этой области нет сохранённых событий/).waitFor();
+    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".notification-events").count(), 0);
     await f.page.getByText("Все события", { exact: true }).click();
-    await f.page
-      .getByText("На этой странице нет сохранённых событий для симуляции.")
-      .waitFor();
+    await f.page.getByText("На этой странице событий нет.").waitFor();
     await capture(f, "events-empty-320.png");
     await close(f);
   }
@@ -611,7 +609,7 @@ try {
     await ready(f);
     assert.match(
       await f.page.locator(".notification-section").innerText(),
-      /Сообщения в Telegram не отправляются/,
+      /сообщение принято Telegram/,
     );
     assert.equal(
       await refresh(f).evaluate(
@@ -630,9 +628,7 @@ try {
     );
     await disclosure.focus();
     await f.page.keyboard.press("Enter");
-    await f.page
-      .getByText("Тестовый транспорт недоступен", { exact: true })
-      .waitFor();
+    await f.page.getByText("Telegram недоступен", { exact: true }).waitFor();
     assert.equal(
       await disclosure.evaluate(
         (el) => el.getBoundingClientRect().height >= 44,
@@ -648,7 +644,7 @@ try {
     assert.equal(await f.page.locator(".notification-events li").count(), 2);
     assert.match(
       await f.page.locator(".notification-events li").first().innerText(),
-      /Согласование заявки[\s\S]*Ожидают повтора[\s\S]*Истекло время тестовой попытки/,
+      /Согласование заявки[\s\S]*Ожидают повтора[\s\S]*Истекло время попытки/,
     );
     assert.match(
       await f.page.locator(".notification-events li").last().innerText(),
@@ -669,9 +665,9 @@ try {
     await f.page
       .getByText(
         mode === "empty"
-          ? /В этой области нет сохранённых событий/
+          ? /В этой области уведомлений пока не было/
           : mode === "disabled"
-            ? "Просмотр симуляции выключен."
+            ? "Просмотр уведомлений выключен."
             : mode === "denied"
               ? "Состояние уведомлений в этой области недоступно."
               : /Не удалось загрузить состояние/,
@@ -832,7 +828,7 @@ try {
     f.setValue(999);
     await refresh(f).click();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByText(/В этой области нет сохранённых событий/).waitFor();
+    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(
       await f.page
@@ -866,7 +862,10 @@ try {
     assert.ok(
       await summary.evaluate((el) => el.getBoundingClientRect().height >= 44),
     );
-    assert.match(await list.innerText(), /Попытка 3 · Симуляция успешна/);
+    assert.match(
+      await list.innerText(),
+      /Попытка 3 · Обработано без отправки \(тест\)/,
+    );
     await capture(f, `attempts-${width}.png`);
     if (width === 320) {
       await f.page.addStyleTag({
@@ -919,7 +918,7 @@ try {
   }
   {
     const f = await fixture("empty");
-    await f.page.getByText(/В этой области нет сохранённых событий/).waitFor();
+    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText(/Новых записей попыток пока нет/).waitFor();
     await capture(f, "attempts-empty-320.png");
@@ -1084,7 +1083,7 @@ try {
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText("Загружаем журнал попыток…").waitFor();
     await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByText(/В этой области нет сохранённых событий/).waitFor();
+    await f.page.getByText(/В этой области уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText(/Новых записей попыток пока нет/).waitFor();

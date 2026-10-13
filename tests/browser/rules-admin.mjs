@@ -107,14 +107,12 @@ async function open(width, mode = "ok") {
 for (const width of [320, 360, 390]) {
   const { page, context, errors, posts } = await open(width);
   await page.getByRole("heading", { name: "Настройки начислений" }).waitFor();
-  await page.getByText(/Действуют с/).waitFor();
+  await page.getByRole("heading", { name: "Кто и когда менял" }).waitFor();
   // No version numbers anywhere on the screen.
   assert.equal(await page.getByText(/верси/i).count(), 0);
   // Fields are filled with the current settings.
-  assert.equal(
-    await page.getByLabel("Часовой пояс расчёта месяца").inputValue(),
-    "Europe/Moscow",
-  );
+  // The month time zone is fixed by the owner (P-04) and not shown.
+  assert.equal(await page.getByLabel("Часовой пояс расчёта месяца").count(), 0);
   assert.equal(
     await page.getByLabel("Название бонуса 2").inputValue(),
     "Бонус +25 %",

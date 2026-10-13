@@ -108,7 +108,7 @@ export function Leaderboard() {
       <div className="tasks-heading">
         <div>
           <h2 id="ranking-title">Рейтинг</h2>
-          <p>Синтетический режим · подтверждённый XP вашей области.</p>
+          <p>XP участников вашей области за месяц.</p>
         </div>
         <button
           type="button"
@@ -204,7 +204,7 @@ export function Leaderboard() {
       {query.isError && (
         <p className="tasks-state" role="alert">
           {disabled
-            ? "Синтетический рейтинг выключен. Его доступность определяет тестовый контур."
+            ? "Рейтинг сейчас выключен."
             : accessError
               ? "Доступ изменился. Повторите вход."
               : hidden
@@ -244,8 +244,8 @@ export function Leaderboard() {
             </p>
           ) : (
             <p className="tasks-state">
-              Синтетических областей пока нет. Тестовый состав задаётся
-              отдельно.
+              Рейтинг виден участникам области. Вас пока не включили ни в одну
+              область.
             </p>
           )}
           {first.scope &&
@@ -333,9 +333,7 @@ export function Leaderboard() {
             ))}
           {first.scope && (
             <p className="ledger-asof">
-              Расчёт: {date(first.updatedAt)} (Москва). Возвраты XP учтены в
-              исходном месяце. Это текущий расчёт журнала, в том числе для
-              прошлых месяцев.
+              Обновлено {date(first.updatedAt)} (Москва).
             </p>
           )}
           {query.hasNextPage && !changed && (

@@ -99,6 +99,30 @@ for (const width of [320, 360, 390]) {
     await page.getByText("Право отозвано.").waitFor();
     assert.equal(await count(live), 0);
     assert.equal(await count(changes), 2);
+    // «Командир» выдаёт весь набор прав одним подтверждением.
+    const commander =
+      "SELECT count(*) n FROM impuls.role_bindings WHERE user_id=$1 AND scope_id=$2 AND revoked_at IS NULL AND action IN ('task.view','task.create','task.assign','task.edit','task.cancel','task.review','reward.decide','reward.fulfill')";
+    await page.getByLabel("Участник", { exact: true }).selectOption(memberId);
+    await page
+      .getByLabel("Право", { exact: true })
+      .selectOption("preset:commander");
+    await page.getByLabel("Основание выдачи").fill("Командир пилота");
+    await page.getByRole("button", { name: "Проверить выдачу" }).click();
+    await page.getByText(/Сделать Реальный участник командиром/).waitFor();
+    assert.equal(await count(commander), 0, "preview writes nothing");
+    await page.getByRole("button", { name: "Подтвердить изменение" }).click();
+    await page.getByText(/^Выдано прав: 8\./).waitFor();
+    assert.equal(await count(commander), 8);
+    assert.equal(await count(changes), 10);
+    await page.getByLabel("Участник", { exact: true }).selectOption(memberId);
+    await page
+      .getByLabel("Право", { exact: true })
+      .selectOption("preset:commander");
+    await page.getByLabel("Основание выдачи").fill("Повтор");
+    await page.getByRole("button", { name: "Проверить выдачу" }).click();
+    await page.getByText("У участника уже есть все права командира.").waitFor();
+    assert.equal(await count(changes), 10, "nothing granted twice");
+    await page.getByLabel("Основание выдачи").fill("");
     // Admission and removal of a person through the real server and database.
     const telegramId = randomInt(7e12, 8e12);
     const person = async (sql) => (await db.query(sql, [telegramId])).rows[0];
@@ -164,6 +188,7 @@ for (const width of [320, 360, 390]) {
       .click();
     await page
       .getByText("Выдано право «Назначение задач» участнику Реальный участник.")
+      .first()
       .waitFor();
     await page
       .getByText(
