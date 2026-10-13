@@ -29,6 +29,16 @@ const date = (value: string) =>
   }).format(new Date(value));
 const number = (value: number) => new Intl.NumberFormat("ru-RU").format(value);
 
+const monthLabel = (key: string) => {
+  const match = /^(\d{4})-(\d{2})$/.exec(key);
+  if (!match) return key;
+  const month = new Intl.DateTimeFormat("ru-RU", {
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)));
+  return `${month} ${match[1]}`;
+};
+
 export function AccountLedger() {
   const { loseAccess, canCorrectLedger } = useAuthorizedSession();
   const query = useInfiniteQuery({
@@ -116,29 +126,23 @@ export function AccountLedger() {
                         </div>
                         <p>
                           {date(entry.createdAt)} ·{" "}
-                          {entry.reward
-                            ? `условия ${entry.reward.version} · `
-                            : ""}
-                          сезон {entry.seasonKey} ({entry.timeZone})
+                          {monthLabel(entry.seasonKey)}
                         </p>
                         <p className="tasks-detail-criteria">{entry.reason}</p>
                         {entry.reward && (
                           <p>
                             {entry.kind === "reward_reservation"
-                              ? "Переведено в резерв"
+                              ? "Отложено под заявку"
                               : entry.kind === "reward_approval"
-                                ? "Резерв списан при одобрении"
-                                : "Возвращено из резерва"}
-                            : {number(Math.abs(entry.reservedDelta))} баллов. XP
-                            не меняется.
+                                ? "Списано после одобрения"
+                                : "Возвращено"}
+                            : {number(Math.abs(entry.reservedDelta))} баллов.
                           </p>
                         )}
                         {entry.correction && (
                           <p>
-                            Возврат начисления ·{" "}
+                            Начисление отменено ·{" "}
                             {entry.correction.actor.displayName}
-                            <br />
-                            Исходная запись: {entry.correction.originalEntryId}
                           </p>
                         )}
                       </div>

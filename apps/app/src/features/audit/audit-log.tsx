@@ -230,15 +230,7 @@ export function AuditLog() {
               </select>
             </label>
           </div>
-          <p className="audit-asof">
-            Прочитано {date(first.updatedAt)} МСК. Новые действия появятся после
-            обновления.
-          </p>
-          <p className="audit-note">
-            Имена и названия задач — на момент чтения. Условия заявки сохранены
-            при подаче, основание и значения — в событии. Отсутствующие прежние
-            значения не восстанавливаются.
-          </p>
+          <p className="audit-asof">Обновлено {date(first.updatedAt)} МСК.</p>
         </>
       ) : null}
       {query.isPending ? (
