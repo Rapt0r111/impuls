@@ -505,7 +505,7 @@ try {
     const f = await fixture(320, "personal");
     await f.page.getByText(/-100 XP/).waitFor();
     await f.page
-      .getByText(/Возврат начисления · Синтетический проверяющий/)
+      .getByText(/Начисление отменено · Синтетический проверяющий/)
       .waitFor();
     assert.equal(
       await f.page.evaluate(
