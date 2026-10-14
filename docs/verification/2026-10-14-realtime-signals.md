@@ -41,3 +41,10 @@
 3. Переменные Vercel `REALTIME_ENABLED=true`, `REALTIME_URL`, `REALTIME_PUBLISHABLE_KEY`, новый деплой.
 4. Проверка на двух устройствах: новая задача появляется у второго без перезагрузки.
    Откат: убрать `REALTIME_ENABLED` — приложение возвращается к опросу.
+
+## Применение на Production (14.10.2026, по слову владельца «применяй»)
+
+- Миграция 000045 применена к Production Supabase (проект `enicnfevahcuiqvwmhgp`) одной транзакцией через `apply_migration` (`impuls_realtime_signals`) с записью `000045_realtime_signals` в `impuls_meta.pgmigrations`. Перед этим в миграцию добавлен явный отзыв прав у `anon`, `authenticated`, `service_role` (коммит после d4225b4); локально пересобрано и 7 из 7 тестов пройдены.
+- Перед применением (только чтение): последняя миграция 000044, схема `realtime` есть, `realtime.send(jsonb,text,text,boolean)` принадлежит `supabase_realtime_admin`, роль `postgres` (владелец функций сигналов) может её вызывать.
+- После применения (запрос): `secrets=1`, `triggers=5`, `impuls_app` вызывает `realtime_topic` (да), `realtime_signal` (нет) и читает секрет (нет), у `anon` нет ни функции, ни секрета, длина темы 71 символ, активных участников 4. Советник безопасности Supabase: только INFO «RLS без политик» для `impuls.realtime_secret`, как у других закрытых таблиц схемы.
+- **Не сделано (нужны действия владельца):** разрешить публичные каналы в Realtime Settings проекта; добавить в Vercel `REALTIME_ENABLED=true`, `REALTIME_URL`, `REALTIME_PUBLISHABLE_KEY` и выпустить деплой; проверить на двух устройствах. Пока этого нет, приложение остаётся на опросе, а сигналы в базе уходят в пустоту (подписчиков нет).
