@@ -582,6 +582,15 @@ body::after {
   margin: 0 0 12px;
 }
 
+/* Пустой список: короткая подсказка без плашки. */
+.tasks-empty {
+  margin: 0;
+  padding: 4px 2px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .tasks-list {
   display: grid;
   gap: 8px;

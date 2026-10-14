@@ -132,7 +132,7 @@ for (const width of [320, 390]) {
   );
   network.down = false;
   await context.setOffline(false);
-  await alert.getByRole("button", { name: "Повторить" }).click();
+  // Данные обновляются сами при возвращении сети: нажимать «Повторить» не нужно.
   await alert.waitFor({ state: "detached" });
   assert.deepEqual(errors, []);
   await context.close();

@@ -196,7 +196,7 @@ export function OpenTaskList({
           ))}
         </ul>
       ) : (
-        <p className="tasks-state">Свободных задач сейчас нет.</p>
+        <p className="tasks-empty">Свободных задач сейчас нет.</p>
       )}
     </>
   );

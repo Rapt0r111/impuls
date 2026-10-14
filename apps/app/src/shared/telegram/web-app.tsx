@@ -25,6 +25,10 @@ export type TelegramWebApp = {
   setBackgroundColor(color: string): void;
   setBottomBarColor?(color: string): void;
   colorScheme?: "light" | "dark";
+  platform?: string;
+  isVersionAtLeast?(version: string): boolean;
+  requestFullscreen?(): void;
+  disableVerticalSwipes?(): void;
   viewportHeight?: number;
   viewportStableHeight?: number;
   safeAreaInset?: TelegramInsets;
@@ -45,6 +49,18 @@ declare global {
   interface Window {
     Telegram?: { WebApp?: TelegramWebApp };
   }
+}
+
+// На телефонах Mini App открывается на весь экран (Bot API 8.0); на компьютере
+// окно остаётся обычным. Свайп вниз не должен закрывать приложение посреди
+// заполнения отчёта (Bot API 7.7). Отсутствие методов не мешает входу.
+const phonePlatforms = ["android", "android_x", "ios"];
+function presentFullscreen(webApp: TelegramWebApp) {
+  const atLeast = (version: string) =>
+    webApp.isVersionAtLeast?.(version) === true;
+  if (atLeast("7.7")) webApp.disableVerticalSwipes?.();
+  if (atLeast("8.0") && phonePlatforms.includes(webApp.platform ?? ""))
+    webApp.requestFullscreen?.();
 }
 
 export function TelegramBridge({
@@ -71,7 +87,11 @@ export function TelegramBridge({
       if (interval !== undefined) window.clearInterval(interval);
       disconnect = connectTelegramEnvironment(webApp);
       callbacks.current.onReady(webApp);
-      for (const configure of [() => webApp.ready(), () => webApp.expand()]) {
+      for (const configure of [
+        () => webApp.ready(),
+        () => webApp.expand(),
+        () => presentFullscreen(webApp),
+      ]) {
         try {
           configure();
         } catch {

@@ -89,6 +89,7 @@ export function CatalogAdmin() {
     networkMode: "always",
     staleTime: 0,
     refetchOnWindowFocus: false,
+    refetchInterval: false,
     refetchOnReconnect: false,
   });
   const error = query.error;
@@ -258,7 +259,7 @@ export function CatalogAdmin() {
             )
           ) : null}
           {!data.items.length ? (
-            <p className="tasks-state">Поощрений пока нет.</p>
+            <p className="tasks-empty">Поощрений пока нет.</p>
           ) : (
             <ul className="admin-catalog-items">
               {data.items.map((item) => (

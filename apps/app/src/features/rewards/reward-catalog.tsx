@@ -524,7 +524,7 @@ export function RewardCatalog() {
                     </label>
                   )}
                   {items.length === 0 ? (
-                    <p className="tasks-state">
+                    <p className="tasks-empty">
                       {first.scope
                         ? "Поощрений пока нет. Их добавляет командир."
                         : "Поощрения видны участникам. Вас пока не добавили в участники."}

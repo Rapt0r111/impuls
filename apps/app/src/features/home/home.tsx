@@ -237,50 +237,41 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
         </p>
       ) : null}
 
-      <section className="home-next" aria-labelledby="home-next-title">
-        <div className="home-next-top">
-          <h3 id="home-next-title">Ближайший срок</h3>
-          {next && isOpen(next.status) ? (
+      {tasks.isError && !tasks.data ? (
+        <p className="tasks-empty" role="alert">
+          Задачи недоступны. Откройте раздел «Задачи» и повторите.
+        </p>
+      ) : null}
+
+      {/* Без открытых задач карточки нет: пустая плашка только занимала экран. */}
+      {next && isOpen(next.status) ? (
+        <section className="home-next" aria-labelledby="home-next-title">
+          <div className="home-next-top">
+            <h3 id="home-next-title">Ближайший срок</h3>
             <span
               className={`task-chip task-chip--status task-chip--${next.status}`}
             >
               {statusNames[next.status]}
             </span>
-          ) : null}
-        </div>
-        {tasks.isPending ? (
-          <p role="status">Загружаем задачи…</p>
-        ) : tasks.isError && !tasks.data ? (
-          <p role="alert">
-            Задачи недоступны. Откройте раздел «Задачи» и повторите.
+          </div>
+          <strong className="home-next-name">{next.title}</strong>
+          <p className="home-next-due">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5V12l3 2" />
+            </svg>
+            {dueText(next.dueAt)}
+            {remainingText(next.dueAt)}
           </p>
-        ) : next && isOpen(next.status) ? (
-          <>
-            <strong className="home-next-name">{next.title}</strong>
-            <p className="home-next-due">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8.5" />
-                <path d="M12 7.5V12l3 2" />
-              </svg>
-              {dueText(next.dueAt)}
-              {remainingText(next.dueAt)}
-            </p>
-            <button
-              type="button"
-              className="home-cta"
-              onClick={() => onNavigate("tasks")}
-            >
-              Открыть задачу
-            </button>
-          </>
-        ) : (
-          // Без задач кнопки нет: открывать нечего, раздел «Задачи» — в меню.
-          <p className="home-next-empty">
-            Открытых задач нет. Новые назначения и свободные задачи появятся в
-            разделе «Задачи».
-          </p>
-        )}
-      </section>
+          <button
+            type="button"
+            className="home-cta"
+            onClick={() => onNavigate("tasks")}
+          >
+            Открыть задачу
+          </button>
+        </section>
+      ) : null}
 
       {showReview ? (
         <section className="home-review" aria-labelledby="home-review-title">

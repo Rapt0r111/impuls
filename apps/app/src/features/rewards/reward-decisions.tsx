@@ -456,7 +456,7 @@ export function RewardDecisions({
                 Обновлено {date(first.updatedAt)}
               </p>
               {items.length === 0 ? (
-                <p className="tasks-state">
+                <p className="tasks-empty">
                   {first.scope
                     ? fulfilling
                       ? "Согласованных чужих заявок на выдачу нет. Свои заявки выдаёт другой уполномоченный."

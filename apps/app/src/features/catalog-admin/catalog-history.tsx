@@ -101,6 +101,7 @@ export function CatalogHistory({
     networkMode: "always",
     staleTime: 0,
     refetchOnWindowFocus: false,
+    refetchInterval: false,
     refetchOnReconnect: false,
   });
   const error = query.error;

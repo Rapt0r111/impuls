@@ -772,7 +772,7 @@ export function TaskManagement() {
                 </button>
               </div>
             ) : items.length === 0 ? (
-              <p className="task-mgmt__state">Доступных задач пока нет.</p>
+              <p className="tasks-empty">Доступных задач пока нет.</p>
             ) : (
               <>
                 <ul className="task-mgmt__items">

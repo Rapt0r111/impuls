@@ -455,7 +455,7 @@ function TaskListContent() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="tasks-state">
+        <p className="tasks-empty">
           {complete
             ? emptyText[segment]
             : "Среди загруженных задач с этим статусом нет. Нажмите «Показать ещё»."}
@@ -756,10 +756,25 @@ function TaskWorkspace() {
   );
 }
 
+// Интервал живого обновления; в фоне запросы не идут (по умолчанию React Query).
+const liveRefreshMs = 15_000;
+
 export function TaskList() {
   const [client] = useState(
     () =>
-      new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } }),
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            // Новые задачи и любые изменения появляются сами: открытые на
+            // экране данные перезапрашиваются, пока приложение на виду, и сразу
+            // при возвращении в него или появлении сети.
+            refetchInterval: liveRefreshMs,
+            refetchOnWindowFocus: true,
+            refetchOnReconnect: true,
+          },
+        },
+      }),
   );
   return (
     <QueryClientProvider client={client}>
