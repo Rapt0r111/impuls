@@ -67,7 +67,18 @@ export async function openReviewQueue(page) {
   const home = page.getByRole("heading", { name: "Главная", exact: true });
   if (!(await home.isVisible()))
     await page.getByRole("button", { name: "Главная", exact: true }).click();
+  // Карточка очереди есть, только когда в ней что-то ждёт; иначе — через «Ещё».
+  const card = page.getByRole("button", {
+    name: "Открыть очередь",
+    exact: true,
+  });
+  const shown = await card
+    .waitFor({ timeout: 1500 })
+    .then(() => true)
+    .catch(() => false);
+  if (shown) return card.click();
+  await page.getByRole("button", { name: "Ещё", exact: true }).click();
   await page
-    .getByRole("button", { name: "Открыть очередь", exact: true })
+    .getByRole("button", { name: "Очередь проверки", exact: true })
     .click();
 }

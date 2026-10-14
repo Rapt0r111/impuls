@@ -115,7 +115,7 @@ for (const width of [320, 360, 390]) {
   await page
     .getByRole("button", { name: "Свободные задачи: вернуться к моим задачам" })
     .click();
-  await page.getByRole("button", { name: /Активные/ }).waitFor();
+  await page.getByRole("button", { name: /Свободные задачи/ }).waitFor();
   assert.ok(
     (await page.evaluate(() => document.documentElement.scrollWidth)) <= width,
     `horizontal overflow with banner at ${width}`,
@@ -162,7 +162,12 @@ for (const width of [320, 360, 390]) {
 
 {
   const { page, context } = await open(390, "empty");
-  await page.getByRole("button", { name: /Активные/ }).waitFor();
+  await page.getByText("Задач в работе нет.", { exact: false }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: /Активные/ }).count(),
+    0,
+    "без задач переключатель разделов не показывается",
+  );
   assert.equal(
     await page.getByRole("button", { name: /Свободные/ }).count(),
     0,

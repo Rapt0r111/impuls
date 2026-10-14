@@ -745,14 +745,16 @@ export function TaskManagement() {
           >
             <div className="task-mgmt__section-heading">
               <h3 id="task-mgmt-list-title">Все задачи</h3>
-              <button
-                type="button"
-                className="task-mgmt__button"
-                disabled={list.isFetching}
-                onClick={() => void list.refetch()}
-              >
-                Обновить
-              </button>
+              {items.length > 0 ? (
+                <button
+                  type="button"
+                  className="task-mgmt__button"
+                  disabled={list.isFetching}
+                  onClick={() => void list.refetch()}
+                >
+                  Обновить
+                </button>
+              ) : null}
             </div>
             {list.isPending ? (
               <p className="task-mgmt__state" role="status">

@@ -189,6 +189,12 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
       .sort((a, b) => a.dueAt.localeCompare(b.dueAt)) ?? [];
   const next = open[0];
   const others = open.slice(1, 4);
+  const reviewCount = waiting.data?.count ?? 0;
+  // Карточка очереди видна, только когда есть что проверять (или число не
+  // загрузилось): пустая очередь не занимает экран и не даёт пустой кнопки.
+  const showReview =
+    canReview === true &&
+    ((waiting.data && reviewCount > 0) || (waiting.isError && !waiting.data));
   return (
     <section className="tasks-section home" aria-labelledby="home-title">
       <div className="tasks-heading">
@@ -197,19 +203,18 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
           <p>Ваш прогресс и ближайшая задача.</p>
         </div>
       </div>
+      <div className="home-top" aria-hidden="true">
+        <span className="home-logo">И</span>
+        <span className="home-brand">Импульс</span>
+      </div>
       <header className="home-greeting">
-        <span className="access-avatar" aria-hidden="true">
+        <span className="home-avatar" aria-hidden="true">
           {initials(user.displayName)}
         </span>
         <div>
-          <span className="access-greeting">{greeting()}</span>
+          <span className="home-hello">{greeting()}</span>
           <strong>{firstName(user.displayName)}</strong>
         </div>
-        {level ? (
-          <span className="task-chip home-level-chip">
-            Уровень {level.level}
-          </span>
-        ) : null}
       </header>
       {profile.isPending ? <p role="status">Загружаем прогресс…</p> : null}
       {profile.isError ? (
@@ -230,34 +235,6 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
             Повторить
           </button>
         </p>
-      ) : null}
-
-      {!guideHidden && data && data.balance.lifetimeXp === 0 ? (
-        <HowItWorks onHide={hideGuide} />
-      ) : null}
-
-      {canReview ? (
-        <section className="home-review" aria-labelledby="home-review-title">
-          <div>
-            <h3 id="home-review-title">Очередь проверки</h3>
-            <p>
-              {waiting.data
-                ? waiting.data.count === 0
-                  ? "Сейчас отчётов на проверке нет."
-                  : `Ждут решения: ${waiting.data.count}${waiting.data.more ? " и больше" : ""}.`
-                : waiting.isError
-                  ? "Число не загрузилось, очередь можно открыть."
-                  : "Считаем отчёты…"}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="access-button"
-            onClick={() => onNavigate("reviews")}
-          >
-            Открыть очередь
-          </button>
-        </section>
       ) : null}
 
       <section className="home-next" aria-labelledby="home-next-title">
@@ -290,119 +267,110 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
             </p>
             <button
               type="button"
-              className="access-button home-next-cta"
+              className="home-cta"
               onClick={() => onNavigate("tasks")}
             >
               Открыть задачу
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
             </button>
           </>
         ) : (
-          <>
-            <p className="home-next-empty">
-              Открытых задач нет. Новые назначения и свободные задачи — в
-              разделе «Задачи».
-            </p>
-            <button
-              type="button"
-              className="access-button access-button--quiet home-next-cta"
-              onClick={() => onNavigate("tasks")}
-            >
-              Все задачи
-            </button>
-          </>
+          // Без задач кнопки нет: открывать нечего, раздел «Задачи» — в меню.
+          <p className="home-next-empty">
+            Открытых задач нет. Новые назначения и свободные задачи появятся в
+            разделе «Задачи».
+          </p>
         )}
       </section>
+
+      {showReview ? (
+        <section className="home-review" aria-labelledby="home-review-title">
+          <div>
+            <h3 id="home-review-title">Очередь проверки</h3>
+            <p>
+              {waiting.data
+                ? `Ждут решения: ${reviewCount}${waiting.data.more ? " и больше" : ""}.`
+                : "Число не загрузилось, очередь можно открыть."}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="home-cta home-cta--accent"
+            onClick={() => onNavigate("reviews")}
+          >
+            Открыть очередь
+          </button>
+        </section>
+      ) : null}
 
       {data ? (
         <>
           <div className="home-stats">
-            <div className="home-level">
+            <div className="home-tile home-level">
+              <div className="home-tile-head">
+                <span className="home-tile-label">XP за всё время</span>
+                <span className="home-tile-chip" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
+                  </svg>
+                </span>
+              </div>
+              <strong className="home-tile-value">
+                {number(data.balance.lifetimeXp)}
+              </strong>
               {level ? (
-                <>
-                  {/* Кольцо дублирует полосу прогресса ниже и скрыто от
-                      скринридеров; 214 — длина окружности радиуса 34. */}
-                  <div className="home-ring" aria-hidden="true">
-                    <svg viewBox="0 0 80 80">
-                      <defs>
-                        <linearGradient
-                          id="home-ring-gradient"
-                          x1="0"
-                          y1="0"
-                          x2="1"
-                          y2="1"
-                        >
-                          <stop offset="0" stopColor="#9af7de" />
-                          <stop offset="1" stopColor="#2fc9a2" />
-                        </linearGradient>
-                      </defs>
-                      <circle
-                        className="home-ring-track"
-                        cx="40"
-                        cy="40"
-                        r="34"
-                      />
-                      <circle
-                        className="home-ring-value"
-                        cx="40"
-                        cy="40"
-                        r="34"
-                        transform="rotate(-90 40 40)"
-                        style={{
-                          strokeDashoffset:
-                            level.nextLevelXp !== null && level.spanXp
-                              ? 214 * (1 - level.progressXp / level.spanXp)
-                              : 0,
-                        }}
-                      />
-                    </svg>
-                    <strong>{level.level}</strong>
-                  </div>
-                  <p className="home-level-top">
-                    <b>{number(data.balance.lifetimeXp)} XP</b>
-                  </p>
+                <span className="home-tile-sub">
+                  Уровень {level.level}
                   {level.nextLevelXp !== null ? (
                     <>
+                      {" "}
+                      · ещё {number(level.remainingXp)} XP
+                      {/* Полоса для скринридеров; видимый прогресс — подпись. */}
                       <progress
                         aria-label={`Прогресс до уровня ${level.level + 1}`}
                         max={level.spanXp!}
                         value={level.progressXp}
                       />
-                      <p className="home-caption">
-                        {number(level.remainingXp)} XP до уровня{" "}
-                        {level.level + 1}
-                      </p>
                     </>
                   ) : (
-                    <p className="home-caption">Достигнут последний уровень.</p>
+                    " · последний"
                   )}
-                </>
+                </span>
               ) : (
-                <p className="home-level-top">
-                  <strong>{number(data.balance.lifetimeXp)}</strong>
-                  <span>XP за всё время</span>
-                </p>
+                <span className="home-tile-sub" aria-hidden="true" />
               )}
             </div>
-            <div className="home-points-card">
-              <span className="home-points-label">Баллы</span>
-              <strong aria-label="Доступно баллов">
+            <div className="home-tile home-points-card">
+              <div className="home-tile-head">
+                <span className="home-tile-label">Баллы</span>
+                <span className="home-tile-chip" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M14.5 9.2a2.8 2.8 0 0 0-2.5-1.2c-1.5 0-2.5.8-2.5 1.9 0 2.6 5 1.3 5 3.9 0 1.1-1.1 1.9-2.5 1.9a2.9 2.9 0 0 1-2.7-1.4M12 6.5v1.3M12 16.2v1.3" />
+                  </svg>
+                </span>
+              </div>
+              <strong className="home-tile-value" aria-label="Доступно баллов">
                 {number(data.balance.availablePoints)}
               </strong>
-              <span className="home-caption">
+              <span className="home-tile-sub">
                 {number(data.balance.reservedPoints)} в резерве
               </span>
             </div>
           </div>
           {season.data?.self ? (
             <dl className="home-season">
-              <dt>{seasonLabel(season.data.season)}</dt>
+              <dt>
+                <span className="home-season-dot" aria-hidden="true" />
+                {seasonLabel(season.data.season)}
+              </dt>
               <dd>{number(season.data.self.xp)}</dd>
             </dl>
           ) : null}
         </>
+      ) : null}
+
+      {!guideHidden && data && data.balance.lifetimeXp === 0 ? (
+        <HowItWorks onHide={hideGuide} />
       ) : null}
 
       {others.length > 0 ? (

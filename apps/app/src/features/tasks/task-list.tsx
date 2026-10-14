@@ -395,25 +395,28 @@ function TaskListContent() {
               </span>
             </button>
           ) : null}
-          <div className="tasks-seg" role="group" aria-label="Раздел списка">
-            {segments.map(([value, label]) => {
-              const count = allItems.filter(
-                (task) => segmentOf(task.status) === value,
-              ).length;
-              return (
-                <button
-                  type="button"
-                  key={value}
-                  className="tasks-seg-item"
-                  aria-pressed={segment === value}
-                  onClick={() => setChosen(value)}
-                >
-                  {label}
-                  {complete && value !== "done" ? ` ${count}` : ""}
-                </button>
-              );
-            })}
-          </div>
+          {/* Без единой задачи переключать нечего: остаётся подсказка ниже. */}
+          {allItems.length > 0 || !complete ? (
+            <div className="tasks-seg" role="group" aria-label="Раздел списка">
+              {segments.map(([value, label]) => {
+                const count = allItems.filter(
+                  (task) => segmentOf(task.status) === value,
+                ).length;
+                return (
+                  <button
+                    type="button"
+                    key={value}
+                    className="tasks-seg-item"
+                    aria-pressed={segment === value}
+                    onClick={() => setChosen(value)}
+                  >
+                    {label}
+                    {complete && value !== "done" ? ` ${count}` : ""}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </>
       )}
 
