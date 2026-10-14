@@ -73,6 +73,9 @@ const env = {
   NOTIFICATION_STATUS_ENABLED: "true",
   REWARDS_ENABLED: "true",
   TASK_MANAGEMENT_ENABLED: "true",
+  REALTIME_ENABLED: "true",
+  REALTIME_URL: "https://realtime.example.test",
+  REALTIME_PUBLISHABLE_KEY: "sb_publishable_test_only",
   TEST_SCREENSHOT_DIR:
     process.env.TEST_SCREENSHOT_DIR ??
     path.join(root, "test-results", "task-slice", String(process.pid)),

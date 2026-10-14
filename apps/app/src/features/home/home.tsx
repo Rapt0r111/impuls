@@ -1,51 +1,41 @@
 "use client";
 
 import {
+  accountLedgerResponseSchema,
   leaderboardResponseSchema,
+  redemptionListResponseSchema,
   reviewListResponseSchema,
   taskListResponseSchema,
 } from "@impuls/contracts";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
-import { initials } from "@/shared/ui/initials";
 import {
   ProfileError,
   useParticipantProfile,
 } from "@/features/profile/participant-profile";
+import { useOpenTasks } from "@/features/tasks/open-tasks";
+import {
+  Arrow,
+  Chevron,
+  Info,
+  Pulse,
+  PlusCircle,
+  ReviewList,
+  Star,
+} from "./home-icons";
+import { LevelUp } from "./home-level-up";
+import {
+  buildNotes,
+  readReadNotes,
+  taskWord,
+  writeReadNotes,
+  type NoteTarget,
+} from "./home-notes";
+import { HelpSheet, LevelSheet, PointsSheet, percent } from "./home-sheets";
+import { HomeTopBar } from "./home-topbar";
 import "./home.css";
 
-const number = (value: number) => new Intl.NumberFormat("ru-RU").format(value);
-const dayLabel = (value: string) =>
-  new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(
-    new Date(value),
-  );
-const timeLabel = (value: string) =>
-  new Intl.DateTimeFormat("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() &&
-  a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate();
-// «Сегодня до 18:00» или «до 10 окт., 18:00»: срок читается без расчёта в уме.
-const dueText = (value: string) =>
-  sameDay(new Date(value), new Date())
-    ? `Сегодня до ${timeLabel(value)}`
-    : `до ${dayLabel(value)}, ${timeLabel(value)}`;
-// «· осталось 3 ч 20 мин» — только для срока сегодня, который ещё не наступил.
-const remainingText = (value: string) => {
-  const now = new Date();
-  const due = new Date(value);
-  const minutes = Math.floor((due.getTime() - now.getTime()) / 60000);
-  if (minutes <= 0 || !sameDay(due, now)) return "";
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return ` · осталось ${hours > 0 ? `${hours} ч ${rest} мин` : `${rest} мин`}`;
-};
-// В приветствии — имя, как на концепте; полное имя остаётся в профиле.
-const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 const asOfLabel = (value: string) =>
   new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
@@ -53,24 +43,10 @@ const asOfLabel = (value: string) =>
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
-// Приветствие считается на клиенте после входа, поэтому серверная разметка с ним не расходится.
-const greeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 5) return "Доброй ночи";
-  if (hour < 12) return "Доброе утро";
-  return hour < 18 ? "Добрый день" : "Добрый вечер";
-};
-const statusNames = {
-  assigned: "Назначена",
-  in_progress: "В работе",
-  needs_work: "На доработке",
-} as const;
-type OpenStatus = keyof typeof statusNames;
-const isOpen = (status: string): status is OpenStatus => status in statusNames;
 
-type HomeTarget = "tasks" | "ledger" | "reviews";
+type HomeTarget = "tasks" | "ledger" | "reviews" | "profile" | "rewards";
 
-// «2026-10» → «в октябре»: месяц рейтинга словами, без технического кода.
+// «2026-10» → «XP за октябрь»: месяц рейтинга словами, без технического кода.
 const seasonLabel = (season: string) => {
   const [year, month] = season.split("-").map(Number);
   if (!year || !month) return season;
@@ -93,7 +69,7 @@ function readGuideHidden() {
 
 function HowItWorks({ onHide }: { onHide: () => void }) {
   return (
-    <section className="home-guide" aria-labelledby="home-guide-title">
+    <section className="guide" aria-labelledby="home-guide-title">
       <h3 id="home-guide-title">Как это работает</h3>
       <ol>
         <li>
@@ -109,12 +85,42 @@ function HowItWorks({ onHide }: { onHide: () => void }) {
           «Поощрения».
         </li>
       </ol>
-      <button type="button" className="home-guide-hide" onClick={onHide}>
+      <button type="button" className="guide-hide" onClick={onHide}>
         Понятно, скрыть
       </button>
     </section>
   );
 }
+
+// Последний показанный уровень хранится на устройстве по участнику: экран нового
+// уровня виден один раз после повышения, а при первом запуске ничего не празднуется.
+const levelKey = (userId: string) => `impuls.home.level.seen.${userId}`;
+function readSeenLevel(userId: string) {
+  try {
+    const raw = window.localStorage.getItem(levelKey(userId));
+    const value = raw === null ? Number.NaN : Number(raw);
+    return Number.isInteger(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+function writeSeenLevel(userId: string, level: number) {
+  try {
+    window.localStorage.setItem(levelKey(userId), String(level));
+  } catch {
+    // Без хранилища экран может появиться снова при следующем запуске.
+  }
+}
+
+const getJson = async (url: string, signal: AbortSignal) => {
+  const response = await fetch(url, {
+    signal,
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+  if (!response.ok) throw new ProfileError(response.status);
+  return response.json() as Promise<unknown>;
+};
 
 export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
   const { loseAccess, user, canReview } = useAuthorizedSession();
@@ -124,17 +130,14 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
     enabled: canReview === true,
     retry: false,
     queryFn: async ({ signal }) => {
-      const response = await fetch("/api/v1/reviews?limit=20", {
-        signal,
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (!response.ok) throw new ProfileError(response.status);
-      const page = reviewListResponseSchema.parse(await response.json());
+      const page = reviewListResponseSchema.parse(
+        await getJson("/api/v1/reviews?limit=20", signal),
+      );
       return { count: page.items.length, more: page.nextCursor !== null };
     },
   });
   const profile = useParticipantProfile();
+  const freeTasks = useOpenTasks();
   // «Главная» появляется только после входа на клиенте, поэтому хранилище читается сразу.
   const [guideHidden, setGuideHidden] = useState(readGuideHidden);
   const hideGuide = () => {
@@ -148,31 +151,40 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
   const tasks = useQuery({
     queryKey: ["home-tasks"],
     retry: false,
-    queryFn: async ({ signal }) => {
-      const response = await fetch("/api/v1/tasks?limit=20", {
-        signal,
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (!response.ok) throw new ProfileError(response.status);
-      return taskListResponseSchema.parse(await response.json());
-    },
+    queryFn: async ({ signal }) =>
+      taskListResponseSchema.parse(
+        await getJson("/api/v1/tasks?limit=20", signal),
+      ),
   });
   // Сезонный XP — собственная строка рейтинга текущего месяца. Рейтинг может
   // быть выключен (404) или недоступен: тогда показатель просто не выводится.
   const season = useQuery({
     queryKey: ["home-season"],
     retry: false,
-    queryFn: async ({ signal }) => {
-      const response = await fetch("/api/v1/leaderboard?limit=1", {
-        signal,
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (!response.ok) throw new ProfileError(response.status);
-      return leaderboardResponseSchema.parse(await response.json());
-    },
+    queryFn: async ({ signal }) =>
+      leaderboardResponseSchema.parse(
+        await getJson("/api/v1/leaderboard?limit=1", signal),
+      ),
   });
+  // Источники колокольчика: свежие начисления и решения по заявкам.
+  const ledger = useQuery({
+    queryKey: ["home-ledger"],
+    retry: false,
+    queryFn: async ({ signal }) =>
+      accountLedgerResponseSchema.parse(
+        await getJson("/api/v1/me/ledger?limit=10", signal),
+      ),
+  });
+  const redemptions = useQuery({
+    queryKey: ["home-redemptions"],
+    retry: false,
+    queryFn: async ({ signal }) =>
+      redemptionListResponseSchema.parse(
+        await getJson("/api/v1/me/redemptions?limit=10", signal),
+      ),
+  });
+  // Потерю доступа определяют основные запросы; колокольчик — лишь дополнение и
+  // при своей ошибке просто остаётся пустым.
   useEffect(() => {
     for (const error of [profile.error, tasks.error, season.error])
       if (error instanceof ProfileError && [401, 403].includes(error.status)) {
@@ -180,233 +192,359 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
         return;
       }
   }, [profile.error, tasks.error, season.error, loseAccess]);
+
+  // Фон, цвета и свечение «Главной» включаются только пока она открыта.
+  useEffect(() => {
+    document.documentElement.dataset.view = "home";
+    return () => {
+      delete document.documentElement.dataset.view;
+    };
+  }, []);
+
+  const [sheet, setSheet] = useState<"level" | "points" | "help" | null>(null);
+  const [read, setRead] = useState<string[]>(readReadNotes);
+  const notes = useMemo(
+    () =>
+      buildNotes({
+        ledger: ledger.data,
+        tasks: tasks.data,
+        redemptions: redemptions.data,
+      }),
+    [ledger.data, tasks.data, redemptions.data],
+  );
+  const readSet = useMemo(() => new Set(read), [read]);
+  const markRead = (ids: string[]) => {
+    const next = [...new Set([...read, ...ids])];
+    setRead(next);
+    writeReadNotes(next);
+  };
+
   const data = profile.data;
-  const level = data?.progression.level;
-  // Ближайший срок среди задач, которые ещё ждут результата участника.
-  const open =
-    tasks.data?.items
-      .filter((task) => isOpen(task.status))
-      .sort((a, b) => a.dueAt.localeCompare(b.dueAt)) ?? [];
-  const next = open[0];
-  const others = open.slice(1, 4);
+  const level = data?.progression.level ?? null;
+  const levelNumber = level?.level ?? null;
+  // Уровень, с которого начинается отсчёт: сохранённый на устройстве, а при первом
+  // запуске — первый загруженный (тогда ничего не празднуется).
+  const [baseline, setBaseline] = useState<number | null>(() =>
+    readSeenLevel(user.id),
+  );
+  if (baseline === null && levelNumber !== null) setBaseline(levelNumber);
+  const celebrating =
+    levelNumber !== null && baseline !== null && levelNumber > baseline;
+  useEffect(() => {
+    if (levelNumber !== null && !celebrating)
+      writeSeenLevel(user.id, levelNumber);
+  }, [levelNumber, celebrating, user.id]);
+  const closeCelebration = () => setBaseline(levelNumber);
+
+  const open = freeTasks.data ?? [];
+  const freeXp = open.length
+    ? Math.max(...open.map((task) => task.fundXp))
+    : null;
   const reviewCount = waiting.data?.count ?? 0;
   // Карточка очереди видна, только когда есть что проверять (или число не
   // загрузилось): пустая очередь не занимает экран и не даёт пустой кнопки.
   const showReview =
     canReview === true &&
     ((waiting.data && reviewCount > 0) || (waiting.isError && !waiting.data));
+  const go = (to: HomeTarget) => {
+    setSheet(null);
+    onNavigate(to);
+  };
+  const openNote = (target: NoteTarget) => go(target);
+  const pct = level ? Math.round(percent(level)) : 0;
+
   return (
-    <section className="tasks-section home" aria-labelledby="home-title">
+    <section className="home" aria-labelledby="home-title">
       <div className="tasks-heading">
         <div>
           <h2 id="home-title">Главная</h2>
-          <p>Ваш прогресс и ближайшая задача.</p>
+          <p>Ваш прогресс и уровень.</p>
         </div>
       </div>
-      <div className="home-top" aria-hidden="true">
-        <span className="home-logo">И</span>
-        <span className="home-brand">Импульс</span>
-      </div>
-      <header className="home-greeting">
-        <span className="home-avatar" aria-hidden="true">
-          {initials(user.displayName)}
-        </span>
-        <div>
-          <span className="home-hello">{greeting()}</span>
-          <strong>{firstName(user.displayName)}</strong>
-        </div>
-      </header>
-      {profile.isPending ? <p role="status">Загружаем прогресс…</p> : null}
-      {profile.isError ? (
-        <p className="tasks-state" role="alert">
-          {!navigator.onLine ? "Нет соединения. " : "Обновление не удалось. "}
-          {data
-            ? `Показаны данные на ${asOfLabel(data.asOf)}; изменения не проводятся.`
-            : "Прогресс недоступен."}{" "}
-          <button
-            type="button"
-            className="tasks-action"
-            onClick={() => {
-              void profile.refetch();
-              void tasks.refetch();
-              void season.refetch();
-            }}
-          >
-            Повторить
-          </button>
-        </p>
-      ) : null}
+      <HomeTopBar
+        name={user.displayName}
+        notes={notes}
+        read={readSet}
+        onMark={(id) => markRead([id])}
+        onMarkAll={() => markRead(notes.map((note) => note.id))}
+        onOpenNote={openNote}
+        onProfile={() => go("profile")}
+        onHelp={() => setSheet("help")}
+      />
 
-      <section className="home-next" aria-labelledby="home-next-title">
-        <div className="home-next-top">
-          <h3 id="home-next-title">Ближайший срок</h3>
-          {next && isOpen(next.status) ? (
-            <span
-              className={`task-chip task-chip--status task-chip--${next.status}`}
-            >
-              {statusNames[next.status]}
-            </span>
-          ) : null}
-        </div>
-        {tasks.isPending ? (
-          <p role="status">Загружаем задачи…</p>
-        ) : tasks.isError && !tasks.data ? (
-          <p role="alert">
-            Задачи недоступны. Откройте раздел «Задачи» и повторите.
+      <div className="wrap">
+        {profile.isPending ? (
+          <p role="status" className="state">
+            Загружаем прогресс…
           </p>
-        ) : next && isOpen(next.status) ? (
-          <>
-            <strong className="home-next-name">{next.title}</strong>
-            <p className="home-next-due">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8.5" />
-                <path d="M12 7.5V12l3 2" />
-              </svg>
-              {dueText(next.dueAt)}
-              {remainingText(next.dueAt)}
-            </p>
+        ) : null}
+        {profile.isError ? (
+          <p className="state" role="alert">
+            {!navigator.onLine ? "Нет соединения. " : "Обновление не удалось. "}
+            {data
+              ? `Показаны данные на ${asOfLabel(data.asOf)}; изменения не проводятся.`
+              : "Прогресс недоступен."}{" "}
             <button
               type="button"
-              className="home-cta"
-              onClick={() => onNavigate("tasks")}
+              onClick={() => {
+                void profile.refetch();
+                void tasks.refetch();
+                void season.refetch();
+              }}
             >
-              Открыть задачу
+              Повторить
             </button>
-          </>
-        ) : (
-          // Без задач кнопки нет: открывать нечего, раздел «Задачи» — в меню.
-          <p className="home-next-empty">
-            Открытых задач нет. Новые назначения и свободные задачи появятся в
-            разделе «Задачи».
           </p>
-        )}
-      </section>
+        ) : null}
 
-      {showReview ? (
-        <section className="home-review" aria-labelledby="home-review-title">
-          <div>
-            <h3 id="home-review-title">Очередь проверки</h3>
-            <p>
-              {waiting.data
-                ? `Ждут решения: ${reviewCount}${waiting.data.more ? " и больше" : ""}.`
-                : "Число не загрузилось, очередь можно открыть."}
-            </p>
-          </div>
+        {data && level ? (
           <button
             type="button"
-            className="home-cta home-cta--accent"
-            onClick={() => onNavigate("reviews")}
+            className="level rise"
+            style={{ "--d": 0, "--p": `${percent(level)}%` } as CSSProperties}
+            aria-label={
+              level.nextLevelXp !== null
+                ? `Уровень ${level.level}, до уровня ${level.level + 1} осталось ${level.remainingXp} XP. Подробнее`
+                : `Уровень ${level.level}, высший уровень. Подробнее`
+            }
+            onClick={() => setSheet("level")}
           >
-            Открыть очередь
-          </button>
-        </section>
-      ) : null}
-
-      {data ? (
-        <>
-          <div className="home-stats">
-            <div className="home-tile home-level">
-              <div className="home-tile-head">
-                <span className="home-tile-label">XP за всё время</span>
-                <span className="home-tile-chip" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
-                  </svg>
-                </span>
-              </div>
-              <strong className="home-tile-value">
-                {number(data.balance.lifetimeXp)}
-              </strong>
-              {level ? (
-                <span className="home-tile-sub">
-                  Уровень {level.level}
-                  {level.nextLevelXp !== null ? (
-                    <>
-                      {" "}
-                      · ещё {number(level.remainingXp)} XP
-                      {/* Полоса для скринридеров; видимый прогресс — подпись. */}
-                      <progress
-                        aria-label={`Прогресс до уровня ${level.level + 1}`}
-                        max={level.spanXp!}
-                        value={level.progressXp}
-                      />
-                    </>
-                  ) : (
-                    " · последний"
-                  )}
-                </span>
-              ) : (
-                <span className="home-tile-sub" aria-hidden="true" />
-              )}
-            </div>
-            <div className="home-tile home-points-card">
-              <div className="home-tile-head">
-                <span className="home-tile-label">Баллы</span>
-                <span className="home-tile-chip" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="8.5" />
-                    <path d="M14.5 9.2a2.8 2.8 0 0 0-2.5-1.2c-1.5 0-2.5.8-2.5 1.9 0 2.6 5 1.3 5 3.9 0 1.1-1.1 1.9-2.5 1.9a2.9 2.9 0 0 1-2.7-1.4M12 6.5v1.3M12 16.2v1.3" />
-                  </svg>
-                </span>
-              </div>
-              <strong className="home-tile-value" aria-label="Доступно баллов">
-                {number(data.balance.availablePoints)}
-              </strong>
-              <span className="home-tile-sub">
-                {number(data.balance.reservedPoints)} в резерве
+            <span className="lv-head">
+              <span className="lv-badge" aria-hidden="true">
+                {level.level}
               </span>
-            </div>
-          </div>
-          {season.data?.self ? (
-            <dl className="home-season">
-              <dt>
-                <span className="home-season-dot" aria-hidden="true" />
-                {seasonLabel(season.data.season)}
-              </dt>
-              <dd>{number(season.data.self.xp)}</dd>
-            </dl>
-          ) : null}
-        </>
-      ) : null}
-
-      {!guideHidden && data && data.balance.lifetimeXp === 0 ? (
-        <HowItWorks onHide={hideGuide} />
-      ) : null}
-
-      {others.length > 0 ? (
-        <div className="home-more">
-          <div className="home-more-head">
-            <h3>Ещё в работе</h3>
-            <button
-              type="button"
-              className="home-more-all"
-              onClick={() => onNavigate("tasks")}
+              <span className="lv-text">
+                <span className="lv-title">Уровень {level.level}</span>
+                <span className="lv-sub">
+                  {level.nextLevelXp !== null
+                    ? `До уровня ${level.level + 1} — ${level.remainingXp} XP`
+                    : "Высший уровень"}
+                </span>
+              </span>
+              <span className="lv-pct" aria-hidden="true">
+                <i
+                  className="cnt pct"
+                  style={{ "--v": pct, "--d": 1 } as CSSProperties}
+                />
+              </span>
+              <Chevron className="lv-chev" />
+            </span>
+            <span
+              className="scale"
+              role="progressbar"
+              aria-label={
+                level.nextLevelXp !== null
+                  ? `Прогресс до уровня ${level.level + 1}`
+                  : "Высший уровень"
+              }
+              aria-valuemin={level.minimumXp}
+              aria-valuemax={level.nextLevelXp ?? data.balance.lifetimeXp}
+              aria-valuenow={data.balance.lifetimeXp}
             >
-              Все задачи
-            </button>
-          </div>
-          <ul className="home-more-list">
-            {others.map((task) => (
-              <li key={task.id}>
-                <button
-                  type="button"
-                  className="home-more-row"
-                  onClick={() => onNavigate("tasks")}
-                >
-                  <span>
-                    <strong>{task.title}</strong>
-                    <span>{dueText(task.dueAt)}</span>
+              <span className="fill" />
+              <span className="knob" aria-hidden="true" />
+            </span>
+            {level.nextLevelXp !== null ? (
+              <span className="ticks" aria-hidden="true">
+                <span>{level.minimumXp} XP</span>
+                <span>{level.nextLevelXp} XP</span>
+              </span>
+            ) : null}
+          </button>
+        ) : null}
+
+        {data ? (
+          <section className="stats rise" style={{ "--d": 1 } as CSSProperties}>
+            {(() => {
+              const body = (
+                <>
+                  <span className="head">
+                    <span className="lbl">XP за всё время</span>
+                    <span className="chip" aria-hidden="true">
+                      <Pulse />
+                    </span>
                   </span>
                   <span
-                    className={`task-chip task-chip--status task-chip--${task.status}`}
+                    className="n"
+                    style={{ "--d": 1 } as CSSProperties}
+                    aria-hidden="true"
                   >
-                    {statusNames[task.status as OpenStatus]}
+                    <i
+                      className="cnt"
+                      style={
+                        {
+                          "--v": data.balance.lifetimeXp,
+                          "--d": 1,
+                        } as CSSProperties
+                      }
+                    />
                   </span>
+                  <span className="sub">Не сгорают</span>
+                </>
+              );
+              return level ? (
+                <button
+                  type="button"
+                  className="tile xp"
+                  aria-label={`XP за всё время: ${data.balance.lifetimeXp}. Подробнее об уровне`}
+                  onClick={() => setSheet("level")}
+                >
+                  {body}
                 </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+              ) : (
+                <div
+                  className="tile xp static"
+                  role="group"
+                  aria-label={`XP за всё время: ${data.balance.lifetimeXp}`}
+                >
+                  {body}
+                </div>
+              );
+            })()}
+            <button
+              type="button"
+              className="tile gold"
+              aria-label={`Баллы: ${data.balance.availablePoints}. Что можно получить`}
+              onClick={() => setSheet("points")}
+            >
+              <span className="head">
+                <span className="lbl">Баллы</span>
+                <span className="chip" aria-hidden="true">
+                  <Star />
+                </span>
+              </span>
+              <span
+                className="n"
+                style={{ "--d": 1 } as CSSProperties}
+                aria-hidden="true"
+              >
+                <i
+                  className="cnt"
+                  style={
+                    {
+                      "--v": data.balance.availablePoints,
+                      "--d": 1,
+                    } as CSSProperties
+                  }
+                />
+              </span>
+              <span className="sub">
+                {data.balance.reservedPoints} в резерве
+              </span>
+            </button>
+          </section>
+        ) : null}
+
+        {data ? (
+          <p className="hint rise" style={{ "--d": 2 } as CSSProperties}>
+            <Info />
+            XP остаются навсегда, баллы тратятся на поощрения
+          </p>
+        ) : null}
+
+        {!guideHidden && data && data.balance.lifetimeXp === 0 ? (
+          <HowItWorks onHide={hideGuide} />
+        ) : null}
+
+        {open.length > 0 ? (
+          <section
+            className="free rise"
+            style={{ "--d": 3 } as CSSProperties}
+            aria-labelledby="home-free-title"
+          >
+            <div className="free-head">
+              <span className="free-ic" aria-hidden="true">
+                <PlusCircle />
+              </span>
+              <div className="free-t">
+                <h3 id="home-free-title">Свободные задачи</h3>
+                <span>
+                  {open.length} {taskWord(open.length)} · до +{freeXp} XP
+                </span>
+              </div>
+            </div>
+            <button type="button" className="cta" onClick={() => go("tasks")}>
+              Взять задачу
+              <Arrow />
+            </button>
+          </section>
+        ) : null}
+
+        {showReview ? (
+          <section
+            className="free rise"
+            style={{ "--d": 3 } as CSSProperties}
+            aria-labelledby="home-review-title"
+          >
+            <div className="free-head">
+              <span className="free-ic" aria-hidden="true">
+                <ReviewList />
+              </span>
+              <div className="free-t">
+                <h3 id="home-review-title">Очередь проверки</h3>
+                <span>
+                  {waiting.data
+                    ? `Ждут решения: ${reviewCount}${waiting.data.more ? " и больше" : ""}.`
+                    : "Число не загрузилось, очередь можно открыть."}
+                </span>
+              </div>
+            </div>
+            <button type="button" className="cta" onClick={() => go("reviews")}>
+              Открыть очередь
+              <Arrow />
+            </button>
+          </section>
+        ) : null}
+
+        {season.data?.self ? (
+          <section
+            className="month rise"
+            style={{ "--d": 4 } as CSSProperties}
+            aria-label={seasonLabel(season.data.season)}
+          >
+            <span className="k">
+              <span className="dot" aria-hidden="true" />
+              {seasonLabel(season.data.season)}
+            </span>
+            <b>
+              <span className="sr">{season.data.self.xp}</span>
+              <i
+                className="cnt"
+                style={
+                  { "--v": season.data.self.xp, "--d": 4 } as CSSProperties
+                }
+                aria-hidden="true"
+              />
+            </b>
+          </section>
+        ) : null}
+      </div>
+
+      {sheet === "level" && data && level ? (
+        <LevelSheet
+          level={level}
+          lifetimeXp={data.balance.lifetimeXp}
+          freeTaskXp={freeXp}
+          showRanking={Boolean(season.data?.self)}
+          onClose={() => setSheet(null)}
+          onTasks={() => go("tasks")}
+        />
+      ) : null}
+      {sheet === "points" && data ? (
+        <PointsSheet
+          available={data.balance.availablePoints}
+          reserved={data.balance.reservedPoints}
+          onClose={() => setSheet(null)}
+          onRewards={() => go("rewards")}
+        />
+      ) : null}
+      {sheet === "help" ? <HelpSheet onClose={() => setSheet(null)} /> : null}
+      {celebrating && data && level ? (
+        <LevelUp
+          level={level}
+          lifetimeXp={data.balance.lifetimeXp}
+          onClose={closeCelebration}
+        />
       ) : null}
     </section>
   );

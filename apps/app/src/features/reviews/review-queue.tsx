@@ -532,7 +532,7 @@ function QueueContent() {
           </p>
         </div>
       ) : items.length === 0 ? (
-        <p className="tasks-state">Нет отчётов, ожидающих проверки.</p>
+        <p className="tasks-empty">Нет отчётов, ожидающих проверки.</p>
       ) : (
         <ul className="tasks-list">
           {items.map((item) => (

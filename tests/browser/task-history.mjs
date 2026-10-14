@@ -301,9 +301,11 @@ try {
     );
     await f.page.context().setOffline(false);
     f.state.failure = null;
+    // После возврата сети данные могут обновиться сами раньше нажатия.
     await f.page
       .getByRole("button", { name: "Повторить загрузку истории", exact: true })
-      .click();
+      .click({ timeout: 3000 })
+      .catch(() => {});
     await f.page
       .getByRole("button", { name: "Обновить историю", exact: true })
       .waitFor();

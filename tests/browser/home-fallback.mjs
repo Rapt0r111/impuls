@@ -32,6 +32,31 @@ export async function mockHomeFallback(page) {
     (url) => url.pathname === "/api/v1/tasks",
     (route) => json(route, 200, { items: [], nextCursor: null }),
   );
+  // Колокольчик и карточка свободных задач читают журнал, заявки и свободные задачи.
+  await page.route(
+    (url) => url.pathname === "/api/v1/me/ledger",
+    (route) =>
+      json(route, 200, {
+        balance: homeFallbackProfile.balance,
+        entries: [],
+        nextCursor: null,
+        asOf: at,
+      }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/v1/me/redemptions",
+    (route) =>
+      json(route, 200, {
+        mode: "synthetic",
+        items: [],
+        nextCursor: null,
+        updatedAt: at,
+      }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/v1/tasks/open",
+    (route) => json(route, 200, { items: [] }),
+  );
   await page.route(
     (url) => url.pathname === "/api/v1/leaderboard",
     (route) =>

@@ -136,6 +136,15 @@ async function fixture(width, mode = "success") {
   await page.route(
     (url) => url.pathname === "/api/v1/me/ledger",
     (route) => {
+      // Колокольчик «Главной» читает короткую выписку (limit=10): к счёту экрана
+      // журнала (limit=20) она не относится.
+      if (new URL(route.request().url()).searchParams.get("limit") === "10")
+        return json(route, {
+          balance,
+          entries: [],
+          nextCursor: null,
+          asOf: at,
+        });
       ledgerReads++;
       if (mode === "ledger-refresh-failed" && ledgerReads > 1)
         return fail(route, 503, "UNAVAILABLE");

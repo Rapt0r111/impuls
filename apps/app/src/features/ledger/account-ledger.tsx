@@ -94,7 +94,7 @@ export function AccountLedger() {
                 </div>
               </dl>
               {entries.length === 0 ? (
-                <p className="tasks-state">
+                <p className="tasks-empty">
                   Начислений пока нет. Они появятся после приёмки результата.
                 </p>
               ) : (

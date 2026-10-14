@@ -35,6 +35,10 @@ import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
 import { MoreScreen, type MoreDestination } from "@/features/more/more-screen";
+import {
+  liveSignals,
+  startLiveSignals,
+} from "@/features/realtime/live-signals";
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -455,7 +459,7 @@ function TaskListContent() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="tasks-state">
+        <p className="tasks-empty">
           {complete
             ? emptyText[segment]
             : "Среди загруженных задач с этим статусом нет. Нажмите «Показать ещё»."}
@@ -756,11 +760,51 @@ function TaskWorkspace() {
   );
 }
 
+// Живое обновление экономит сервер: опрос раз в минуту, только пока приложение
+// на виду и пользователь недавно что-то делал. Через 5 минут без касаний опрос
+// засыпает и просыпается первым же касанием (с мгновенным обновлением). Сразу
+// после возвращения в приложение данные обновляет сам React Query.
+const liveRefreshMs = 60_000;
+// Пока подписка на сигналы жива, опрос — лишь страховка на случай потерянного сигнала.
+const safetyRefreshMs = 5 * 60_000;
+const idleAfterMs = 5 * 60_000;
+const activity = { lastAt: Date.now() };
+const isIdle = () => Date.now() - activity.lastAt > idleAfterMs;
+
 export function TaskList() {
   const [client] = useState(
     () =>
-      new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } }),
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            refetchInterval: () =>
+              isIdle()
+                ? false
+                : liveSignals.connected
+                  ? safetyRefreshMs
+                  : liveRefreshMs,
+            refetchOnWindowFocus: true,
+            refetchOnReconnect: true,
+          },
+        },
+      }),
   );
+  useEffect(() => startLiveSignals(client), [client]);
+  useEffect(() => {
+    const touch = () => {
+      const wasIdle = isIdle();
+      activity.lastAt = Date.now();
+      // Опрос уснул: первое касание обновляет данные и запускает его снова.
+      if (wasIdle) void client.invalidateQueries({ refetchType: "active" });
+    };
+    const events = ["pointerdown", "keydown", "touchstart"] as const;
+    for (const name of events)
+      window.addEventListener(name, touch, { passive: true });
+    return () => {
+      for (const name of events) window.removeEventListener(name, touch);
+    };
+  }, [client]);
   return (
     <QueryClientProvider client={client}>
       <TaskWorkspace />

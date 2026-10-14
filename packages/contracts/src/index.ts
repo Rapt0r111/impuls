@@ -297,3 +297,6 @@ export type {
   RulesPublishResponse,
   RulesResponse,
 } from "./rules";
+
+export { realtimeResponseSchema } from "./realtime";
+export type { RealtimeResponse } from "./realtime";

@@ -87,7 +87,7 @@ for (const width of [320, 390]) {
 
 {
   const { context, page, errors } = await open(404);
-  await page.getByLabel("Доступно баллов").waitFor();
+  await page.getByRole("button", { name: /^Баллы:/ }).waitFor();
   assert.equal(
     await page.getByText("XP за октябрь", { exact: true }).count(),
     0,
@@ -102,7 +102,7 @@ for (const width of [320, 390]) {
   await page.getByRole("heading", { name: "Главная", exact: true }).waitFor({
     state: "detached",
   });
-  assert.equal(await page.getByLabel("Доступно баллов").count(), 0);
+  assert.equal(await page.getByRole("button", { name: /^Баллы:/ }).count(), 0);
   await context.close();
   scenarios++;
 }
@@ -110,7 +110,7 @@ for (const width of [320, 390]) {
 {
   network.down = false;
   const { context, page, errors } = await open(200);
-  await page.getByLabel("Доступно баллов").waitFor();
+  await page.getByRole("button", { name: /^Баллы:/ }).waitFor();
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   await page.getByRole("heading", { name: "Главная", exact: true }).waitFor({
     state: "detached",
@@ -132,7 +132,7 @@ for (const width of [320, 390]) {
   );
   network.down = false;
   await context.setOffline(false);
-  await alert.getByRole("button", { name: "Повторить" }).click();
+  // Данные обновляются сами при возвращении сети: нажимать «Повторить» не нужно.
   await alert.waitFor({ state: "detached" });
   assert.deepEqual(errors, []);
   await context.close();

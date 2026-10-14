@@ -293,9 +293,11 @@ try {
     );
     await f.page.context().setOffline(false);
     f.state.failure = null;
+    // После возврата сети данные могут обновиться сами раньше нажатия.
     await f.region
       .getByRole("button", { name: "Повторить загрузку событий", exact: true })
-      .click();
+      .click({ timeout: 3000 })
+      .catch(() => {});
     await f.region
       .getByRole("button", { name: "Обновить события", exact: true })
       .waitFor();
