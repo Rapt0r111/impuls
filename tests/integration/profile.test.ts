@@ -174,9 +174,11 @@ const url = process.env.TEST_DATABASE_URL,
       availablePoints: 30,
       version: 2,
     });
+    // Past the last configured threshold (250) the next level costs the last span (150).
     expect(p.response.progression.level).toMatchObject({
       level: 3,
-      nextLevelXp: null,
+      nextLevelXp: 400,
+      remainingXp: 150,
     });
     expect([a.task, b.task]).toContain(p.response.firstResult!.task.id);
     expect(

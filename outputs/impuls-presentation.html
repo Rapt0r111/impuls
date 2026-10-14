@@ -413,12 +413,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .topbar-left .brand{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:.09em;color:var(--ink);text-decoration:none}
 .topbar-left .brandmark{width:22px;height:22px;color:var(--mint);flex-shrink:0}
 .brand-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:4px;background:rgba(112,225,194,0.1);color:var(--mint);border:1px solid rgba(112,225,194,0.25);white-space:nowrap}
-.topbar-modes{display:inline-flex;align-items:center;gap:2px;background:#0c1c24;border:1px solid var(--line);border-radius:8px;padding:2px;height:32px}
-.mode-tab{height:26px;padding:0 10px;font-size:11px;font-weight:600;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;transition:all .16s ease}
-.mode-tab .ico{width:13px;height:13px;stroke-width:1.8;color:currentColor}
-.mode-tab:hover:not(.active){color:var(--ink);background:rgba(255,255,255,0.05)}
-.mode-tab.active{background:#17333e;color:var(--ink);border-color:#335360;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
-.mode-tab.active .ico{color:var(--mint)}
+.topbar-modes{display:inline-flex;align-items:center;background:rgba(11,26,34,0.9);border:1px solid rgba(75,105,115,0.42);border-radius:9999px;padding:3px;gap:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.25),0 2px 8px rgba(0,0,0,0.2)}
+.mode-tab{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 13px;font-size:12px;font-weight:600;border-radius:9999px;border:0;background:transparent;color:#92a9b1;cursor:pointer;white-space:nowrap;transition:color .18s ease,background .18s ease,box-shadow .18s ease;user-select:none;-webkit-user-select:none;line-height:1}
+.mode-tab .ico{width:14px;height:14px;stroke:currentColor;color:inherit;stroke-width:2;fill:none;display:block;flex-shrink:0;transition:transform .18s ease}
+.mode-tab:hover:not(.active){color:#edf5f2;background:rgba(255,255,255,0.06)}
+.mode-tab:hover:not(.active) .ico{transform:scale(1.08)}
+.mode-tab.active{background:var(--mint);color:#061518;font-weight:750;box-shadow:0 1px 3px rgba(0,0,0,0.35),0 0 12px rgba(112,225,194,0.3)}
+.mode-tab.active .ico{color:#061518!important;stroke:#061518!important}
 .topbar .toplinks{display:flex;align-items:center;gap:12px;font-size:12px;flex-shrink:0}
 .topbar .toplinks a{text-decoration:none;color:var(--muted);font-size:12px;transition:color .18s;white-space:nowrap}
 .topbar .toplinks a:hover{color:var(--mint)}
@@ -617,42 +618,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 }
 
 /* --- INTERACTIVE PRESENTATION COCKPIT & LIVE ATTENTION ELEMENTS --- */
-.topbar-modes {
-  display: flex;
-  background: #0b1a22;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 3px;
-}
-.mode-tab {
-  background: transparent;
-  border: 0;
-  color: var(--muted);
-  padding: 6px 14px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-  min-height: 38px;
-}
-.mode-tab:hover {
-  color: var(--ink);
-  background: #142832;
-}
-.mode-tab.active {
-  background: var(--mint);
-  color: var(--bg);
-  font-weight: 750;
-  box-shadow: 0 0 14px rgba(112, 225, 194, 0.35);
-}
-@media (max-width: 960px) {
-  .topbar-modes { display: none; }
-}
 
 .cockpit-badge {
   display: inline-flex;
@@ -4214,48 +4179,106 @@ render();
   };
   let userNavigating = false;
   let userNavTimer = null;
+  let currentActiveView = 'demo';
+
+  const setActiveTab = (view) => {
+    if (currentActiveView === view && modeTabs[0]?.classList.contains('active')) return;
+    currentActiveView = view;
+    modeTabs.forEach(t => {
+      const active = t.dataset.view === view;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', String(active));
+    });
+  };
 
   modeTabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      const view = tab.dataset.view;
       userNavigating = true;
       clearTimeout(userNavTimer);
-      userNavTimer = setTimeout(() => { userNavigating = false; }, 800);
-      const view = tab.dataset.view;
-      const target = document.querySelector(viewMap[view] || '#demo');
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      userNavTimer = setTimeout(() => { userNavigating = false; }, 850);
+
+      // If user was in presentation mode, exit it when switching to economy or docs
+      if (view !== 'demo' && document.body.classList.contains('presentation')) {
+        document.body.classList.remove('presentation');
+        const presentToggle = document.getElementById('present-toggle');
+        if (presentToggle) presentToggle.textContent = 'Режим презентации';
       }
-      modeTabs.forEach(t => {
-        const active = t === tab;
-        t.classList.toggle('active', active);
-        t.setAttribute('aria-selected', String(active));
-      });
+
+      setActiveTab(view);
+
+      if (view === 'demo') {
+        const target = document.querySelector('#demo') || document.querySelector('.hero');
+        if (target && window.scrollY > target.offsetTop + 180) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } else {
+        const target = document.querySelector(viewMap[view]);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
     });
   });
 
-  if ('IntersectionObserver' in window) {
-    const sectionObserver = new IntersectionObserver((entries) => {
-      if (userNavigating) return;
-      const visible = entries.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-      if (visible.length === 0) return;
-      const topEntry = visible[0];
-      let activeView = 'demo';
-      if (topEntry.target.id === 'specification') activeView = 'docs';
-      else if (['mechanics', 'team-world', 'rpg-operative', 'rpg-terminal', 'career-matrix'].includes(topEntry.target.id)) activeView = 'economy';
-      else if (topEntry.target.id === 'demo' || topEntry.target.classList.contains('launch')) activeView = 'demo';
+  const updateScrollSpy = () => {
+    if (userNavigating) return;
+    if (document.body.classList.contains('presentation')) {
+      setActiveTab('demo');
+      return;
+    }
 
-      modeTabs.forEach(t => {
-        const active = t.dataset.view === activeView;
-        t.classList.toggle('active', active);
-        t.setAttribute('aria-selected', String(active));
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const windowHeight = window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+
+    // If reached bottom of document, activate docs
+    if (scrollY + windowHeight >= docHeight - 90) {
+      setActiveTab('docs');
+      return;
+    }
+
+    const mechanicsEl = document.getElementById('mechanics');
+    const docsEl = document.getElementById('specification');
+
+    if (!mechanicsEl || !docsEl) return;
+
+    // Threshold offset from viewport top (accounting for topbar 54px + reading headroom)
+    const threshold = 150;
+    const mechanicsTop = mechanicsEl.getBoundingClientRect().top;
+    const docsTop = docsEl.getBoundingClientRect().top;
+
+    let targetView = 'demo';
+    if (docsTop <= threshold) {
+      targetView = 'docs';
+    } else if (mechanicsTop <= threshold) {
+      targetView = 'economy';
+    } else {
+      targetView = 'demo';
+    }
+
+    setActiveTab(targetView);
+  };
+
+  let scrollTicking = false;
+  window.addEventListener('scroll', () => {
+    if (!scrollTicking) {
+      requestAnimationFrame(() => {
+        updateScrollSpy();
+        scrollTicking = false;
       });
-    }, { threshold: [0.1, 0.3, 0.6] });
+      scrollTicking = true;
+    }
+  }, { passive: true });
 
-    ['launch', 'demo', 'mechanics', 'specification'].forEach(id => {
-      const el = document.getElementById(id) || document.querySelector('.' + id);
-      if (el) sectionObserver.observe(el);
-    });
-  }
+  window.addEventListener('resize', () => {
+    updateScrollSpy();
+  }, { passive: true });
+
+  // Initial sync
+  updateScrollSpy();
 
   /* ========================================================
      FLOATING REWARD BADGES & PHONE AURA FX

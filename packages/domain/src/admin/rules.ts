@@ -162,7 +162,7 @@ export function definitionFromSettings(
     progression: settings.levelThresholds
       ? {
           levelThresholds: settings.levelThresholds,
-          ...(settings.levelNames.length
+          ...(settings.levelNames?.length
             ? { levelNames: settings.levelNames }
             : {}),
         }
@@ -305,7 +305,7 @@ export async function publishRules(
       minPercent: input.minPercent,
       bonuses: input.bonuses,
       levelThresholds: input.levelThresholds,
-      levelNames: input.levelNames,
+      levelNames: input.levelNames ?? [],
       openTaskLimit: input.openTaskLimit ?? null,
     };
     if (
