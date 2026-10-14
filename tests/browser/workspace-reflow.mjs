@@ -76,7 +76,7 @@ const views = [
   ["management", "Постановка задач", ".task-mgmt__item"],
   ["catalog", "Управление каталогом", ".admin-catalog-items > li"],
   ["audit", "Журнал действий", ".audit-section"],
-  ["notifications", "Состояние уведомлений", ".notification-counts"],
+  ["notifications", "Состояние уведомлений", ".notification-summary"],
 ];
 
 async function fixture(browser, width) {

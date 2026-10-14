@@ -58,6 +58,18 @@ type Change =
       };
     };
 
+const rightsCount = (n: number) => {
+  const mod10 = n % 10,
+    mod100 = n % 100;
+  return `${n} ${
+    mod10 === 1 && mod100 !== 11
+      ? "право"
+      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+        ? "права"
+        : "прав"
+  }`;
+};
+
 export function AccessAdmin() {
   const {
     accessScopes = [],
@@ -338,203 +350,223 @@ export function AccessAdmin() {
       {data ? (
         <>
           <ul className="admin-catalog-items" aria-label="Участники">
-            {members.map((m) => (
-              <li key={m.userId}>
-                <strong>
-                  {m.displayName}
-                  {m.isSelf ? " (вы)" : ""}
-                </strong>
-                {m.bindings.length ? (
-                  <ul>
-                    {m.bindings.map((b) => (
-                      <li key={b.id} className="access-binding">
-                        <span>
-                          {actionLabels[b.action]}
-                          {b.validUntil
-                            ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
-                            : " · без срока"}
-                        </span>
-                        {data.canManage && !m.isSelf ? (
-                          <button
-                            type="button"
-                            className="tasks-action"
-                            aria-label={`Отозвать: ${actionLabels[b.action]}, ${m.displayName}`}
-                            disabled={Boolean(preview)}
-                            onClick={() => {
-                              if (revokeId === b.id) setRevokeId(null);
-                              else {
-                                setRevokeId(b.id);
-                                setReason("");
+            {members.map((m) => {
+              const bindings = m.bindings.length ? (
+                <ul>
+                  {m.bindings.map((b) => (
+                    <li key={b.id} className="access-binding">
+                      <span>
+                        {actionLabels[b.action]}
+                        {b.validUntil
+                          ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
+                          : " · без срока"}
+                      </span>
+                      {data.canManage && !m.isSelf ? (
+                        <button
+                          type="button"
+                          className="tasks-action"
+                          aria-label={`Отозвать: ${actionLabels[b.action]}, ${m.displayName}`}
+                          disabled={Boolean(preview)}
+                          onClick={() => {
+                            if (revokeId === b.id) setRevokeId(null);
+                            else {
+                              setRevokeId(b.id);
+                              setReason("");
+                            }
+                          }}
+                        >
+                          {revokeId === b.id ? "Не отзывать" : "Отозвать"}
+                        </button>
+                      ) : null}
+                      {revokeId === b.id && !preview ? (
+                        <form
+                          className="catalog-publication tasks-filter"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            stage({
+                              path: "revocations",
+                              summary: `Отозвать «${actionLabels[b.action]}» у ${m.displayName}.`,
+                              body: {
+                                scope,
+                                bindingId: b.id,
+                                expectedVersion: b.version,
+                                reason: reason.trim(),
+                              },
+                            });
+                          }}
+                        >
+                          <div className="catalog-publication-field">
+                            <label htmlFor={`${id}-rr-${b.id}`}>
+                              Основание отзыва
+                            </label>
+                            <textarea
+                              id={`${id}-rr-${b.id}`}
+                              required
+                              maxLength={500}
+                              rows={2}
+                              value={reason}
+                              onChange={(event) =>
+                                setReason(event.target.value)
                               }
-                            }}
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="tasks-action"
+                            disabled={!reason.trim()}
                           >
-                            {revokeId === b.id ? "Не отзывать" : "Отозвать"}
+                            Проверить отзыв
                           </button>
-                        ) : null}
-                        {revokeId === b.id && !preview ? (
-                          <form
-                            className="catalog-publication tasks-filter"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              stage({
-                                path: "revocations",
-                                summary: `Отозвать «${actionLabels[b.action]}» у ${m.displayName}.`,
-                                body: {
-                                  scope,
-                                  bindingId: b.id,
-                                  expectedVersion: b.version,
-                                  reason: reason.trim(),
-                                },
-                              });
-                            }}
-                          >
-                            <div className="catalog-publication-field">
-                              <label htmlFor={`${id}-rr-${b.id}`}>
-                                Основание отзыва
-                              </label>
-                              <textarea
-                                id={`${id}-rr-${b.id}`}
-                                required
-                                maxLength={500}
-                                rows={2}
-                                value={reason}
-                                onChange={(event) =>
-                                  setReason(event.target.value)
-                                }
-                              />
-                            </div>
-                            <button
-                              type="submit"
-                              className="tasks-action"
-                              disabled={!reason.trim()}
-                            >
-                              Проверить отзыв
-                            </button>
-                          </form>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="notification-note">Выданных прав нет.</p>
-                )}
-              </li>
-            ))}
+                        </form>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null;
+              return (
+                <li key={m.userId}>
+                  <strong>
+                    {m.displayName}
+                    {m.isSelf ? " (вы)" : ""}
+                  </strong>
+                  {!bindings ? (
+                    <p className="notification-note">Выданных прав нет.</p>
+                  ) : m.bindings.length > 3 ? (
+                    // Длинный список прав свёрнут, чтобы карточки участников
+                    // оставались короткими.
+                    <details className="access-bindings">
+                      <summary>{rightsCount(m.bindings.length)}</summary>
+                      {bindings}
+                    </details>
+                  ) : (
+                    bindings
+                  )}
+                </li>
+              );
+            })}
           </ul>
           {status ? <p role={blocked ? "alert" : "status"}>{status}</p> : null}
           {data.canManage && !revokeId ? (
             preview ? (
               pendingForm
             ) : (
-              <form
-                className="catalog-publication tasks-filter"
-                aria-labelledby={`${id}-grant`}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const validUntil = until ? new Date(until) : null;
-                  if (validUntil && !(validUntil.getTime() > Date.now())) {
-                    setStatus("Срок права должен быть в будущем.");
-                    return;
-                  }
-                  const held = new Set(
-                    subject?.bindings.map((binding) => binding.action) ?? [],
-                  );
-                  const actions =
-                    action === COMMANDER
-                      ? commanderActions.filter((a) => !held.has(a))
-                      : [action];
-                  if (!actions.length) {
-                    setStatus("У участника уже есть все права командира.");
-                    return;
-                  }
-                  const term = validUntil
-                    ? ` до ${dateTime.format(validUntil)} МСК`
-                    : " без срока";
-                  stage({
-                    path: "grants",
-                    actions,
-                    summary:
+              // Формы свёрнуты: сначала виден список людей и их прав.
+              <details className="access-form">
+                <summary>Выдать право</summary>
+                <form
+                  className="catalog-publication tasks-filter"
+                  aria-labelledby={`${id}-grant`}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const validUntil = until ? new Date(until) : null;
+                    if (validUntil && !(validUntil.getTime() > Date.now())) {
+                      setStatus("Срок права должен быть в будущем.");
+                      return;
+                    }
+                    const held = new Set(
+                      subject?.bindings.map((binding) => binding.action) ?? [],
+                    );
+                    const actions =
                       action === COMMANDER
-                        ? `Сделать ${subject?.displayName ?? ""} командиром${term}: ${actions.map((a) => actionLabels[a as (typeof grantableActions)[number]].toLowerCase()).join(", ")}.`
-                        : `Выдать «${actionLabels[action as (typeof grantableActions)[number]]}» участнику ${subject?.displayName ?? ""}${term}.`,
-                    body: {
-                      scope,
-                      subjectId,
-                      action,
-                      validUntil: validUntil ? validUntil.toISOString() : null,
-                      reason: reason.trim(),
-                    },
-                  });
-                }}
-              >
-                <h4 id={`${id}-grant`}>Выдать право</h4>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-subject`}>Участник</label>
-                  <select
-                    id={`${id}-subject`}
-                    required
-                    value={subjectId}
-                    onChange={(event) => setSubjectId(event.target.value)}
-                  >
-                    <option value="">Выберите участника</option>
-                    {members
-                      .filter((m) => !m.isSelf)
-                      .map((m) => (
-                        <option key={m.userId} value={m.userId}>
-                          {m.displayName}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-action`}>Право</label>
-                  <select
-                    id={`${id}-action`}
-                    value={action}
-                    onChange={(event) => setAction(event.target.value)}
-                  >
-                    <option value={COMMANDER}>
-                      Командир: задачи, проверка, заявки
-                    </option>
-                    <optgroup label="Отдельное право">
-                      {grantableActions.map((a) => (
-                        <option key={a} value={a}>
-                          {actionLabels[a]}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-until`}>
-                    Действует до (необязательно)
-                  </label>
-                  <input
-                    id={`${id}-until`}
-                    type="datetime-local"
-                    value={until}
-                    onChange={(event) => setUntil(event.target.value)}
-                  />
-                </div>
-                <div className="catalog-publication-field">
-                  <label htmlFor={`${id}-reason`}>Основание выдачи</label>
-                  <textarea
-                    id={`${id}-reason`}
-                    required
-                    maxLength={500}
-                    rows={2}
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="tasks-action"
-                  disabled={!subjectId || !reason.trim()}
+                        ? commanderActions.filter((a) => !held.has(a))
+                        : [action];
+                    if (!actions.length) {
+                      setStatus("У участника уже есть все права командира.");
+                      return;
+                    }
+                    const term = validUntil
+                      ? ` до ${dateTime.format(validUntil)} МСК`
+                      : " без срока";
+                    stage({
+                      path: "grants",
+                      actions,
+                      summary:
+                        action === COMMANDER
+                          ? `Сделать ${subject?.displayName ?? ""} командиром${term}: ${actions.map((a) => actionLabels[a as (typeof grantableActions)[number]].toLowerCase()).join(", ")}.`
+                          : `Выдать «${actionLabels[action as (typeof grantableActions)[number]]}» участнику ${subject?.displayName ?? ""}${term}.`,
+                      body: {
+                        scope,
+                        subjectId,
+                        action,
+                        validUntil: validUntil
+                          ? validUntil.toISOString()
+                          : null,
+                        reason: reason.trim(),
+                      },
+                    });
+                  }}
                 >
-                  Проверить выдачу
-                </button>
-              </form>
+                  <h4 id={`${id}-grant`} className="sr-only">
+                    Выдать право
+                  </h4>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-subject`}>Участник</label>
+                    <select
+                      id={`${id}-subject`}
+                      required
+                      value={subjectId}
+                      onChange={(event) => setSubjectId(event.target.value)}
+                    >
+                      <option value="">Выберите участника</option>
+                      {members
+                        .filter((m) => !m.isSelf)
+                        .map((m) => (
+                          <option key={m.userId} value={m.userId}>
+                            {m.displayName}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-action`}>Право</label>
+                    <select
+                      id={`${id}-action`}
+                      value={action}
+                      onChange={(event) => setAction(event.target.value)}
+                    >
+                      <option value={COMMANDER}>
+                        Командир: задачи, проверка, заявки
+                      </option>
+                      <optgroup label="Отдельное право">
+                        {grantableActions.map((a) => (
+                          <option key={a} value={a}>
+                            {actionLabels[a]}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-until`}>
+                      Действует до (необязательно)
+                    </label>
+                    <input
+                      id={`${id}-until`}
+                      type="datetime-local"
+                      value={until}
+                      onChange={(event) => setUntil(event.target.value)}
+                    />
+                  </div>
+                  <div className="catalog-publication-field">
+                    <label htmlFor={`${id}-reason`}>Основание выдачи</label>
+                    <textarea
+                      id={`${id}-reason`}
+                      required
+                      maxLength={500}
+                      rows={2}
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="tasks-action"
+                    disabled={!subjectId || !reason.trim()}
+                  >
+                    Проверить выдачу
+                  </button>
+                </form>
+              </details>
             )
           ) : null}
           {revokeId && preview ? pendingForm : null}
@@ -544,21 +576,24 @@ export function AccessAdmin() {
             </p>
           ) : null}
           {data.canManageMembers ? (
-            <MemberAdmin
-              key={scope}
-              scope={scope}
-              data={data}
-              onDirty={setMemberDirty}
-              onChanged={() => void query.refetch()}
-              onUnavailable={() => {
-                client.setQueriesData<AccessListResponse | null>(
-                  { queryKey: ["admin-access"] },
-                  () => null,
-                );
-                setBlocked(true);
-                setStatus("Управление составом недоступно.");
-              }}
-            />
+            <details className="access-form">
+              <summary>Допуск участников</summary>
+              <MemberAdmin
+                key={scope}
+                scope={scope}
+                data={data}
+                onDirty={setMemberDirty}
+                onChanged={() => void query.refetch()}
+                onUnavailable={() => {
+                  client.setQueriesData<AccessListResponse | null>(
+                    { queryKey: ["admin-access"] },
+                    () => null,
+                  );
+                  setBlocked(true);
+                  setStatus("Управление составом недоступно.");
+                }}
+              />
+            </details>
           ) : null}
         </>
       ) : null}

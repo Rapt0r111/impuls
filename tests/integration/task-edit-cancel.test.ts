@@ -763,6 +763,15 @@ const url = process.env.TEST_DATABASE_URL;
         ]);
         const page = await context.newPage();
         page.setDefaultTimeout(8000);
+        // Подробности задачи свёрнуты; сценарию нужны кнопки правки и отмены.
+        await page.addInitScript(() => {
+          new MutationObserver(() => {
+            for (const d of document.querySelectorAll(
+              "details.task-mgmt__details:not([open])",
+            ))
+              d.open = true;
+          }).observe(document, { childList: true, subtree: true });
+        });
         const errors: string[] = [];
         page.on("pageerror", (e) => errors.push(e.message));
         page.on("dialog", (d) => d.accept());

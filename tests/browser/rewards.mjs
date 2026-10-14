@@ -436,15 +436,20 @@ try {
     else if (mode === "no-scope")
       await f.page.getByText(/Поощрения видны участникам/).waitFor();
     else if (["full", "poor", "pending"].includes(mode)) {
-      const name = {
-        full: "Закончились",
-        poor: "Недостаточно баллов",
-        pending: "Ждёт решения",
-      }[mode];
-      await f.page.getByRole("button", { name, exact: true }).waitFor();
+      // Недоступная покупка — метка или полоса «Не хватает», без кнопки.
+      if (mode === "poor")
+        await f.page.getByText(/^Не хватает \d+ баллов$/).waitFor();
+      else
+        await f.page
+          .locator(".reward-card-state", {
+            hasText: mode === "full" ? "Закончились" : "Ждёт решения",
+          })
+          .waitFor();
       assert.equal(
-        await f.page.getByRole("button", { name, exact: true }).isEnabled(),
-        false,
+        await f.page
+          .getByRole("button", { name: "Получить", exact: true })
+          .count(),
+        0,
       );
     } else
       await f.page

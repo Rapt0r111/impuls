@@ -34,6 +34,15 @@ async function fixture(
     errors = [],
     posts = [],
     memberPosts = [];
+  // Формы выдачи права и допуска свёрнуты; сценарию нужны их поля.
+  await page.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const d of document.querySelectorAll(
+        "details.access-form:not([open])",
+      ))
+        d.open = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
   const membership = "e1111111-1111-4111-8111-111111111111";
   let people = [
     {

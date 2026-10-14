@@ -147,9 +147,7 @@ function ProfileNameForm({ current }: { current: string }) {
             setStatus("");
           }}
         />
-        <p id={`${id}-hint`}>
-          {nameRule}. Имя видно в рейтинге, очереди проверки и журналах.
-        </p>
+        <p id={`${id}-hint`}>{nameRule}.</p>
         <button
           type="submit"
           className="tasks-action"
@@ -246,16 +244,11 @@ export function ParticipantProfile() {
                       value={level.progressXp}
                     />
                     <p className="profile-level-caption">
-                      {number(level.progressXp)} / {number(level.spanXp!)} XP ·
-                      порог следующего уровня {number(level.nextLevelXp)} XP за
-                      всё время.
+                      {number(level.progressXp)} из {number(level.spanXp!)} XP
+                      на этом уровне
                     </p>
                   </>
                 )}
-                <p>
-                  Расчёт учитывает исправления начислений. Смена месяца не
-                  сбрасывает XP.
-                </p>
               </>
             ) : (
               <p>
@@ -280,10 +273,7 @@ export function ParticipantProfile() {
                   </strong>
                 </p>
                 <p>{data.firstResult.task.title}</p>
-                <p>
-                  {date(data.firstResult.grantedAt)} МСК · условие{" "}
-                  {data.firstResult.conditionVersion}
-                </p>
+                <p>{date(data.firstResult.grantedAt)} МСК</p>
                 {data.firstResult.sourceCorrected ? (
                   <p>
                     Сохранено основание первого результата. Начисление по нему
@@ -302,10 +292,6 @@ export function ParticipantProfile() {
                 командиром.
               </p>
             )}
-            <p>
-              Косметическое достижение выдаётся один раз и не добавляет XP или
-              баллы.
-            </p>
           </section>
         </>
       ) : null}

@@ -76,6 +76,13 @@ export function NotificationStatus() {
   const data = !accessError && !hidden ? query.data : null;
   const empty =
     data && Object.values(data.counts).every((value) => value === 0);
+  const queued = data
+    ? data.counts.unclaimed +
+      data.counts.ready +
+      data.counts.processing +
+      data.counts.retry
+    : 0;
+  const problems = data ? data.counts.failed + data.counts.suppressed : 0;
   const errors = data
     ? Object.entries(data.errors).filter(([, value]) => value > 0)
     : [];
@@ -148,19 +155,55 @@ export function NotificationStatus() {
             </p>
           ) : (
             <>
-              <dl className="notification-counts">
-                {Object.entries(data.counts).map(([key, value]) => (
-                  <div key={key}>
-                    <dt>{statusNames[key as keyof typeof statusNames]}</dt>
-                    <dd>{value.toLocaleString("ru-RU")}</dd>
+              {/* Сначала ответ «всё ли дошло» и три числа; разбивка по
+                  восьми статусам — по запросу. */}
+              <div className="notification-summary">
+                <p
+                  className={`notification-verdict notification-verdict--${
+                    problems ? "bad" : queued ? "wait" : "good"
+                  }`}
+                >
+                  {problems
+                    ? `Не доставлено: ${problems.toLocaleString("ru-RU")}.${
+                        errors.length ? " Причины — в блоке ниже." : ""
+                      }`
+                    : queued
+                      ? `Ошибок нет, в очереди ${queued.toLocaleString("ru-RU")}.`
+                      : "Всё доставлено, ошибок нет."}
+                </p>
+                <dl className="notification-tiles">
+                  <div className="notification-tile--good">
+                    <dt>доставлено</dt>
+                    <dd>{data.counts.delivered.toLocaleString("ru-RU")}</dd>
                   </div>
-                ))}
-              </dl>
-              <p className="notification-note">
-                «Доставлено в Telegram» — сообщение принято Telegram. Если
-                получатель ни разу не открывал бота, Telegram сообщение не
-                примет.
-              </p>
+                  <div>
+                    <dt>в очереди</dt>
+                    <dd>{queued.toLocaleString("ru-RU")}</dd>
+                  </div>
+                  <div
+                    className={problems ? "notification-tile--bad" : undefined}
+                  >
+                    <dt>не доставлено</dt>
+                    <dd>{problems.toLocaleString("ru-RU")}</dd>
+                  </div>
+                </dl>
+              </div>
+              <details className="notification-breakdown">
+                <summary>Подробно по статусам</summary>
+                <dl className="notification-counts">
+                  {Object.entries(data.counts).map(([key, value]) => (
+                    <div key={key}>
+                      <dt>{statusNames[key as keyof typeof statusNames]}</dt>
+                      <dd>{value.toLocaleString("ru-RU")}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="notification-note">
+                  «Доставлено в Telegram» — сообщение принято Telegram. Если
+                  получатель ни разу не открывал бота, Telegram сообщение не
+                  примет.
+                </p>
+              </details>
             </>
           )}
           {errors.length ? (

@@ -612,6 +612,15 @@ const url = process.env.TEST_DATABASE_URL,
           },
         ]);
         const page = await context.newPage();
+        // Разбивка по статусам свёрнута; сценарий сверяет счётчики.
+        await page.addInitScript(() => {
+          new MutationObserver(() => {
+            for (const d of document.querySelectorAll(
+              "details.notification-breakdown:not([open])",
+            ))
+              d.open = true;
+          }).observe(document, { childList: true, subtree: true });
+        });
         page.setDefaultTimeout(5000);
         await page.route(
           "https://telegram.org/js/telegram-web-app.js",

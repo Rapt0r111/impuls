@@ -64,6 +64,15 @@ for (const width of [320, 360, 390]) {
     page = await context.newPage(),
     errors = [];
   page.setDefaultTimeout(10000);
+  // Формы выдачи права и допуска свёрнуты; сценарию нужны их поля.
+  await page.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const d of document.querySelectorAll(
+        "details.access-form:not([open])",
+      ))
+        d.open = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
   page.on("pageerror", (e) => errors.push(e.message));
   await context.addCookies([
     { name: "impuls_session", value: token, url: origin },

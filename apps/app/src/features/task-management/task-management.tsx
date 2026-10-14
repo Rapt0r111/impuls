@@ -927,28 +927,13 @@ function TaskRow({
           </span>
         </div>
         <p className="task-mgmt__item-meta">
-          {manyScopes ? `${task.scope.name} · ` : ""}
-          {priorityNames[task.priority]} · до {formatDate(task.dueAt)}
-        </p>
-        <p className="task-mgmt__criteria">{task.criteria}</p>
-        <p className="task-mgmt__item-meta">
-          Фонд: {formatFunds(task)}
-          {task.categoryCode !== NO_CATEGORY
-            ? ` · категория ${task.categoryCode}`
+          {task.priority !== "normal"
+            ? `${priorityNames[task.priority]} · `
             : ""}
+          {task.assignee ? `${task.assignee.displayName} · ` : ""}
+          до {formatDate(task.dueAt)} · {formatFunds(task)}
         </p>
-        {task.assignee && (
-          <p className="task-mgmt__item-meta">
-            Исполнитель: {task.assignee.displayName}
-          </p>
-        )}
       </div>
-      {historyScopeIds?.includes(task.scope.id) && (
-        <>
-          <TaskTimeline taskId={task.id} />
-          <TaskHistory taskId={task.id} />
-        </>
-      )}
       {canAssign && (
         <div className="task-mgmt__assign">
           {scope?.assignees.length ? (
@@ -989,31 +974,55 @@ function TaskRow({
           )}
         </div>
       )}
-      {!changeForm && (
-        <div className="task-mgmt__change-actions">
-          {scope?.canEdit && task.status === "draft" && (
-            <button
-              type="button"
-              className="task-mgmt__button"
-              disabled={disabled}
-              onClick={() => onChange("edit")}
-            >
-              Редактировать черновик
-            </button>
-          )}
-          {scope?.canCancel &&
-            !["accepted", "cancelled"].includes(task.status) && (
+      {/* Критерии, история и редкие действия свёрнуты: в списке видно
+          главное — название, статус, исполнитель, срок и награда. */}
+      <details className="task-mgmt__details">
+        <summary>Подробнее</summary>
+        {manyScopes || task.categoryCode !== NO_CATEGORY ? (
+          <p className="task-mgmt__item-meta">
+            {[
+              manyScopes ? task.scope.name : null,
+              task.categoryCode !== NO_CATEGORY
+                ? `категория ${task.categoryCode}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        ) : null}
+        <p className="task-mgmt__criteria">{task.criteria}</p>
+        {historyScopeIds?.includes(task.scope.id) && (
+          <>
+            <TaskTimeline taskId={task.id} />
+            <TaskHistory taskId={task.id} />
+          </>
+        )}
+        {!changeForm && (
+          <div className="task-mgmt__change-actions">
+            {scope?.canEdit && task.status === "draft" && (
               <button
                 type="button"
                 className="task-mgmt__button"
                 disabled={disabled}
-                onClick={() => onChange("cancel")}
+                onClick={() => onChange("edit")}
               >
-                Отменить задачу
+                Редактировать черновик
               </button>
             )}
-        </div>
-      )}
+            {scope?.canCancel &&
+              !["accepted", "cancelled"].includes(task.status) && (
+                <button
+                  type="button"
+                  className="task-mgmt__button"
+                  disabled={disabled}
+                  onClick={() => onChange("cancel")}
+                >
+                  Отменить задачу
+                </button>
+              )}
+          </div>
+        )}
+      </details>
       {changeForm}
     </li>
   );

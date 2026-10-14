@@ -534,11 +534,6 @@ export function RewardCatalog() {
                       {items.map((item) => {
                         const short =
                           item.price - first.balance.availablePoints;
-                        const pending = requests.find(
-                          (request) =>
-                            request.status === "pending" &&
-                            request.rewardId === item.rewardId,
-                        );
                         const soldOut = item.quota.available === 0;
                         return (
                           <li key={item.id} className="reward-card">
@@ -573,52 +568,30 @@ export function RewardCatalog() {
                                 <span>Не хватает {number(short)} баллов</span>
                               </div>
                             ) : null}
-                            <div className="reward-card-actions">
-                              <button
-                                className="tasks-action task-report-primary"
-                                type="button"
-                                disabled={
-                                  unavailable ||
-                                  catalog.isFetching ||
-                                  item.hasPendingRequest ||
-                                  item.owned ||
-                                  soldOut ||
-                                  first.balance.availablePoints < item.price
-                                }
-                                onClick={() =>
-                                  choose({ action: "reserve", item })
-                                }
-                              >
+                            {item.owned || item.hasPendingRequest || soldOut ? (
+                              // Недоступное действие — короткая метка, а не
+                              // выключенная кнопка: отмена заявки — в «Мои заявки».
+                              <p className="reward-card-state">
                                 {item.owned
                                   ? "Уже получено"
                                   : item.hasPendingRequest
                                     ? "Ждёт решения"
-                                    : soldOut
-                                      ? "Закончились"
-                                      : short > 0
-                                        ? "Недостаточно баллов"
-                                        : "Получить"}
-                              </button>
-                              {pending ? (
+                                    : "Закончились"}
+                              </p>
+                            ) : short > 0 ? null : (
+                              <div className="reward-card-actions">
                                 <button
-                                  className="tasks-action reward-cancel"
+                                  className="tasks-action task-report-primary"
                                   type="button"
-                                  disabled={
-                                    mine.isError ||
-                                    mine.isFetching ||
-                                    mine.isFetchNextPageError
-                                  }
+                                  disabled={unavailable || catalog.isFetching}
                                   onClick={() =>
-                                    choose({
-                                      action: "cancel",
-                                      item: pending,
-                                    })
+                                    choose({ action: "reserve", item })
                                   }
                                 >
-                                  Отменить запрос
+                                  Получить
                                 </button>
-                              ) : null}
-                            </div>
+                              </div>
+                            )}
                           </li>
                         );
                       })}

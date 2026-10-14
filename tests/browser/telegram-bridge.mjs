@@ -144,6 +144,15 @@ async function fixture(width = 390, mode = "modern", role = "participant") {
     reducedMotion: "reduce",
   });
   const errors = [];
+  // Редкие действия строки задачи свёрнуты в «Подробнее»; сценарию нужны кнопки.
+  await page.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const d of document.querySelectorAll(
+        "details.task-mgmt__details:not([open])",
+      ))
+        d.open = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
   page.on("pageerror", (error) => errors.push(error.message));
   const json = (route, body, status = 200) =>
     route.fulfill({

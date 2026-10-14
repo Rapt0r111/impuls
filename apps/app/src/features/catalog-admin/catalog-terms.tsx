@@ -15,6 +15,27 @@ export const catalogDate = (value: string) =>
     timeZone: "Europe/Moscow",
   }).format(new Date(value));
 
+const plural = (n: number, one: string, few: string, many: string) => {
+  const mod10 = n % 10,
+    mod100 = n % 100;
+  return mod10 === 1 && mod100 !== 11
+    ? one
+    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+      ? few
+      : many;
+};
+// Срок резерва хранится в секундах; человеку показываем дни, часы или минуты.
+export function reservationText(seconds: number) {
+  const n = (value: number) => value.toLocaleString("ru-RU");
+  if (seconds % 86400 === 0)
+    return `${n(seconds / 86400)} ${plural(seconds / 86400, "день", "дня", "дней")}`;
+  if (seconds % 3600 === 0)
+    return `${n(seconds / 3600)} ${plural(seconds / 3600, "час", "часа", "часов")}`;
+  if (seconds % 60 === 0)
+    return `${n(seconds / 60)} ${plural(seconds / 60, "минута", "минуты", "минут")}`;
+  return `${n(seconds)} с`;
+}
+
 export function CatalogTerms({
   value,
   label = "Действующие условия",
@@ -56,7 +77,7 @@ export function CatalogTerms({
         <br />
         {value.reservationSeconds === null
           ? "Срок резерва не задан."
-          : `Срок резерва: ${value.reservationSeconds.toLocaleString("ru-RU")} с.`}
+          : `Срок резерва: ${reservationText(value.reservationSeconds)}.`}
       </p>
     </div>
   );

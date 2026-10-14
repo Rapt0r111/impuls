@@ -623,6 +623,15 @@ const origin = process.env.TEST_APP_ORIGIN;
             { name: "impuls_session", value: tokens[2]!, url: origin! },
           ]);
           const page = await context.newPage();
+          // Подробности задачи свёрнуты; сценарию нужна история.
+          await page.addInitScript(() => {
+            new MutationObserver(() => {
+              for (const d of document.querySelectorAll(
+                "details.task-mgmt__details:not([open])",
+              ))
+                d.open = true;
+            }).observe(document, { childList: true, subtree: true });
+          });
           const errors: string[] = [];
           page.on("pageerror", (e) => errors.push(e.message));
           await page.route(

@@ -337,11 +337,7 @@ try {
         await f.page
           .getByRole("button", { name: "Журнал действий", exact: true })
           .click();
-        await f.page
-          .getByText(
-            "Первоначальные выключенные условия, версия 1. Квота при создании не задаётся.",
-          )
-          .waitFor();
+        await f.page.getByText(/Создана выключенной, без мест\./).waitFor();
         await capture(f, `audit-${width}`);
       }
       scenarios++;
