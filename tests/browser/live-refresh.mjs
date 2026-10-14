@@ -13,7 +13,25 @@ const task = {
   fundPoints: 5,
   ruleVersion: 1,
   version: 1,
+  // Назначение попадает в колокольчик, пока ему не больше недели.
+  updatedAt: new Date().toISOString(),
+};
+// Свободная задача, которую участник может взять.
+const freeTask = {
+  id: "c2222222-1111-4111-8111-111111111111",
+  title: "Свободная задача из реального времени",
+  criteria: "Критерии",
+  priority: "normal",
+  dueAt: "2099-10-07T10:00:00.000Z",
+  fundXp: 10,
+  fundPoints: 5,
+  version: 1,
   updatedAt: at,
+  scope: {
+    id: "b1111111-1111-4111-8111-111111111111",
+    kind: "group",
+    name: "Группа",
+  },
 };
 const browser = await chromium.launch();
 let scenarios = 0;
@@ -36,7 +54,7 @@ async function open({ platform, withTask }) {
       contentType: "application/json",
       body: JSON.stringify(body),
     });
-  const state = { tasks: [] };
+  const state = { tasks: [], free: [] };
   await page.route("https://telegram.org/js/telegram-web-app.js", (r) =>
     r.fulfill({
       contentType: "application/javascript",
@@ -80,7 +98,7 @@ async function open({ platform, withTask }) {
         });
       if (p === "/api/v1/tasks")
         return json(r, { items: state.tasks, nextCursor: null });
-      if (p === "/api/v1/tasks/open") return json(r, { items: [] });
+      if (p === "/api/v1/tasks/open") return json(r, { items: state.free });
       if (p === "/api/v1/leaderboard")
         return json(r, {
           mode: "synthetic",
@@ -108,22 +126,30 @@ async function open({ platform, withTask }) {
 }
 
 {
-  // A task assigned while the screen is open shows up without reloading.
+  // Новая свободная задача и новое назначение появляются без перезагрузки.
   const { page, context, state, errors } = await open({ platform: "ios" });
-  // Без задач на «Главной» нет карточки срока и кнопок.
-  await page.getByLabel("Доступно баллов").waitFor();
-  assert.equal(await page.getByText("Ближайший срок").count(), 0);
+  // Без свободных задач на «Главной» нет карточки и кнопки «Взять задачу».
+  await page.getByRole("button", { name: /^Баллы:/ }).waitFor();
+  assert.equal(await page.getByText("Свободные задачи").count(), 0);
   assert.equal(
-    await page.getByRole("button", { name: "Открыть задачу" }).count(),
+    await page.getByRole("button", { name: "Взять задачу" }).count(),
     0,
   );
-  state.tasks = [task];
-  await page.clock.fastForward(61_000);
-  await page.getByText(task.title).waitFor();
   assert.equal(
-    await page.getByRole("button", { name: "Открыть задачу" }).count(),
+    await page.getByRole("button", { name: "Уведомления" }).count(),
     1,
   );
+  state.free = [freeTask];
+  state.tasks = [task];
+  await page.clock.fastForward(61_000);
+  await page.getByText("1 задача · до +10 XP").waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Взять задачу" }).count(),
+    1,
+  );
+  await page
+    .getByRole("button", { name: "Уведомления, новых: 1", exact: true })
+    .waitFor();
   assert.deepEqual(errors, []);
   await context.close();
   scenarios++;

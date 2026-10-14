@@ -66,7 +66,7 @@ const quota = {
   available: 5433,
 };
 const views = [
-  ["home", "Главная", ".home-level"],
+  ["home", "Главная", ".home .level"],
   ["tasks", "Мои задачи", ".tasks-list > li"],
   ["ledger", "Баланс и журнал", ".ledger-balances"],
   ["rewards", "Поощрения", ".reward-card"],
