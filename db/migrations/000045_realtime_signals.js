@@ -70,6 +70,21 @@ const up = (pgm) => {
     $$;
     REVOKE ALL ON FUNCTION impuls.realtime_on_change() FROM PUBLIC;
 
+    -- Роли API Supabase не должны видеть ни секрет, ни функции (у схемы impuls для них нет USAGE,
+    -- здесь права отзываются явно на случай изменения умолчаний).
+    DO $$
+    DECLARE role_name text;
+    BEGIN
+      FOR role_name IN
+        SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated', 'service_role')
+      LOOP
+        EXECUTE format('REVOKE ALL ON impuls.realtime_secret FROM %I', role_name);
+        EXECUTE format(
+          'REVOKE ALL ON FUNCTION impuls.realtime_topic(uuid), impuls.realtime_signal(uuid[], text), impuls.realtime_on_change() FROM %I',
+          role_name);
+      END LOOP;
+    END $$;
+
     ${tables
       .map(
         ([table, events, kind]) => `CREATE TRIGGER ${table}_realtime
