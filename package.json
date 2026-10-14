@@ -43,7 +43,8 @@
     "demo:test": "bun run demo:build && bun work/verify.cjs && bun work/test_features.cjs && bun work/test_new_features.cjs && bun work/test_all_buttons.cjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:bootstrap-owner": "node scripts/bootstrap-owner.mjs",
-    "db:local": "node scripts/local-db.mjs"
+    "db:local": "node scripts/local-db.mjs",
+    "ci:local": "node scripts/local-ci.mjs"
   },
   "devDependencies": {
     "@chenglou/pretext": "^0.0.9",

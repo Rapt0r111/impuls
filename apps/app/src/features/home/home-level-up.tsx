@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
-import { percent, type Level } from "./home-sheets";
+import { levelName, percent, type Level } from "./home-sheets";
 
 // Конфетти макета: смещение, поворот и задержка заданы заранее, чтобы кадры не менялись.
 const bits: [number, number, number, number, string, number, number, string][] =
@@ -99,7 +99,7 @@ export function LevelUp({
 
       <div className="lu-copy">
         <p className="lu-eyebrow">Новый уровень</p>
-        <h2>Уровень {level.level}</h2>
+        <h2>{levelName(level)}</h2>
         <p className="lu-lead">
           Отличная работа! Вы набрали нужный опыт и открыли следующую ступень.
         </p>

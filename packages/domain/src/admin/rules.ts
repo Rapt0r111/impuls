@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import { syntheticLevelThresholds } from "../profile/progression";
+import {
+  LEVEL_NAME_MAX,
+  syntheticLevelNames,
+  syntheticLevelThresholds,
+} from "../profile/progression";
 
 export type RuleSettings = {
   timeZone: string;
@@ -8,6 +12,7 @@ export type RuleSettings = {
   minPercent: number | null;
   bonuses: { code: string; title: string; percent: number }[];
   levelThresholds: number[] | null;
+  levelNames: string[];
   openTaskLimit: number | null;
 };
 export type CurrentRules = RuleSettings & {
@@ -118,6 +123,7 @@ export function settingsFromDefinition(
     minPercent,
     bonuses,
     levelThresholds: syntheticLevelThresholds(rule),
+    levelNames: syntheticLevelNames(rule),
     openTaskLimit: openTaskLimitFrom(rule),
     legacyOptions,
   };
@@ -154,7 +160,12 @@ export function definitionFromSettings(
     // An empty progression keeps "levels are not configured" explicit: without it the
     // profile would fall back to the thresholds of an older version.
     progression: settings.levelThresholds
-      ? { levelThresholds: settings.levelThresholds }
+      ? {
+          levelThresholds: settings.levelThresholds,
+          ...(settings.levelNames?.length
+            ? { levelNames: settings.levelNames }
+            : {}),
+        }
       : {},
   };
 }
@@ -294,6 +305,7 @@ export async function publishRules(
       minPercent: input.minPercent,
       bonuses: input.bonuses,
       levelThresholds: input.levelThresholds,
+      levelNames: input.levelNames ?? [],
       openTaskLimit: input.openTaskLimit ?? null,
     };
     if (
@@ -303,6 +315,8 @@ export async function publishRules(
           mode: "synthetic",
           progression: { levelThresholds: settings.levelThresholds },
         })) ||
+      settings.levelNames.length > (settings.levelThresholds?.length ?? 0) ||
+      settings.levelNames.some((name) => name.length > LEVEL_NAME_MAX) ||
       new Set(settings.bonuses.map((b) => b.code)).size !==
         settings.bonuses.length
     )

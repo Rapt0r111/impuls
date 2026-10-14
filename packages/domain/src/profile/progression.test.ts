@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { levelProgress, syntheticLevelThresholds } from "./progression";
+import {
+  levelProgress,
+  levelTitle,
+  syntheticLevelNames,
+  syntheticLevelThresholds,
+} from "./progression";
 
 describe("synthetic versioned level thresholds", () => {
   it("uses independent boundary results, zero, maximum and safe integer XP", () => {
@@ -9,8 +14,9 @@ describe("synthetic versioned level thresholds", () => {
       [99, 1, 1],
       [100, 2, 150],
       [249, 2, 1],
-      [250, 3, 0],
-      [9007199254740991, 3, 0],
+      [250, 3, 150],
+      [399, 3, 1],
+      [400, 4, 150],
     ]) {
       expect(levelProgress(xp!, steps)).toMatchObject({
         level,
@@ -25,6 +31,19 @@ describe("synthetic versioned level thresholds", () => {
       progressXp: 25,
       spanXp: 150,
     });
+    // Beyond the table every level costs the last configured span (150 here).
+    expect(levelProgress(1000, steps)).toEqual({
+      level: 8,
+      minimumXp: 1000,
+      nextLevelXp: 1150,
+      remainingXp: 150,
+      progressXp: 0,
+      spanXp: 150,
+    });
+    const huge = levelProgress(1_000_000_000_000, steps);
+    expect(huge.level).toBeGreaterThan(8);
+    expect(huge.minimumXp).toBeLessThanOrEqual(1_000_000_000_000);
+    expect(huge.progressXp + huge.remainingXp).toBe(huge.spanXp);
     expect(levelProgress(0, [0])).toEqual({
       level: 1,
       minimumXp: 0,
@@ -59,6 +78,12 @@ describe("synthetic versioned level thresholds", () => {
       { mode: "synthetic", progression: null },
     ])
       expect(syntheticLevelThresholds(rule)).toBeNull();
+    expect(
+      syntheticLevelNames({ progression: { levelNames: ["Новичок", 5] } }),
+    ).toEqual(["Новичок", ""]);
+    expect(levelTitle(["Новичок", ""], 1)).toBe("Новичок");
+    expect(levelTitle(["Новичок", ""], 2)).toBeNull();
+    expect(levelTitle([], 1)).toBeNull();
     expect(() => levelProgress(-1, [0])).toThrow();
     expect(() => levelProgress(0, [0, 0])).toThrow();
   });

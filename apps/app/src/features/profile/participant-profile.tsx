@@ -228,7 +228,7 @@ export function ParticipantProfile() {
                   <span className="profile-level-number" aria-hidden="true">
                     {level.level}
                   </span>
-                  <span>уровень</span>
+                  <span>{level.title ?? "уровень"}</span>
                 </p>
                 {level.nextLevelXp === null ? (
                   <p>Достигнут последний настроенный уровень.</p>

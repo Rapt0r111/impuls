@@ -32,7 +32,13 @@ import {
   writeReadNotes,
   type NoteTarget,
 } from "./home-notes";
-import { HelpSheet, LevelSheet, PointsSheet, percent } from "./home-sheets";
+import {
+  HelpSheet,
+  LevelSheet,
+  PointsSheet,
+  levelName,
+  percent,
+} from "./home-sheets";
 import { HomeTopBar } from "./home-topbar";
 import "./home.css";
 
@@ -231,8 +237,12 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
   if (baseline === null && levelNumber !== null) setBaseline(levelNumber);
   const celebrating =
     levelNumber !== null && baseline !== null && levelNumber > baseline;
+  // Сохраняется только повышение: понижение из-за исправления XP не должно
+  // снова показать праздник при возврате на прежний уровень.
   useEffect(() => {
-    if (levelNumber !== null && !celebrating)
+    if (levelNumber === null || celebrating) return;
+    const seen = readSeenLevel(user.id);
+    if (seen === null || levelNumber > seen)
       writeSeenLevel(user.id, levelNumber);
   }, [levelNumber, celebrating, user.id]);
   const closeCelebration = () => setBaseline(levelNumber);
@@ -305,8 +315,8 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
             style={{ "--d": 0, "--p": `${percent(level)}%` } as CSSProperties}
             aria-label={
               level.nextLevelXp !== null
-                ? `Уровень ${level.level}, до уровня ${level.level + 1} осталось ${level.remainingXp} XP. Подробнее`
-                : `Уровень ${level.level}, высший уровень. Подробнее`
+                ? `${levelName(level)}, до уровня ${level.level + 1} осталось ${level.remainingXp} XP. Подробнее`
+                : `${levelName(level)}, высший уровень. Подробнее`
             }
             onClick={() => setSheet("level")}
           >
@@ -315,7 +325,7 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
                 {level.level}
               </span>
               <span className="lv-text">
-                <span className="lv-title">Уровень {level.level}</span>
+                <span className="lv-title">{levelName(level)}</span>
                 <span className="lv-sub">
                   {level.nextLevelXp !== null
                     ? `До уровня ${level.level + 1} — ${level.remainingXp} XP`

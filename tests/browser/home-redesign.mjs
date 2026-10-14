@@ -15,6 +15,7 @@ const ago = (ms) => new Date(now - ms).toISOString();
 const at = ago(0);
 const level3 = {
   level: 3,
+  title: null,
   minimumXp: 800,
   progressXp: 199,
   spanXp: 400,
@@ -429,6 +430,7 @@ for (const width of [320, 360, 390]) {
   const top = await open({
     level: {
       level: 5,
+      title: null,
       minimumXp: 2000,
       progressXp: 100,
       spanXp: null,
@@ -465,6 +467,7 @@ for (const width of [320, 360, 390]) {
   const zero = await open({
     level: {
       level: 1,
+      title: null,
       minimumXp: 0,
       progressXp: 0,
       spanXp: 400,
@@ -506,6 +509,7 @@ for (const width of [320, 360, 390]) {
     xp: 1200,
     level: {
       level: 4,
+      title: null,
       minimumXp: 1200,
       progressXp: 0,
       spanXp: 400,
@@ -538,6 +542,7 @@ for (const width of [320, 360, 390]) {
     xp: 1200,
     level: {
       level: 4,
+      title: null,
       minimumXp: 1200,
       progressXp: 0,
       spanXp: 400,
