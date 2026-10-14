@@ -450,7 +450,53 @@ for (const width of [320, 360, 390]) {
     await none.page.getByRole("button", { name: /^XP за всё время/ }).count(),
     0,
   );
+  // Карточка и шкала остаются на месте и честно говорят, что пороги не заданы.
+  const placeholder = none.page.getByRole("group", {
+    name: "Уровень не определён: пороги уровней не заданы",
+  });
+  await placeholder.waitFor();
+  await placeholder.getByText("Пороги уровней ещё не заданы").waitFor();
+  assert.equal(await placeholder.locator("button").count(), 0);
+  const scaleBox = await placeholder.locator(".scale").boundingBox();
+  assert.ok(scaleBox && scaleBox.height >= 10 && scaleBox.width > 100);
+  assert.equal(await placeholder.locator(".fill, .knob").count(), 0);
   await none.context.close();
+  // Нулевой XP при заданных уровнях: уровень 1 и пустая шкала, не скрытая карточка.
+  const zero = await open({
+    level: {
+      level: 1,
+      minimumXp: 0,
+      progressXp: 0,
+      spanXp: 400,
+      remainingXp: 400,
+      nextLevelXp: 400,
+    },
+    xp: 0,
+  });
+  await zero.page
+    .getByRole("button", { name: /^Уровень 1, до уровня 2 осталось 400 XP/ })
+    .waitFor();
+  assert.equal(await zero.page.getByRole("progressbar").count(), 1);
+  await zero.context.close();
+  scenarios++;
+}
+
+{
+  // Верхний отступ: без системных зон шапка у верха, как в макете; зоны Telegram соблюдаются.
+  const { page, context } = await open();
+  await page.locator(".home .logo").waitFor();
+  const logoTop = async () =>
+    (await page.locator(".home .logo").boundingBox()).y;
+  assert.ok((await logoTop()) <= 20, `шапка слишком низко: ${await logoTop()}`);
+  await page.evaluate(() => {
+    const root = document.documentElement.style;
+    root.setProperty("--impuls-device-safe-top", "47px");
+    root.setProperty("--impuls-content-safe-top", "56px");
+  });
+  const withSafe = await logoTop();
+  assert.ok(withSafe >= 103, `шапка под кнопками Telegram: ${withSafe}`);
+  assert.ok(withSafe <= 103 + 16, `лишний отступ в Telegram: ${withSafe}`);
+  await context.close();
   scenarios++;
 }
 
