@@ -14,6 +14,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Image from "next/image";
 import { TelegramBridge, type TelegramWebApp } from "@/shared/telegram/web-app";
 import { TelegramBackProvider } from "@/shared/telegram/back-navigation";
 import { SessionContext } from "./session-context";
@@ -296,9 +297,15 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
         <div className="access-shell">
           {state.kind !== "authorized" ? (
             <header className="access-header">
-              <span className="access-logo" aria-hidden="true">
-                И
-              </span>
+              <Image
+                className="access-logo"
+                src="/brand/logo-mark.svg"
+                width={34}
+                height={34}
+                alt=""
+                aria-hidden="true"
+                unoptimized
+              />
               <span className="access-brand">Импульс</span>
             </header>
           ) : null}

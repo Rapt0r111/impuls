@@ -17,6 +17,7 @@
     "build:app": "bun run --cwd apps/app build",
     "build:worker": "bun run --cwd apps/worker build",
     "build:edge": "node scripts/build-edge-worker.mjs",
+    "brand:assets": "node scripts/render-brand-assets.mjs",
     "start": "bun run --cwd apps/app start",
     "worker:simulate": "bun run --cwd apps/worker start --once",
     "worker:watch": "bun run --cwd apps/worker start --watch",

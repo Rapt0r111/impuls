@@ -2,3 +2,4 @@ bun.lock
 apps/app/next-env.d.ts
 apps/app/.next
 apps/worker/dist
+docs/brand/brandbook.html

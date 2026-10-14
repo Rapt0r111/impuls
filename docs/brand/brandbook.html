@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ИМПУЛЬС — Брендбук, логотип, нейминг и промо-кит</title>
+  <style>
+    :root {
+      --color-bg: #08151c;
+      --color-panel: #11262f;
+      --color-surface: #152d37;
+      --color-edge: #23404c;
+      --color-ink: #edf5f2;
+      --color-muted: #8faab4;
+      --color-mint: #70e1c2;
+      --color-mint-deep: #257e6d;
+      --color-gold: #f6d083;
+      --color-gold-tint: rgba(246, 208, 131, 0.15);
+      --color-mint-tint: rgba(112, 225, 194, 0.12);
+      --font-main: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'Consolas', 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-ink);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 80px;
+    }
+
+    /* Ambient glow */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -200px;
+      left: 20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(112, 225, 194, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header.hero {
+      padding: 60px 0 40px;
+      border-bottom: 1px solid var(--color-edge);
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--color-mint-tint);
+      border: 1px solid rgba(112, 225, 194, 0.3);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-mint);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    h1 span {
+      color: var(--color-mint);
+    }
+
+    p.lead {
+      font-size: 18px;
+      color: var(--color-muted);
+      max-width: 720px;
+      line-height: 1.65;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 64px;
+    }
+
+    .section-head {
+      margin-bottom: 24px;
+    }
+
+    .section-head h2 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-head p {
+      color: var(--color-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* Cards & Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--color-panel);
+      border: 1px solid var(--color-edge);
+      border-radius: 20px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Logo showcase cards */
+    .logo-preview-box {
+      background: #050d12;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 32px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      margin-bottom: 16px;
+      transition: background 0.2s ease;
+    }
+
+    .logo-preview-box img,
+    .logo-preview-box svg {
+      max-width: 100%;
+      height: auto;
+      max-height: 180px;
+      display: block;
+    }
+
+    .logo-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--color-mint);
+      color: #08151c;
+    }
+    .btn-primary:hover {
+      background: #8bf0d4;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--color-surface);
+      color: var(--color-ink);
+      border: 1px solid var(--color-edge);
+    }
+    .btn-secondary:hover {
+      background: #1c3b48;
+    }
+
+    /* Size tests */
+    .size-test-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--color-surface);
+      padding: 14px 20px;
+      border-radius: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .size-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--color-muted);
+    }
+
+    /* Color Swatches */
+    .swatch {
+      height: 90px;
+      border-radius: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Copy boxes */
+    .copy-box {
+      background: #061016;
+      border: 1px solid var(--color-edge);
+      border-radius: 14px;
+      padding: 18px;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+      font-family: var(--font-main);
+      color: #dbe7eb;
+    }
+
+    .copy-box strong {
+      color: #ffffff;
+    }
+
+    .copy-box .tag-highlight {
+      color: var(--color-mint);
+      font-weight: 700;
+    }
+
+    .copy-box .gold-highlight {
+      color: var(--color-gold);
+      font-weight: 700;
+    }
+
+    /* Promo Banners Preview */
+    .banner-preview-img {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--color-edge);
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--color-edge);
+    }
+
+    th {
+      color: var(--color-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    td strong {
+      color: var(--color-ink);
+    }
+
+    /* Status badge pill */
+    .status-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--color-mint-tint);
+      color: var(--color-mint);
+    }
+
+    .status-gold {
+      background: var(--color-gold-tint);
+      color: var(--color-gold);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <header class="hero">
+      <div class="badge">Брендбук &amp; Рекламный пакет</div>
+      <h1>ИМПУЛЬС: <span>Айдентика, Нейминг и Промо</span></h1>
+      <p class="lead">
+        Полный комплект фирменного стиля, векторных логотипов, позиционирования и готовых рекламных материалов для Telegram Mini App научной роты.
+      </p>
+    </header>
+
+    <!-- SECTION 1: ЛОГОТИПЫ -->
+    <section id="logos">
+      <div class="section-head">
+        <h2>1. Комплект логотипов (SVG Векторы)</h2>
+        <p>Высокотехнологичный знак: буква «И», совмещённая с энергетическим импульсом/осциллограммой, шевронной геометрией и золотым узлом признания.</p>
+      </div>
+
+      <div class="grid-3">
+        <!-- Logo 1: Standalone Mark -->
+        <div class="card">
+          <div class="card-title">
+            <span>Знак / Аватарка (512×512)</span>
+            <span class="status-pill">Основной</span>
+          </div>
+          <div class="logo-preview-box">
+            <img src="logo-mark.svg" alt="Логотип Импульс — Знак" width="160" height="160" />
+          </div>
+          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 16px;">
+            Иконка для Telegram-бота, аватарки канала, фавиконки и экранов загрузки.
+          </p>
+          <div class="logo-actions">
+            <a href="logo-mark.svg" download="impuls-mark.svg" class="btn btn-primary">Скачать SVG</a>
+            <button class="btn btn-secondary" onclick="copyFile('logo-mark.svg', this)">Копировать код</button>
+          </div>
+        </div>
+
+        <!-- Logo 2: Horizontal Wordmark -->
+        <div class="card">
+          <div class="card-title">
+            <span>Горизонтальный блок</span>
+            <span class="status-pill">Для шапки / сайта</span>
+          </div>
+          <div class="logo-preview-box">
+            <img src="logo-horizontal.svg" alt="Горизонтальный логотип Импульс" style="max-height: 80px;" />
+          </div>
+          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 16px;">
+            Фирменный блок со знаком, названием «ИМПУЛЬС» и дескриптором для шапки сервиса.
+          </p>
+          <div class="logo-actions">
+            <a href="logo-horizontal.svg" download="impuls-horizontal.svg" class="btn btn-primary">Скачать SVG</a>
+            <button class="btn btn-secondary" onclick="copyFile('logo-horizontal.svg', this)">Копировать код</button>
+          </div>
+        </div>
+
+        <!-- Logo 3: Tactical Badge -->
+        <div class="card">
+          <div class="card-title">
+            <span>Тактический шеврон</span>
+            <span class="status-pill status-gold">Мерч / Постеры</span>
+          </div>
+          <div class="logo-preview-box">
+            <img src="logo-badge.svg" alt="Шеврон Импульс" style="max-height: 170px;" />
+          </div>
+          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 16px;">
+            Эмблема для презентаций, сертификатов, физических нашивок и наградных грамот.
+          </p>
+          <div class="logo-actions">
+            <a href="logo-badge.svg" download="impuls-badge.svg" class="btn btn-primary">Скачать SVG</a>
+            <button class="btn btn-secondary" onclick="copyFile('logo-badge.svg', this)">Копировать код</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Size test -->
+      <div class="card" style="margin-top: 24px;">
+        <div class="card-title">Тест читаемости знака в микро-размерах интерфейса</div>
+        <div class="size-test-bar">
+          <div class="size-item">
+            <img src="logo-mark.svg" width="64" height="64" alt="64px" />
+            <span>64 px (Виджет)</span>
+          </div>
+          <div class="size-item">
+            <img src="logo-mark.svg" width="44" height="44" alt="44px" />
+            <span>44 px (Аватар в чате)</span>
+          </div>
+          <div class="size-item">
+            <img src="logo-mark.svg" width="32" height="32" alt="32px" />
+            <span>32 px (Шапка Mini App)</span>
+          </div>
+          <div class="size-item">
+            <img src="logo-mark.svg" width="24" height="24" alt="24px" />
+            <span>24 px (Иконка строки)</span>
+          </div>
+          <div class="size-item">
+            <img src="logo-mark.svg" width="16" height="16" alt="16px" />
+            <span>16 px (Фавикон)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: НЕЙМИНГ И ПОЗИЦИОНИРОВАНИЕ -->
+    <section id="naming">
+      <div class="section-head">
+        <h2>2. Нейминг и слоганы</h2>
+        <p>Семантическая проработка названия «Импульс», альтернативные варианты и рекламные слоганы для разных целевых групп.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title">Смысловая архитектура названия «ИМПУЛЬС»</div>
+        <div class="grid-3" style="margin-top: 16px;">
+          <div>
+            <strong style="color: var(--color-mint);">1. Научно-технический смысл</strong>
+            <p style="font-size: 13px; color: var(--color-muted); margin-top: 6px;">
+              Импульс в физике (\(p = mv\)) — мера механического движения и воздействия. В электронике — сигнал, запускающий процесс. Олицетворяет научную деятельность роты.
+            </p>
+          </div>
+          <div>
+            <strong style="color: var(--color-mint);">2. Служебный смысл</strong>
+            <p style="font-size: 13px; color: var(--color-muted); margin-top: 6px;">
+              «Импульс к действию» — побуждение к проявлению инициативы, качественному закрытию задач и профессиональному росту военнослужащего.
+            </p>
+          </div>
+          <div>
+            <strong style="color: var(--color-gold);">3. Игровой и командный смысл</strong>
+            <p style="font-size: 13px; color: var(--color-muted); margin-top: 6px;">
+              Вклад каждого бойца складывается в общий импульс развития лаборатории/роты. Начисление XP и баллов дает ритм и динамику.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Naming Matrix Table -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title">Матрица вариантов нейминга (для выбора владельцем проекта)</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Название</th>
+              <th>Характер / Тон</th>
+              <th>Плюсы</th>
+              <th>Дескриптор</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>ИМПУЛЬС</strong> (IMPULSE)</td>
+              <td>Динамичный, энергичный, научный</td>
+              <td>Уже зафиксирован в коде и планах; ёмкое слово; легко запоминается</td>
+              <td>Система признания и задач научной роты</td>
+              <td><span class="status-pill">Рекомендовано</span></td>
+            </tr>
+            <tr>
+              <td><strong>ВЕКТОР-Н</strong> (VECTOR)</td>
+              <td>Строгий, геометрический, военный</td>
+              <td>Прямая ассоциация с направлением движения и целеустремленностью</td>
+              <td>Платформа координации исследований</td>
+              <td><span class="status-pill status-gold">Альтернатива 1</span></td>
+            </tr>
+            <tr>
+              <td><strong>СИНТЕЗ</strong> (SYNTHESIS)</td>
+              <td>Академичный, глубокий, основательный</td>
+              <td>Синтез службы и науки, синтез личного вклада в общий результат</td>
+              <td>Цифровая среда достижений научной роты</td>
+              <td><span class="status-pill status-gold">Альтернатива 2</span></td>
+            </tr>
+            <tr>
+              <td><strong>КВАНТ</strong> (QUANT)</td>
+              <td>Лаконичный, технологичный, дискретный</td>
+              <td>Ассоциация с квантованием результатов (каждая задача — квант вклада)</td>
+              <td>Учёт результатов и наград</td>
+              <td><span class="status-pill status-gold">Альтернатива 3</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Slogans Grid -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Рекламные слоганы для бойцов (исследователей)</div>
+          <ul style="padding-left: 20px; font-size: 14px; color: var(--color-muted); line-height: 2;">
+            <li><strong style="color: #fff;">«Твой вклад в науку и службу имеет вес»</strong> — главный слоган.</li>
+            <li>«Решай задачи. Повышай уровень. Открывай поощрения».</li>
+            <li>«Твой код и исследования работают на твой статус».</li>
+            <li>«Прозрачные правила: награда и критерии известны до старта».</li>
+            <li>«Опыт не сгорает. Баллы работают».</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Слоганы для командиров и руководства</div>
+          <ul style="padding-left: 20px; font-size: 14px; color: var(--color-muted); line-height: 2;">
+            <li><strong style="color: #fff;">«Прозрачный учёт — заслуженное признание»</strong>.</li>
+            <li>«От постановки задачи до приёмки в один клик прямо в Telegram».</li>
+            <li>«Объективная картина вклада каждого бойца в НИР и регламентные работы».</li>
+            <li>«Гибкая настройка премий и целевых бонусов при приёмке».</li>
+            <li>«Полная история и защита от несогласованных начислений».</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: РЕКЛАМНЫЕ КРЕАТИВЫ И БАННЕРЫ -->
+    <section id="advertising">
+      <div class="section-head">
+        <h2>3. Рекламные баннеры и креативы</h2>
+        <p>Готовые графические баннеры в векторном формате SVG для анонсов, каналов и презентаций.</p>
+      </div>
+
+      <div class="grid-2">
+        <!-- Banner 1: Square -->
+        <div class="card">
+          <div class="card-title">
+            <span>Квадратный креатив (1080×1080)</span>
+            <span class="status-pill">Для Telegram-постов</span>
+          </div>
+          <img src="promo-banner-post.svg" class="banner-preview-img" alt="Промо-баннер 1080x1080" />
+          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 16px;">
+            Оптимизирован для публикации в Telegram-каналах и чатах роты. Демонстрирует карточку задачи, кошелёк баллов и ключевые преимущества.
+          </p>
+          <div class="logo-actions">
+            <a href="promo-banner-post.svg" download="impuls-promo-post.svg" class="btn btn-primary">Скачать баннер SVG</a>
+            <a href="promo-banner-post.svg" target="_blank" class="btn btn-secondary">Открыть оригинал</a>
+          </div>
+        </div>
+
+        <!-- Banner 2: Landscape -->
+        <div class="card">
+          <div class="card-title">
+            <span>Горизонтальный баннер (1200×630)</span>
+            <span class="status-pill">Превью ссылок / Слайды</span>
+          </div>
+          <img src="promo-banner-landscape.svg" class="banner-preview-img" alt="Горизонтальный промо-баннер" />
+          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 16px;">
+            Стандарт Open Graph (OG) для превью ссылки при отправке в Telegram, а также титульный баннер для слайдов презентации.
+          </p>
+          <div class="logo-actions">
+            <a href="promo-banner-landscape.svg" download="impuls-promo-landscape.svg" class="btn btn-primary">Скачать баннер SVG</a>
+            <a href="promo-banner-landscape.svg" target="_blank" class="btn btn-secondary">Открыть оригинал</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: ГОТОВЫЕ ПРОМО-ТЕКСТЫ ДЛЯ TELEGRAM -->
+    <section id="promo-copy">
+      <div class="section-head">
+        <h2>4. Готовые рекламные тексты и сценарии анонсов</h2>
+        <p>Готовые к отправке посты в закрытые каналы и чаты научной роты (со смайликами, форматированием и призывами к действию).</p>
+      </div>
+
+      <!-- Post 1: Announcement / Launch -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title">
+          <span>Пост 1: Официальный запуск сервиса в роте</span>
+          <button class="btn btn-secondary" onclick="copyText('post1-text', this)">Копировать текст</button>
+        </div>
+        <div id="post1-text" class="copy-box">🚀 <strong>НАУЧНАЯ РОТА: ВСТРЕЧАЙТЕ СЕРВИС «ИМПУЛЬС»</strong>
+
+Парни, теперь весь учёт наших задач, исследований и повседневной работы собран в одном месте — прямо в Telegram!
+
+«Импульс» — это интерактивный сервис, где твой личный вклад виден командованию, приносит несгораемый опыт и открывает доступ к каталогу поощрений.
+
+<span class="tag-highlight">ЧТО ВНУТРИ:</span>
+⚡️ <strong>Задачи и НИР:</strong> Бери задачи из свободного пула роты или выполняй назначенные. Критерии приёмки и награда известны заранее!
+📈 <strong>Уровни и XP:</strong> Получай опыт за принятые результаты. Чем сложнее задача — тем выше твой статус в рейтинге месяца.
+🎁 <strong>Каталог поощрений:</strong> Зарабатывай баллы и подавай заявки на увольнения, благодарности роты, грамоты и особые привилегии.
+🤝 <strong>Импульс-Спасибо:</strong> Благодари сослуживцев за помощь в проектах.
+
+Никаких сторонних приложений устанавливать не нужно — сервис запускается в 1 клик внутри Telegram.
+
+👉 <strong>Запустить сервис:</strong> @impuls_bot
+<em>(Доступ открыт для участников закрытого пилота)</em></div>
+      </div>
+
+      <!-- Post 2: Quick Start Guide -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title">
+          <span>Пост 2: Экспресс-онбординг (Как забрать первое поощрение)</span>
+          <button class="btn btn-secondary" onclick="copyText('post2-text', this)">Копировать текст</button>
+        </div>
+        <div id="post2-text" class="copy-box">💡 <strong>КАК РАБОТАЕТ «ИМПУЛЬС»: 3 ШАГА ДО ПЕРВОГО ПООЩРЕНИЯ</strong>
+
+Новичок в сервисе? Вот простая инструкция, как превратить свои строчки кода или отчёт по НИР в реальные бонусы:
+
+1️⃣ <strong>Возьми задачу в работу</strong>
+Заходи во вкладку «Задачи». Там есть назначенные командиром поручения и свободный пул. У каждой задачи указана сложность (от S до XXL) и точная награда (например, +150 XP и +50 баллов).
+
+2️⃣ <strong>Сдай результат</strong>
+Закончил этап или проект? Жми «Сдать результат», прикрепляй ссылку или текстовый отчёт. Командир проверит соответствие критериям и начислит награду. За выдающиеся результаты командир может выдать дифференцированный бонус!
+
+3️⃣ <strong>Загляни в «Каталог»</strong>
+Опыт (XP) двигает тебя в Зал Славы месяца, а Баллы попадают на баланс кошелька. В каталоге выбирай желаемое поощрение (например, внеочередное увольнение) и жми «Зарезервировать». 
+
+Заходи прямо сейчас и проверь свои текущие задачи: @impuls_bot</div>
+      </div>
+
+      <!-- Post 3: For Commanders -->
+      <div class="card">
+        <div class="card-title">
+          <span>Пост 3: Инструкция для командиров (Управление и приёмка)</span>
+          <button class="btn btn-secondary" onclick="copyText('post3-text', this)">Копировать текст</button>
+        </div>
+        <div id="post3-text" class="copy-box">📋 <strong>ДЛЯ КОМАНДНОГО СОСТАВА: РЕЖИМ ПРИЁМКИ И НАЗНАЧЕНИЯ</strong>
+
+«Импульс» создан для того, чтобы снять рутину контроля и дать прозрачный инструмент мотивации личного состава:
+
+🔹 <strong>Очередь проверки:</strong> все сданные результаты задач и этапных вех аккуратно сгруппированы в разделе «Проверка отчётов». Вы видите точное время сдачи и приложенные материалы.
+🔹 <strong>Гибкая корректировка наград:</strong> на этапе приёмки вы можете скорректировать базовые баллы с учётом реальной сложности и выбрать один из 8 вариантов поощрительных бонусов.
+🔹 <strong>Заявки на поощрения:</strong> запросы бойцов на увольнения и статусы поступают в единый реестр с проверкой квот мест и резервированием баллов.
+🔹 <strong>Инициативы снизу:</strong> военнослужащие могут предлагать рационализаторские инициативы — утверждайте их в 1 клик, превращая в официальные задачи роты.</div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: ФИРМЕННЫЙ СТИЛЬ И ЦВЕТА -->
+    <section id="identity">
+      <div class="section-head">
+        <h2>5. Фирменная палитра и типографика</h2>
+        <p>Палитра выдержана в концепции «технологичного исследовательского центра» с глубоким морским фоном и мятно-золотыми акцентами.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="swatch" style="background: #08151c; color: #edf5f2;">#08151C</div>
+          <strong>Deep Navy (Фон)</strong>
+          <p style="font-size: 12px; color: var(--color-muted);">Основной цвет холста и шапки Telegram WebView.</p>
+        </div>
+
+        <div class="card">
+          <div class="swatch" style="background: #11262f; color: #edf5f2;">#11262F</div>
+          <strong>Panel Cyan (Панели)</strong>
+          <p style="font-size: 12px; color: var(--color-muted);">Поверхности карточек, меню и списков задач.</p>
+        </div>
+
+        <div class="card">
+          <div class="swatch" style="background: #70e1c2; color: #08151c;">#70E1C2</div>
+          <strong>Mint Cyan (Действие/XP)</strong>
+          <p style="font-size: 12px; color: var(--color-muted);">Главные кнопки, шкалы прогресса и акценты энергии.</p>
+        </div>
+
+        <div class="card">
+          <div class="swatch" style="background: #f6d083; color: #08151c;">#F6D083</div>
+          <strong>Warm Gold (Баллы/Награды)</strong>
+          <p style="font-size: 12px; color: var(--color-muted);">Расходуемые баллы кошелька, призовые места и бейджи.</p>
+        </div>
+
+        <div class="card">
+          <div class="swatch" style="background: #edf5f2; color: #08151c;">#EDF5F2</div>
+          <strong>Ice White (Заголовки)</strong>
+          <p style="font-size: 12px; color: var(--color-muted);">Высококонтрастный текст первого уровня.</p>
+        </div>
+
+        <div class="card">
+          <div class="swatch" style="background: #8faab4; color: #08151c;">#8FAAB4</div>
+          <strong>Slate Muted (Подписи)</strong>
+          <p style="font-size: 12px; color: var(--color-muted);">Вторичные подписи, метаданные и метки времени.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    async function copyFile(filename, btn) {
+      try {
+        const resp = await fetch(filename);
+        const text = await resp.text();
+        await navigator.clipboard.writeText(text);
+        const orig = btn.innerText;
+        btn.innerText = 'Скопировано!';
+        setTimeout(() => { btn.innerText = orig; }, 1800);
+      } catch (e) {
+        alert('Не удалось скопировать. Пожалуйста, скачайте файл.');
+      }
+    }
+
+    function copyText(elemId, btn) {
+      const text = document.getElementById(elemId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Скопировано!';
+        setTimeout(() => { btn.innerText = orig; }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>
