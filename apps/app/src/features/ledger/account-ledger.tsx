@@ -54,14 +54,16 @@ export function AccountLedger() {
           <h2 id="ledger-title">Баланс и журнал</h2>
           <p>XP растёт за принятые задачи, баллы тратятся на поощрения.</p>
         </div>
-        <button
-          type="button"
-          className="tasks-action"
-          disabled={query.isFetching}
-          onClick={() => void query.refetch()}
-        >
-          Обновить журнал
-        </button>
+        {entries.length > 0 ? (
+          <button
+            type="button"
+            className="tasks-action"
+            disabled={query.isFetching}
+            onClick={() => void query.refetch()}
+          >
+            Обновить журнал
+          </button>
+        ) : null}
       </div>
       {query.isPending ? (
         <p role="status">Загружаем журнал…</p>

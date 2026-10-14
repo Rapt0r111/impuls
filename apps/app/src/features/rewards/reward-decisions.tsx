@@ -238,32 +238,34 @@ export function RewardDecisions({
               : "Одобрите или отклоните заявку. При отказе баллы вернутся участнику."}
           </p>
         </div>
-        <button
-          type="button"
-          className="tasks-action"
-          disabled={locked || selection !== null || queue.isFetching}
-          onClick={() => {
-            client.setQueryData<
-              InfiniteData<RedemptionReviewResponse, string | null>
-            >(
-              [
-                fulfilling ? "redemption-fulfillment" : "redemption-review",
-                scope,
-              ],
-              (data) =>
-                data
-                  ? {
-                      ...data,
-                      pages: data.pages.slice(0, 1),
-                      pageParams: [null],
-                    }
-                  : data,
-            );
-            void queue.refetch();
-          }}
-        >
-          Обновить очередь
-        </button>
+        {items.length > 0 || unavailable ? (
+          <button
+            type="button"
+            className="tasks-action"
+            disabled={locked || selection !== null || queue.isFetching}
+            onClick={() => {
+              client.setQueryData<
+                InfiniteData<RedemptionReviewResponse, string | null>
+              >(
+                [
+                  fulfilling ? "redemption-fulfillment" : "redemption-review",
+                  scope,
+                ],
+                (data) =>
+                  data
+                    ? {
+                        ...data,
+                        pages: data.pages.slice(0, 1),
+                        pageParams: [null],
+                      }
+                    : data,
+              );
+              void queue.refetch();
+            }}
+          >
+            Обновить очередь
+          </button>
+        ) : null}
       </div>
       {message && (
         <p

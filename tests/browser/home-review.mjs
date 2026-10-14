@@ -11,7 +11,7 @@ const scope = {
 const browser = await chromium.launch();
 let scenarios = 0;
 
-async function open(width, reviewer) {
+async function open(width, reviewer, waiting = 0) {
   const context = await browser.newContext({
     viewport: { width, height: 850 },
     reducedMotion: "reduce",
@@ -69,7 +69,33 @@ async function open(width, reviewer) {
     (u) => u.pathname === "/api/v1/reviews",
     (r) => {
       requests.push(r.request().url());
-      return json(r, { items: [], nextCursor: null });
+      return json(r, {
+        items: Array.from({ length: waiting }, (_, i) => ({
+          submissionId: `d${i}111111-1111-4111-8111-111111111111`,
+          text: "Отчёт",
+          submittedAt: "2026-10-06T10:00:00.000Z",
+          attemptNumber: 1,
+          author: {
+            id: "e1111111-1111-4111-8111-111111111111",
+            displayName: "Иванов",
+          },
+          task: {
+            id: `f${i}111111-1111-4111-8111-111111111111`,
+            title: "Задача",
+            status: "in_review",
+            priority: "normal",
+            dueAt: "2026-10-07T10:00:00.000Z",
+            fundXp: 10,
+            fundPoints: 5,
+            ruleVersion: 1,
+            version: 1,
+            updatedAt: "2026-10-06T10:00:00.000Z",
+            criteria: "Критерии",
+            scope,
+          },
+        })),
+        nextCursor: null,
+      });
     },
   );
   await page.goto(origin);
@@ -79,9 +105,9 @@ async function open(width, reviewer) {
 
 for (const width of [320, 360, 390]) {
   // A reviewer sees the queue on Home, with the count, and can open it.
-  const { page, context, errors } = await open(width, true);
+  const { page, context, errors } = await open(width, true, 2);
   await page.getByRole("heading", { name: "Очередь проверки" }).waitFor();
-  await page.getByText("Сейчас отчётов на проверке нет.").waitFor();
+  await page.getByText("Ждут решения: 2.").waitFor();
   assert.ok(
     (await page.evaluate(() => document.documentElement.scrollWidth)) <= width,
     `horizontal overflow at ${width}`,
@@ -89,6 +115,20 @@ for (const width of [320, 360, 390]) {
   await page.getByRole("button", { name: "Открыть очередь" }).click();
   await page.locator("#reviews-title").waitFor();
   assert.deepEqual(errors, []);
+  await context.close();
+  scenarios++;
+}
+
+{
+  // A reviewer with an empty queue gets no card and no button on Home.
+  const { page, context } = await open(390, true, 0);
+  await page.getByRole("heading", { name: "Главная" }).waitFor();
+  await page.waitForTimeout(500);
+  assert.equal(await page.getByText("Очередь проверки").count(), 0);
+  assert.equal(
+    await page.getByRole("button", { name: "Открыть очередь" }).count(),
+    0,
+  );
   await context.close();
   scenarios++;
 }

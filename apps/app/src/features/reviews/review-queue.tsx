@@ -504,18 +504,20 @@ function QueueContent() {
           <h2 id="reviews-title">Очередь проверки</h2>
           <p>Отчёты участников. Собственные результаты исключены.</p>
         </div>
-        <button
-          className="tasks-action"
-          type="button"
-          onClick={() => {
-            if (confirmLeave()) {
-              setSelected(null);
-              void queue.refetch();
-            }
-          }}
-        >
-          Обновить очередь
-        </button>
+        {items.length > 0 ? (
+          <button
+            className="tasks-action"
+            type="button"
+            onClick={() => {
+              if (confirmLeave()) {
+                setSelected(null);
+                void queue.refetch();
+              }
+            }}
+          >
+            Обновить очередь
+          </button>
+        ) : null}
       </div>
       {queue.isPending ? (
         <p role="status">Загружаем отчёты…</p>
