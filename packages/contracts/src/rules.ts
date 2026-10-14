@@ -42,20 +42,31 @@ const fields = {
     ),
   // null — levels are not configured, the profile shows that honestly.
   levelThresholds: thresholds.nullable(),
+  // Names of the configured levels from the first one; an empty string means no name.
+  levelNames: z.array(z.string().trim().max(40)).max(100).default([]),
   // How many self-taken free tasks one participant may keep unfinished; null — no limit.
   openTaskLimit: z.number().int().min(1).max(50).nullable().default(null),
 };
-export const rulesPublishRequestSchema = z.strictObject({
-  ...fields,
-  reason: z.string().trim().min(1).max(2000),
-});
-export const currentRulesSchema = z.strictObject({
-  versionNumber: z.number().int().positive(),
-  effectiveFrom: z.iso.datetime(),
-  ...fields,
-  // The latest version uses absolute amounts from an earlier slice: publishing replaces them.
-  legacyOptions: z.boolean(),
-});
+// A name is kept only for a level that exists: names never outnumber the thresholds.
+const namesFitLevels = (value: {
+  levelThresholds: number[] | null;
+  levelNames: string[];
+}) => value.levelNames.length <= (value.levelThresholds?.length ?? 0);
+export const rulesPublishRequestSchema = z
+  .strictObject({
+    ...fields,
+    reason: z.string().trim().min(1).max(2000),
+  })
+  .refine(namesFitLevels, "Названий больше, чем уровней");
+export const currentRulesSchema = z
+  .strictObject({
+    versionNumber: z.number().int().positive(),
+    effectiveFrom: z.iso.datetime(),
+    ...fields,
+    // The latest version uses absolute amounts from an earlier slice: publishing replaces them.
+    legacyOptions: z.boolean(),
+  })
+  .refine(namesFitLevels, "Названий больше, чем уровней");
 export const rulesResponseSchema = z.strictObject({
   current: currentRulesSchema.nullable(),
   history: z.array(

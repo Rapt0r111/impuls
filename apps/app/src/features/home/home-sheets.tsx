@@ -101,6 +101,11 @@ function Sheet({
   );
 }
 
+// Заголовок уровня: «Уровень 2 · Исполнитель», название — только если правила его дали.
+export const levelName = (level: Level) =>
+  level.title
+    ? `Уровень ${level.level} · ${level.title}`
+    : `Уровень ${level.level}`;
 export const percent = (level: Level) =>
   level.spanXp ? Math.min(100, (level.progressXp / level.spanXp) * 100) : 100;
 
@@ -126,13 +131,13 @@ export function LevelSheet({
       ? Math.ceil(level.remainingXp / freeTaskXp)
       : null;
   return (
-    <Sheet label={`Уровень ${level.level}`} onClose={onClose}>
+    <Sheet label={levelName(level)} onClose={onClose}>
       <div className="sheet-head">
         <span className="lv-badge" aria-hidden="true">
           {level.level}
         </span>
         <div>
-          <h2>Уровень {level.level}</h2>
+          <h2>{levelName(level)}</h2>
           <p>
             {level.nextLevelXp !== null
               ? `${lifetimeXp} из ${level.nextLevelXp} XP до уровня ${next}`

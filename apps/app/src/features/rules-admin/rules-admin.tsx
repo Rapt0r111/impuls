@@ -52,6 +52,7 @@ type Settings = {
   minPercent: number | null;
   bonuses: { title: string; percent: number }[];
   levelThresholds: number[] | null;
+  levelNames: string[];
   openTaskLimit: number | null;
 };
 const NOT_SET = "не задано";
@@ -81,8 +82,7 @@ const labels: [string, (value: Settings) => string][] = [
     (v) =>
       v.levelThresholds && v.levelThresholds.length > 1
         ? v.levelThresholds
-            .slice(1)
-            .map((t, i) => `${i + 2}-й с ${t} XP`)
+            .map((t, i) => `${levelLabel(v, i)} с ${t} XP`)
             .join(", ")
         : "не заданы",
   ],
@@ -98,6 +98,10 @@ const changesBetween = (before: Settings | null, after: Settings) =>
     const now = text(after);
     return was === now ? [] : [{ title, was, now }];
   });
+
+// Название уровня или «N-й уровень», если название не задано.
+const levelLabel = (v: Settings, index: number) =>
+  v.levelNames[index]?.trim() || `${index + 1}-й уровень`;
 
 // Действующие настройки простыми словами на примере задачи с фондом 100 XP.
 function plainSummary(v: Settings): string[] {
@@ -118,7 +122,7 @@ function plainSummary(v: Settings): string[] {
   }
   lines.push(
     v.levelThresholds && v.levelThresholds.length > 1
-      ? `Уровни: ${v.levelThresholds.map((t, i) => `${i + 1}-й с ${t} XP`).join(", ")}.`
+      ? `Уровни: ${v.levelThresholds.map((t, i) => `${levelLabel(v, i)} с ${t} XP`).join(", ")}.`
       : "Уровни не заданы.",
   );
   lines.push(
@@ -243,6 +247,8 @@ function RulesForm({
   const [levels, setLevels] = useState<string[]>(
     () => current?.levelThresholds?.slice(1).map(String) ?? [],
   );
+  // Названия уровней по порядку, с первого; пустое поле — уровень без названия.
+  const [names, setNames] = useState<string[]>(() => current?.levelNames ?? []);
   const [limit, setLimit] = useState(
     current?.openTaskLimit == null ? "" : String(current.openTaskLimit),
   );
@@ -302,6 +308,9 @@ function RulesForm({
               percent: percents[i],
             })),
             levelThresholds: thresholds,
+            levelNames: Array.isArray(thresholds)
+              ? thresholds.map((_, i) => (names[i] ?? "").trim())
+              : [],
             openTaskLimit: limit.trim() ? Number(limit) : null,
             reason: reason.trim() || DEFAULT_REASON,
           });
@@ -494,11 +503,30 @@ function RulesForm({
             <legend>Уровни</legend>
             <p className="notification-note">
               {levels.length
-                ? "Уровень растёт, когда у участника набирается указанный XP."
+                ? "Уровень растёт, когда у участника набирается указанный XP. Названия необязательны; после последнего уровня уровни продолжаются без предела."
                 : "Уровни не заданы: в профиле уровень не показывается."}
             </p>
             {levels.length ? (
-              <p className="rules-fixed">1-й уровень — с 0 XP</p>
+              <div className="rules-row">
+                <p className="rules-fixed">1-й уровень — с 0 XP</p>
+                <label>
+                  <span>Название 1-го уровня</span>
+                  <input
+                    maxLength={40}
+                    value={names[0] ?? ""}
+                    placeholder="Без названия"
+                    onChange={(e) =>
+                      edit(setNames)(
+                        Array.from(
+                          { length: Math.max(names.length, 1) },
+                          (_, i) =>
+                            i === 0 ? e.target.value : (names[i] ?? ""),
+                        ),
+                      )
+                    }
+                  />
+                </label>
+              </div>
             ) : null}
             {levels.map((value, index) => (
               <div key={index} className="rules-row">
@@ -516,12 +544,32 @@ function RulesForm({
                     }
                   />
                 </label>
+                <label>
+                  <span>Название {index + 2}-го уровня</span>
+                  <input
+                    maxLength={40}
+                    value={names[index + 1] ?? ""}
+                    placeholder="Без названия"
+                    onChange={(e) =>
+                      edit(setNames)(
+                        Array.from(
+                          { length: Math.max(names.length, index + 2) },
+                          (_, i) =>
+                            i === index + 1 ? e.target.value : (names[i] ?? ""),
+                        ),
+                      )
+                    }
+                  />
+                </label>
                 {index === levels.length - 1 ? (
                   <button
                     type="button"
                     className="tasks-action"
                     aria-label={`Убрать ${index + 2}-й уровень`}
-                    onClick={() => edit(setLevels)(levels.slice(0, -1))}
+                    onClick={() => {
+                      edit(setLevels)(levels.slice(0, -1));
+                      edit(setNames)(names.slice(0, index + 1));
+                    }}
                   >
                     Убрать
                   </button>

@@ -1,6 +1,11 @@
 import type { Pool } from "pg";
 import { accountBalance, type BalanceRow } from "../ledger/credit";
-import { levelProgress, syntheticLevelThresholds } from "./progression";
+import {
+  levelProgress,
+  levelTitle,
+  syntheticLevelNames,
+  syntheticLevelThresholds,
+} from "./progression";
 
 export async function readParticipantProfile(
   pool: Pool,
@@ -106,9 +111,19 @@ export async function readParticipantProfile(
                 ? ("configured" as const)
                 : ("invalid" as const),
           ruleVersion: explicitlyUnset ? null : (rule?.version_number ?? null),
-          level: thresholds
-            ? levelProgress(balance.lifetimeXp, thresholds)
-            : null,
+          level:
+            thresholds && rule
+              ? (() => {
+                  const level = levelProgress(balance.lifetimeXp, thresholds);
+                  return {
+                    ...level,
+                    title: levelTitle(
+                      syntheticLevelNames(rule.definition),
+                      level.level,
+                    ),
+                  };
+                })()
+              : null,
         },
         firstResult: first
           ? {

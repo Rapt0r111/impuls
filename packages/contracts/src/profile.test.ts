@@ -23,6 +23,7 @@ const data = {
     ruleVersion: 1,
     level: {
       level: 2,
+      title: "Исполнитель",
       minimumXp: 100,
       nextLevelXp: 250,
       remainingXp: 125,

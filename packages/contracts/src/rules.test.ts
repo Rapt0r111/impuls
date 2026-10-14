@@ -35,6 +35,15 @@ describe("rules publish request", () => {
     ["unknown zone", { timeZone: "Mars/Base" }],
     ["limit of zero", { openTaskLimit: 0 }],
     ["limit above fifty", { openTaskLimit: 51 }],
+    [
+      "more names than levels",
+      { levelThresholds: [0, 100], levelNames: ["A", "B", "C"] },
+    ],
+    [
+      "name longer than forty",
+      { levelThresholds: [0], levelNames: ["x".repeat(41)] },
+    ],
+    ["names without levels", { levelThresholds: null, levelNames: ["A"] }],
     ["percent above 100", { minPercent: 101 }],
     [
       "duplicate bonus codes",

@@ -2,7 +2,9 @@ import { z } from "zod";
 import { accountBalanceSchema } from "./ledger";
 
 const levelSchema = z.object({
-  level: z.number().int().min(1).max(100),
+  // Levels have no ceiling; the configured names may be missing for a level.
+  level: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
+  title: z.string().min(1).max(40).nullable(),
   minimumXp: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   nextLevelXp: z
     .number()
