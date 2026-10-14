@@ -206,6 +206,7 @@ async function fixture(browser, width) {
         ruleVersion: 1,
         level: {
           level: 2,
+          title: null,
           minimumXp: 100,
           nextLevelXp: 20000,
           remainingXp: 7655,

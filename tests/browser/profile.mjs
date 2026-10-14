@@ -113,6 +113,7 @@ async function fixture(mode = "populated", width = 390) {
                     xp === 250
                       ? {
                           level: 3,
+                          title: null,
                           minimumXp: 250,
                           nextLevelXp: null,
                           remainingXp: 0,
@@ -122,6 +123,7 @@ async function fixture(mode = "populated", width = 390) {
                       : xp === 0
                         ? {
                             level: 1,
+                            title: null,
                             minimumXp: 0,
                             nextLevelXp: 100,
                             remainingXp: 100,
@@ -130,6 +132,7 @@ async function fixture(mode = "populated", width = 390) {
                           }
                         : {
                             level: 2,
+                            title: null,
                             minimumXp: 100,
                             nextLevelXp: 250,
                             remainingXp: 125,
