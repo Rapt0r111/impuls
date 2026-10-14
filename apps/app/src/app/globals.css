@@ -351,27 +351,32 @@ body::after {
 .workspace-nav {
   margin: 0;
 }
-/* Плавающая капсула: размытый фон, мягкая граница, у активного раздела
-   подсвеченная «таблетка» под значком. */
+/* Плавающая капсула как в макете: стекло с размытием, пять равных колонок,
+   у активного раздела мятная «таблетка» с мягким свечением значка. Капсула
+   всплывает при открытии, активная таблетка слегка парит. */
 .workspace-nav-personal {
   position: fixed;
   right: 0;
-  bottom: calc(10px + var(--app-safe-bottom));
+  bottom: calc(14px + var(--app-safe-bottom));
   left: 0;
   z-index: 20;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
   width: min(calc(100% - 24px), 440px);
+  min-height: 72px;
+  box-sizing: border-box;
   margin-inline: auto;
-  padding: 6px;
-  border: 1px solid var(--color-edge);
-  border-radius: 26px;
-  background: var(--color-glass);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 32px -14px rgb(0 0 0 / 0.8);
+  padding: 0 6px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 24px;
+  background: rgb(10 24 22 / 0.82);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.6);
+  animation: rise 0.7s var(--ease-out) 0.36s both;
 }
 .workspace-nav-personal .workspace-tab {
   position: relative;
-  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -379,28 +384,32 @@ body::after {
   gap: 4px;
   min-width: 0;
   min-height: 56px;
+  padding: 6px 0;
+  border-radius: 16px;
 }
 .workspace-tab-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
+  display: grid;
+  place-items: center;
+  width: 56px;
   height: 30px;
-  border-radius: 15px;
-  transition: transform 180ms var(--ease-out);
+  border-radius: 999px;
+  transition:
+    background 250ms ease-out,
+    transform 180ms var(--ease-out);
 }
-.workspace-nav-personal .workspace-tab:active .workspace-tab-pill {
-  transform: scale(0.9);
+.workspace-nav-personal .workspace-tab:active {
+  transform: scale(0.92);
 }
 .workspace-tab-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   flex: none;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: filter 250ms ease-out;
 }
 .workspace-nav-personal .workspace-tab[aria-pressed="true"] {
   color: var(--color-mint);
@@ -409,8 +418,14 @@ body::after {
 .workspace-nav-personal
   .workspace-tab[aria-pressed="true"]
   .workspace-tab-pill {
-  background: rgb(112 225 194 / 0.17);
-  animation: pop 0.55s var(--ease-pop) both;
+  background: rgb(112 225 194 / 0.16);
+  animation: dock-drift 5s ease-in-out infinite;
+}
+.workspace-nav-personal
+  .workspace-tab[aria-pressed="true"]
+  .workspace-tab-icon {
+  filter: drop-shadow(0 0 6px rgb(112 225 194 / 0.7));
+  animation: dock-bounce 0.45s var(--ease-pop) both;
 }
 .workspace-tab {
   min-width: 0;
@@ -418,17 +433,17 @@ body::after {
   padding: 8px 4px;
   border: 0;
   border-radius: 12px;
-  color: #a9bec4;
+  color: #7e9891;
   background: transparent;
   font: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   overflow-wrap: anywhere;
   white-space: normal;
   transition:
-    color 180ms ease-out,
-    background 180ms ease-out;
+    color 200ms ease-out,
+    transform 200ms ease-out;
 }
 .workspace-nav-personal .workspace-tab span {
   max-width: 100%;
@@ -436,7 +451,7 @@ body::after {
 }
 @media (max-width: 440px) {
   .workspace-nav-personal {
-    width: calc(100% - 16px);
+    width: calc(100% - 24px);
     padding-inline: 4px;
   }
   .workspace-nav-personal .workspace-tab {
@@ -445,15 +460,39 @@ body::after {
   }
 }
 @media (max-width: 359px) {
+  .workspace-nav-personal {
+    padding-inline: 2px;
+  }
   .workspace-nav-personal .workspace-tab {
-    font-size: 10px;
+    font-size: 9.5px;
+    letter-spacing: -0.01em;
   }
   .workspace-tab-pill {
     width: 44px;
   }
 }
 .workspace-tab:hover {
-  color: var(--color-ink);
+  color: #cfe3de;
+}
+@keyframes dock-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+@keyframes dock-bounce {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Основная кнопка: градиент, тень и редкий блик. Блик рисует ::after,

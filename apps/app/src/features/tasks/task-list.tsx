@@ -756,8 +756,14 @@ function TaskWorkspace() {
   );
 }
 
-// Интервал живого обновления; в фоне запросы не идут (по умолчанию React Query).
-const liveRefreshMs = 15_000;
+// Живое обновление экономит сервер: опрос раз в минуту, только пока приложение
+// на виду и пользователь недавно что-то делал. Через 5 минут без касаний опрос
+// засыпает и просыпается первым же касанием (с мгновенным обновлением). Сразу
+// после возвращения в приложение данные обновляет сам React Query.
+const liveRefreshMs = 60_000;
+const idleAfterMs = 5 * 60_000;
+const activity = { lastAt: Date.now() };
+const isIdle = () => Date.now() - activity.lastAt > idleAfterMs;
 
 export function TaskList() {
   const [client] = useState(
@@ -766,16 +772,27 @@ export function TaskList() {
         defaultOptions: {
           queries: {
             staleTime: 30_000,
-            // Новые задачи и любые изменения появляются сами: открытые на
-            // экране данные перезапрашиваются, пока приложение на виду, и сразу
-            // при возвращении в него или появлении сети.
-            refetchInterval: liveRefreshMs,
+            refetchInterval: () => (isIdle() ? false : liveRefreshMs),
             refetchOnWindowFocus: true,
             refetchOnReconnect: true,
           },
         },
       }),
   );
+  useEffect(() => {
+    const touch = () => {
+      const wasIdle = isIdle();
+      activity.lastAt = Date.now();
+      // Опрос уснул: первое касание обновляет данные и запускает его снова.
+      if (wasIdle) void client.invalidateQueries({ refetchType: "active" });
+    };
+    const events = ["pointerdown", "keydown", "touchstart"] as const;
+    for (const name of events)
+      window.addEventListener(name, touch, { passive: true });
+    return () => {
+      for (const name of events) window.removeEventListener(name, touch);
+    };
+  }, [client]);
   return (
     <QueryClientProvider client={client}>
       <TaskWorkspace />

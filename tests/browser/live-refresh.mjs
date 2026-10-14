@@ -118,7 +118,7 @@ async function open({ platform, withTask }) {
     0,
   );
   state.tasks = [task];
-  await page.clock.fastForward(16_000);
+  await page.clock.fastForward(61_000);
   await page.getByText(task.title).waitFor();
   assert.equal(
     await page.getByRole("button", { name: "Открыть задачу" }).count(),
@@ -135,7 +135,7 @@ async function open({ platform, withTask }) {
   await page.getByRole("button", { name: "Мои задачи", exact: true }).click();
   await page.getByText("Задач в работе нет.", { exact: false }).waitFor();
   state.tasks = [task];
-  await page.clock.fastForward(16_000);
+  await page.clock.fastForward(61_000);
   await page.getByText(task.title).waitFor();
   await context.close();
   scenarios++;
