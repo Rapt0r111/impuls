@@ -129,7 +129,8 @@ const getJson = async (url: string, signal: AbortSignal) => {
 };
 
 export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
-  const { loseAccess, user, canReview } = useAuthorizedSession();
+  const { loseAccess, user, canReview, canManageRules } =
+    useAuthorizedSession();
   // Проверяющему очередь видна сразу на главной: сколько отчётов ждёт и кнопка входа.
   const waiting = useQuery({
     queryKey: ["home-review-waiting"],
@@ -361,6 +362,33 @@ export function Home({ onNavigate }: { onNavigate: (to: HomeTarget) => void }) {
               </span>
             ) : null}
           </button>
+        ) : data ? (
+          // Пороги уровней не заданы в правилах: карточка и шкала остаются на месте,
+          // но уровень не выдумывается — экран прямо говорит, чего не хватает.
+          <div
+            className="level static rise"
+            style={{ "--d": 0 } as CSSProperties}
+            role="group"
+            aria-label="Уровень не определён: пороги уровней не заданы"
+          >
+            <span className="lv-head">
+              <span className="lv-badge" aria-hidden="true">
+                –
+              </span>
+              <span className="lv-text">
+                <span className="lv-title">Уровень</span>
+                <span className="lv-sub">
+                  {canManageRules
+                    ? "Пороги не заданы: Ещё → Настройки начислений"
+                    : "Пороги уровней ещё не заданы"}
+                </span>
+              </span>
+            </span>
+            <span className="scale" role="presentation" aria-hidden="true" />
+            <span className="ticks" aria-hidden="true">
+              <span>{data.balance.lifetimeXp} XP</span>
+            </span>
+          </div>
         ) : null}
 
         {data ? (

@@ -226,6 +226,14 @@ html[data-view="home"] {
   --color-mint: #5ee6c4;
   --color-gold: #f4c56a;
 }
+/* Отступ сверху: только то, что требует Telegram (строка состояния и кнопки
+   полноэкранного режима), без запасных 20 + 12 px общей раскладки. */
+html[data-view="home"] .access-screen {
+  padding-top: max(7px, var(--app-safe-top));
+}
+html[data-view="home"] .access-content--authorized {
+  padding-top: 0;
+}
 html[data-view="home"] body::before {
   inset: 0;
   animation: none;
@@ -259,8 +267,9 @@ html[data-view="home"] body::after {
   --home-display: "Impuls Display", var(--font-manrope), sans-serif;
   --home-num: "Impuls Sora", var(--font-manrope), system-ui, sans-serif;
   position: relative;
-  /* Шапка и содержимое макета стоят на отступе 16 px; экран даёт 20 px. */
-  margin: -8px -4px 0;
+  /* Шапка и содержимое макета стоят на отступе 16 px; экран даёт 20 px по бокам,
+     а сверху отступ сжат ниже (html[data-view="home"] .access-screen). */
+  margin: 0 -4px;
   color: #eaf7f3;
   font-family: var(--home-body);
   font-size: 16px;
@@ -302,7 +311,7 @@ html[data-view="home"] body::after {
   align-items: center;
   gap: 12px;
   box-sizing: border-box;
-  height: 60px;
+  height: 56px;
   margin-right: -8px;
 }
 .home .logo {
@@ -726,9 +735,22 @@ html[data-view="home"] body::after {
 .home .level:hover {
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
-.home .level:active,
+.home .level:not(.static):active,
 .home .tile:active {
   transform: scale(0.985);
+}
+/* Уровень не определён: та же карточка и шкала, но без нажатия и без заливки. */
+.home .level.static {
+  cursor: default;
+  border-color: var(--line);
+}
+.home .level.static:hover {
+  border-color: var(--line);
+}
+.home .level.static .lv-badge {
+  color: var(--muted);
+  background: rgb(255 255 255 / 0.07);
+  box-shadow: none;
 }
 .home .lv-head {
   display: flex;
@@ -966,6 +988,10 @@ html[data-view="home"] body::after {
   color: #cfe3de;
   font-size: 13px;
   line-height: 1.4;
+}
+.home .guide li {
+  display: list-item;
+  list-style: decimal;
 }
 .home .guide-hide {
   min-height: 44px;
