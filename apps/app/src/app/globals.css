@@ -203,17 +203,11 @@ body::after {
 }
 
 .access-logo {
-  display: grid;
+  display: block;
   width: 34px;
   height: 34px;
   flex-shrink: 0;
-  place-items: center;
-  border: 1px solid rgb(112 225 194 / 0.45);
-  border-radius: 11px;
-  background: linear-gradient(145deg, #2f6f66, #173f44);
-  color: #aef5e0;
-  font-size: 17px;
-  font-weight: 700;
+  border-radius: 9px;
 }
 
 .access-brand {
