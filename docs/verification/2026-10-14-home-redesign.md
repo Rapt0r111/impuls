@@ -28,3 +28,13 @@
 - Не проверено: реальный Telegram на Android и iOS (полноэкранный режим и отступы), нагрузка опроса на Vercel и Supabase при многих участниках.
 
 - **Нижняя навигация** приведена к макету: капсула 72 px с размытием, пять равных колонок, таблетка 56×30, свечение значка активного раздела, всплытие при открытии, лёгкое парение таблетки и отскок значка при выборе; подписи на 320 px уменьшены, чтобы «Поощрения» не переносилось.
+
+## Запись проверки на голове `dad7456`
+
+- GitHub Actions: оба запуска `check` (push и pull_request) на `dad7456` завершились «failure» за 2–3 секунды, без раннера (`runner_id: 0`) и без журнала (запрос журнала даёт HTTP 404). Тесты не начинались, причину в коде это не показывает. Перезапуск из облачной сессии недоступен (403), поэтому следующий запуск даёт этот коммит с отчётом.
+- Локально на сборке `dad7456` (Next.js 16.3.8, Chromium из `/opt/pw-browsers`):
+  - `bun run check` (format, lint, typecheck, unit, build) — код возврата 0;
+  - `node scripts/verify-telegram-bridge.mjs` — 14 сценариев;
+  - `node scripts/verify-workspace-reflow.mjs` — 150 сценариев, 0 ошибок;
+  - все синтетические браузерные тесты из `tests/browser` (без `*-real`, `embedded-access`, `layout-audit`, `access-smoke`, `speed-insights`) — прошли, включая `live-refresh`, `home`, `home-review`, `open-tasks`, `task-history`, `task-timeline`.
+- Не запускалось локально: тесты `*-real`, `test:task-slice`, `test:restore`, `test:worker-ops`, `demo:test` (нужна PostgreSQL 17 и окружение CI); `embedded-access` падает на старом Chromium в этой среде; `speed-insights` ждёт внешний скрипт Vercel и в CI не входит.
