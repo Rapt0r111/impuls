@@ -119,6 +119,7 @@ async function fixture(browser, width) {
       user: { id, displayName: "Синтетический_участник_с_длинным_псевдонимом" },
       csrfToken: "synthetic",
     },
+    "/api/v1/me/realtime": { enabled: false },
     "/api/v1/me/permissions": {
       permissions: [
         "task.review",

@@ -35,6 +35,10 @@ import { AccessAdmin } from "@/features/access-admin/access-admin";
 import { NotificationStatus } from "@/features/notifications/notification-status";
 import { RewardCatalog } from "@/features/rewards/reward-catalog";
 import { MoreScreen, type MoreDestination } from "@/features/more/more-screen";
+import {
+  liveSignals,
+  startLiveSignals,
+} from "@/features/realtime/live-signals";
 
 type TaskStatus = TaskListResponse["items"][number]["status"];
 type StatusFilter = TaskStatus | "all";
@@ -761,6 +765,8 @@ function TaskWorkspace() {
 // засыпает и просыпается первым же касанием (с мгновенным обновлением). Сразу
 // после возвращения в приложение данные обновляет сам React Query.
 const liveRefreshMs = 60_000;
+// Пока подписка на сигналы жива, опрос — лишь страховка на случай потерянного сигнала.
+const safetyRefreshMs = 5 * 60_000;
 const idleAfterMs = 5 * 60_000;
 const activity = { lastAt: Date.now() };
 const isIdle = () => Date.now() - activity.lastAt > idleAfterMs;
@@ -772,13 +778,19 @@ export function TaskList() {
         defaultOptions: {
           queries: {
             staleTime: 30_000,
-            refetchInterval: () => (isIdle() ? false : liveRefreshMs),
+            refetchInterval: () =>
+              isIdle()
+                ? false
+                : liveSignals.connected
+                  ? safetyRefreshMs
+                  : liveRefreshMs,
             refetchOnWindowFocus: true,
             refetchOnReconnect: true,
           },
         },
       }),
   );
+  useEffect(() => startLiveSignals(client), [client]);
   useEffect(() => {
     const touch = () => {
       const wasIdle = isIdle();
