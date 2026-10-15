@@ -18,7 +18,11 @@ export type TaskTimeline = {
       | "returned"
       | "accepted"
       | "edited"
-      | "cancelled";
+      | "cancelled"
+      | "proposed"
+      | "verified"
+      | "approved"
+      | "declined";
     status:
       | "draft"
       | "assigned"
@@ -26,7 +30,9 @@ export type TaskTimeline = {
       | "in_review"
       | "needs_work"
       | "accepted"
-      | "cancelled";
+      | "cancelled"
+      | "awaiting_verification"
+      | "awaiting_commander";
     occurredAt: string;
     actor: Person | null;
     assignee: Person | null;

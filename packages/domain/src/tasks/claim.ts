@@ -35,7 +35,7 @@ type OpenRow = {
 };
 
 const OPEN_LIMIT = 50;
-const memberOf = (scopeColumn: string, userParam: string) => `EXISTS (
+export const memberOf = (scopeColumn: string, userParam: string) => `EXISTS (
   SELECT 1 FROM impuls.task_scope_members m
    WHERE m.scope_id = ${scopeColumn} AND m.user_id = ${userParam} AND m.synthetic
      AND m.revoked_at IS NULL AND m.valid_from <= clock_timestamp()

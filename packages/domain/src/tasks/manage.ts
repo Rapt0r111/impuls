@@ -137,6 +137,7 @@ export async function listManagedTasks(
   const result = await pool.query<TaskRow>(
     `${selectTask}
     WHERE EXISTS (SELECT 1 FROM impuls.users actor WHERE actor.id = $1 AND actor.active)
+    AND NOT t.self_submitted
     AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${manageBinding} AND b.scope_id = t.scope_id)
     AND ($2::uuid IS NULL OR t.id > $2) ORDER BY t.id LIMIT $3`,
     [actorId, options.cursor ?? null, limit + 1],

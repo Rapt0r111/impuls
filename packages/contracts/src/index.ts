@@ -30,6 +30,7 @@ export const permissionsResponseSchema = z.object({
         "task.edit",
         "task.cancel",
         "task.review",
+        "task.verify",
         "reward.decide",
         "reward.fulfill",
         "admin.access",
@@ -299,4 +300,16 @@ export type {
 } from "./rules";
 
 export { realtimeResponseSchema } from "./realtime";
+export {
+  selfTaskDecideRequestSchema,
+  selfTaskListResponseSchema,
+  selfTaskOptionsResponseSchema,
+  selfTaskProposeRequestSchema,
+  selfTaskQuerySchema,
+  selfTaskResponseSchema,
+  selfTaskSchema,
+  selfTaskVerifyRequestSchema,
+  selfTaskViewSchema,
+} from "./self-tasks";
+export type { SelfTask } from "./self-tasks";
 export type { RealtimeResponse } from "./realtime";
