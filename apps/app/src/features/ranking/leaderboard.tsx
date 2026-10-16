@@ -87,7 +87,7 @@ export function Leaderboard() {
   }, [accessError, error, loseAccess]);
   const first = !accessError && !hidden ? query.data?.pages[0] : undefined;
   const items = first ? query.data!.pages.flatMap((page) => page.items) : [];
-  // Самый поздний месяц — текущий по Москве: будущие месяцы выбрать нельзя.
+  // Самый поздний месяц — текущий по часовому поясу правил: будущие месяцы выбрать нельзя.
   const latest = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Moscow",
     year: "numeric",
@@ -139,7 +139,7 @@ export function Leaderboard() {
               <span className="ranking-month-value" aria-hidden="true">
                 {monthTitle(season || first.season)}
               </span>
-              <span>Месяц · Москва</span>
+              <span>Месяц</span>
               <input
                 type="month"
                 value={season || first.season}
@@ -330,9 +330,7 @@ export function Leaderboard() {
               </>
             ))}
           {first.scope && (
-            <p className="ledger-asof">
-              Обновлено {date(first.updatedAt)} (Москва).
-            </p>
+            <p className="ledger-asof">Обновлено {date(first.updatedAt)}.</p>
           )}
           {query.hasNextPage && !changed && (
             <button

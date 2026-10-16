@@ -145,9 +145,7 @@ export function NotificationStatus() {
               </select>
             </label>
           ) : null}
-          <p className="notification-asof">
-            Обновлено {date(data.updatedAt)} МСК.
-          </p>
+          <p className="notification-asof">Обновлено {date(data.updatedAt)}.</p>
           {empty ? (
             <p className="tasks-state">
               Уведомлений пока не было. Они появляются после действий с задачами
@@ -253,8 +251,7 @@ export function NotificationStatus() {
                       Создано{" "}
                       <time dateTime={event.createdAt}>
                         {date(event.createdAt)}
-                      </time>{" "}
-                      МСК
+                      </time>
                     </p>
                   </li>
                 ))}

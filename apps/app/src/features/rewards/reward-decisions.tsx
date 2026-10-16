@@ -288,7 +288,7 @@ export function RewardDecisions({
           {!fulfilling && (
             <p>
               {selection.redemption.expiresAt
-                ? `Срок резерва: ${date(selection.redemption.expiresAt)} МСК. После срока одобрение недоступно; завершите резерв по истечению срока или откажите.`
+                ? `Срок резерва: ${date(selection.redemption.expiresAt)}. После срока одобрение недоступно; завершите резерв по истечению срока или откажите.`
                 : "Срок резерва не задан; завершение по истечению срока недоступно."}{" "}
             </p>
           )}
@@ -478,7 +478,7 @@ export function RewardDecisions({
                           {!fulfilling && (
                             <p>
                               {item.redemption.expiresAt
-                                ? `Срок резерва: ${date(item.redemption.expiresAt)} МСК`
+                                ? `Срок резерва: ${date(item.redemption.expiresAt)}`
                                 : "Срок резерва не задан"}
                             </p>
                           )}

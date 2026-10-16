@@ -158,7 +158,6 @@ export function CatalogHistory({
                 <time dateTime={data.updatedAt}>
                   {catalogDate(data.updatedAt)}
                 </time>{" "}
-                МСК.{" "}
                 {query.isError
                   ? "Показаны ранее подтверждённые версии."
                   : "История перечитывается вручную."}

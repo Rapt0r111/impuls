@@ -138,7 +138,6 @@ export function NotificationEvents({
                 <time dateTime={data.updatedAt}>
                   {notificationDate(data.updatedAt)}
                 </time>{" "}
-                МСК.{" "}
                 {query.isError
                   ? "Показаны ранее подтверждённые состояния."
                   : "Состояния перечитываются вручную."}
@@ -156,8 +155,7 @@ export function NotificationEvents({
                         Создано{" "}
                         <time dateTime={event.createdAt}>
                           {notificationDate(event.createdAt)}
-                        </time>{" "}
-                        МСК
+                        </time>
                       </p>
                     </li>
                   ))}

@@ -70,8 +70,7 @@ export function CatalogTerms({
             Начало действия:{" "}
             <time dateTime={value.effectiveFrom}>
               {catalogDate(value.effectiveFrom)}
-            </time>{" "}
-            МСК.
+            </time>
           </>
         )}
         <br />

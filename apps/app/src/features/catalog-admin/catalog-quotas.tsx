@@ -158,7 +158,6 @@ export function CatalogQuotas({
                 <time dateTime={data.updatedAt}>
                   {catalogDate(data.updatedAt)}
                 </time>{" "}
-                МСК.{" "}
                 {query.isError
                   ? "Показаны ранее подтверждённые счётчики."
                   : "Счётчики перечитываются вручную."}
@@ -178,7 +177,7 @@ export function CatalogQuotas({
                         <time dateTime={period.endsAt}>
                           {catalogDate(period.endsAt)}
                         </time>{" "}
-                        МСК. Начало включительно, конец исключительно.
+                        Начало включительно, конец исключительно.
                       </p>
                       <dl className="notification-counts">
                         {(

@@ -191,7 +191,7 @@ export function MemberAdmin({
     }
     stage({
       path: "admissions",
-      summary: `Допустить «${displayName.trim()}» (Telegram ID ${numeric})${validUntil ? ` до ${dateTime.format(validUntil)} МСК` : " без срока"}.`,
+      summary: `Допустить «${displayName.trim()}» (Telegram ID ${numeric})${validUntil ? ` до ${dateTime.format(validUntil)}` : " без срока"}.`,
       body: {
         scope,
         telegramId: numeric,

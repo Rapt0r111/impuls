@@ -660,7 +660,7 @@ export function RewardCatalog() {
                             </p>
                             {item.status === "pending" && item.expiresAt ? (
                               <p className="notification-note">
-                                Ответ до {deadlineDate(item.expiresAt)} МСК
+                                Ответ до {deadlineDate(item.expiresAt)}
                               </p>
                             ) : null}
                             {why ? (
