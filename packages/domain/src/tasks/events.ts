@@ -15,7 +15,11 @@ export async function appendTaskEvent(
       | "returned"
       | "accepted"
       | "edited"
-      | "cancelled";
+      | "cancelled"
+      | "proposed"
+      | "verified"
+      | "approved"
+      | "declined";
     reason?: string;
     submissionId?: string;
     reviewId?: string;

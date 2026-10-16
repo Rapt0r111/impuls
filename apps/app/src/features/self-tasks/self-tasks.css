@@ -1,0 +1,117 @@
+/* Свои задачи: отчёт участника, очередь проверки и очередь командира. */
+.self-panel {
+  display: grid;
+  gap: 20px;
+}
+.self-hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.self-section h3,
+.self-form h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+.self-form {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.04);
+}
+.self-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 14px;
+}
+.self-field > span {
+  color: var(--color-muted);
+}
+.self-field input,
+.self-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1.5px solid rgb(255 255 255 / 0.2);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.05);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 16px;
+}
+.self-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.self-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.self-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 15px;
+}
+.self-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.self-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.04);
+}
+.self-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.self-card-head strong {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.self-status {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+.self-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.self-actions,
+.self-decline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+.self-decline {
+  display: grid;
+}
+.self-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}

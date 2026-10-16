@@ -31,6 +31,19 @@ export type {
 } from "./tasks/read";
 export { mutateAssignedTask } from "./tasks/write";
 export { claimTask, listOpenTasks } from "./tasks/claim";
+export {
+  decideSelfTask,
+  listSelfTasks,
+  proposeSelfTask,
+  readSelfTaskOptions,
+  verifySelfTask,
+} from "./tasks/self";
+export type {
+  SelfTask,
+  SelfTaskOptions,
+  SelfTaskResult,
+  SelfTaskStatus,
+} from "./tasks/self";
 export type { ClaimInput, ClaimResult, OpenTask } from "./tasks/claim";
 export { consumeTaskMutationAttempt } from "./tasks/rate-limit";
 export type {

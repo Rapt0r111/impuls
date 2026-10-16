@@ -7,6 +7,7 @@ export const permissionActions = [
   "task.edit",
   "task.cancel",
   "task.review",
+  "task.verify",
   "reward.decide",
   "reward.fulfill",
   "admin.access",

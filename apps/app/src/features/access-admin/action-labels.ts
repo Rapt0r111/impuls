@@ -7,6 +7,7 @@ export const actionLabels: Record<(typeof grantableActions)[number], string> = {
   "task.edit": "Редактирование задач",
   "task.cancel": "Отмена задач",
   "task.review": "Проверка отчётов",
+  "task.verify": "Проверка самостоятельных задач",
   "reward.decide": "Решения по заявкам",
   "reward.fulfill": "Выдача поощрений",
   "admin.rules": "Настройки начислений",

@@ -1,0 +1,612 @@
+"use client";
+
+import {
+  selfTaskListResponseSchema,
+  selfTaskOptionsResponseSchema,
+  selfTaskResponseSchema,
+  type SelfTask,
+} from "@impuls/contracts";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState, type FormEvent } from "react";
+import { useAuthorizedSession } from "@/features/auth/session-context";
+import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import "./self-tasks.css";
+
+const SELF_KEY = ["self-tasks"];
+
+type View = "mine" | "verify" | "commander";
+
+const statusNames: Record<SelfTask["status"], string> = {
+  awaiting_verification: "Ждёт проверяющего",
+  awaiting_commander: "Ждёт командира",
+  in_review: "На приёмке",
+  needs_work: "На доработке",
+  accepted: "Принято",
+  cancelled: "Отклонено",
+};
+
+function useSelfList(view: View) {
+  return useQuery({
+    queryKey: [...SELF_KEY, view],
+    queryFn: async ({ signal }) => {
+      const response = await fetch(`/api/v1/self-tasks?view=${view}`, {
+        credentials: "same-origin",
+        cache: "no-store",
+        signal,
+      });
+      if (!response.ok) throw new Error(`Self tasks: ${response.status}`);
+      return selfTaskListResponseSchema.parse(await response.json()).items;
+    },
+    retry: false,
+  });
+}
+
+function useSelfOptions() {
+  return useQuery({
+    queryKey: [...SELF_KEY, "options"],
+    queryFn: async ({ signal }) => {
+      const response = await fetch("/api/v1/self-tasks?view=options", {
+        credentials: "same-origin",
+        cache: "no-store",
+        signal,
+      });
+      if (!response.ok)
+        throw new Error(`Self task options: ${response.status}`);
+      return selfTaskOptionsResponseSchema.parse(await response.json());
+    },
+    retry: false,
+  });
+}
+
+type Outcome =
+  { ok: true } | { ok: false; message: string } | { ok: "unconfirmed" };
+
+// One POST. 401/403 hand over to the session handler; other failures carry the server's message.
+async function post(
+  path: string,
+  body: unknown,
+  csrfToken: string,
+  key: string,
+  onAccess: (status: number) => void,
+): Promise<Outcome> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1/self-tasks${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+        "Idempotency-Key": key,
+      },
+      body: JSON.stringify(body),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch {
+    return { ok: "unconfirmed" };
+  }
+  if (response.status === 401 || response.status === 403) {
+    onAccess(response.status);
+    return { ok: false, message: "Доступ к приложению отозван" };
+  }
+  if (response.status === 429) {
+    return { ok: false, message: mutationLimitMessage(response) };
+  }
+  if (response.ok) {
+    selfTaskResponseSchema.parse(await response.json());
+    return { ok: true };
+  }
+  const error = (await response.json().catch(() => null)) as {
+    message?: string;
+  } | null;
+  return {
+    ok: false,
+    message:
+      error?.message ??
+      "Не удалось сохранить. Обновите список и попробуйте снова.",
+  };
+}
+
+const dateText = (value: string) =>
+  new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(
+    new Date(value),
+  );
+
+function Requested({ task }: { task: SelfTask }) {
+  return (
+    <p className="self-task-meta">
+      <span className="task-chip task-chip--points">
+        просит {task.requestedPoints} баллов
+      </span>
+      {task.requestedXp !== null ? (
+        <span className="task-chip task-chip--xp">
+          просит {task.requestedXp} XP
+        </span>
+      ) : null}
+    </p>
+  );
+}
+
+// The member reports a finished task, asks for points (and optionally XP), and picks verifiers.
+function ReportForm() {
+  const { csrfToken, loseAccess } = useAuthorizedSession();
+  const client = useQueryClient();
+  const options = useSelfOptions();
+  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const [points, setPoints] = useState("");
+  const [xp, setXp] = useState("");
+  const [verifiers, setVerifiers] = useState<string[]>([]);
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  // Same key for a retry of the same report after a lost response; a new key otherwise.
+  const key = useRef<string | null>(null);
+
+  if (options.isPending) return <p className="tasks-state">Загружаем…</p>;
+  if (options.isError || !options.data?.scopeId) {
+    return (
+      <p className="tasks-empty">
+        Отчёты недоступны: вы пока не в области задач.
+      </p>
+    );
+  }
+  const candidates = options.data.verifiers;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (pending || !options.data?.scopeId) return;
+    const requestedPoints = Number(points);
+    const requestedXp = xp.trim() === "" ? null : Number(xp);
+    if (!Number.isInteger(requestedPoints) || requestedPoints < 0) {
+      setMessage("Укажите баллы целым числом от 0.");
+      return;
+    }
+    if (
+      requestedXp !== null &&
+      (!Number.isInteger(requestedXp) || requestedXp < 0)
+    ) {
+      setMessage("XP — целое число от 0, или оставьте поле пустым.");
+      return;
+    }
+    setPending(true);
+    setMessage(null);
+    const idem = key.current ?? crypto.randomUUID();
+    key.current = idem;
+    const outcome = await post(
+      "",
+      {
+        scopeId: options.data.scopeId,
+        title,
+        text,
+        requestedPoints,
+        requestedXp,
+        verifierIds: verifiers,
+      },
+      csrfToken,
+      idem,
+      loseAccess,
+    );
+    setPending(false);
+    if (outcome.ok === "unconfirmed") {
+      setMessage(
+        "Ответ не получен. Нажмите «Отправить» ещё раз: повтор не создаст второй отчёт.",
+      );
+      return;
+    }
+    key.current = null;
+    if (!outcome.ok) {
+      setMessage(outcome.message);
+      return;
+    }
+    setTitle("");
+    setText("");
+    setPoints("");
+    setXp("");
+    setVerifiers([]);
+    setMessage("Отчёт отправлен проверяющему.");
+    await client.invalidateQueries({ queryKey: SELF_KEY });
+  }
+
+  return (
+    <form className="self-form" onSubmit={(event) => void submit(event)}>
+      <h3>Отчёт о сделанной задаче</h3>
+      <label className="self-field">
+        <span>Название</span>
+        <input
+          value={title}
+          maxLength={120}
+          onChange={(event) => setTitle(event.target.value)}
+          required
+        />
+      </label>
+      <label className="self-field">
+        <span>Что сделано и результат</span>
+        <textarea
+          value={text}
+          maxLength={2000}
+          onChange={(event) => setText(event.target.value)}
+          required
+        />
+      </label>
+      <div className="self-row">
+        <label className="self-field">
+          <span>Баллы, которые просите</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={100000}
+            value={points}
+            onChange={(event) => setPoints(event.target.value)}
+            required
+          />
+        </label>
+        <label className="self-field">
+          <span>XP (необязательно)</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={100000}
+            value={xp}
+            onChange={(event) => setXp(event.target.value)}
+          />
+        </label>
+      </div>
+      <fieldset className="self-field">
+        <legend>Проверяющие (один или несколько)</legend>
+        {candidates.length ? (
+          candidates.map((person) => (
+            <label key={person.id} className="self-check">
+              <input
+                type="checkbox"
+                checked={verifiers.includes(person.id)}
+                onChange={(event) =>
+                  setVerifiers((current) =>
+                    event.target.checked
+                      ? [...current, person.id]
+                      : current.filter((id) => id !== person.id),
+                  )
+                }
+              />
+              {person.displayName}
+            </label>
+          ))
+        ) : (
+          <p className="self-hint">
+            В области пока нет проверяющих. Попросите командира выдать право
+            проверки.
+          </p>
+        )}
+      </fieldset>
+      {message ? (
+        <p role="status" className="self-message">
+          {message}
+        </p>
+      ) : null}
+      <button
+        type="submit"
+        className="tasks-action"
+        disabled={pending || verifiers.length === 0}
+      >
+        {pending ? "Отправляем…" : "Отправить проверяющему"}
+      </button>
+    </form>
+  );
+}
+
+function MyReports() {
+  const mine = useSelfList("mine");
+  if (mine.isPending) return null;
+  if (!mine.data?.length) return null;
+  return (
+    <section className="self-section" aria-label="Мои отчёты">
+      <h3>Мои отчёты</h3>
+      <ul className="self-list">
+        {mine.data.map((task) => (
+          <li key={task.id} className="self-card">
+            <div className="self-card-head">
+              <strong>{task.title}</strong>
+              <span className="self-status">{statusNames[task.status]}</span>
+            </div>
+            <Requested task={task} />
+            <p className="self-hint">Обновлено {dateText(task.updatedAt)}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// Verifier queue: the reports waiting for this person's approval or decline.
+function VerifyQueue() {
+  const { csrfToken, loseAccess } = useAuthorizedSession();
+  const client = useQueryClient();
+  const waiting = useSelfList("verify");
+  const [open, setOpen] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const key = useRef(new Map<string, string>());
+
+  if (!waiting.data?.length) return null;
+
+  async function act(task: SelfTask, decision: "approve" | "decline") {
+    if (pendingId) return;
+    const intent = `${task.id}:${task.version}:${decision}`;
+    const idem = key.current.get(intent) ?? crypto.randomUUID();
+    key.current.set(intent, idem);
+    setPendingId(task.id);
+    setMessage(null);
+    const body =
+      decision === "approve"
+        ? { decision, expectedVersion: task.version }
+        : { decision, expectedVersion: task.version, reason };
+    const outcome = await post(
+      `/${task.id}/verify`,
+      body,
+      csrfToken,
+      idem,
+      loseAccess,
+    );
+    setPendingId(null);
+    if (outcome.ok === "unconfirmed") {
+      setMessage(
+        "Ответ не получен. Нажмите кнопку ещё раз: повтор не создаст второе решение.",
+      );
+      return;
+    }
+    key.current.delete(intent);
+    if (!outcome.ok) {
+      setMessage(outcome.message);
+      await client.invalidateQueries({ queryKey: SELF_KEY });
+      return;
+    }
+    setOpen(null);
+    setReason("");
+    await client.invalidateQueries({ queryKey: SELF_KEY });
+  }
+
+  return (
+    <section className="self-section" aria-label="Ждут вашей проверки">
+      <h3>Ждут вашей проверки</h3>
+      {message ? (
+        <p role="alert" className="self-message">
+          {message}
+        </p>
+      ) : null}
+      <ul className="self-list">
+        {waiting.data.map((task) => (
+          <li key={task.id} className="self-card">
+            <div className="self-card-head">
+              <strong>{task.title}</strong>
+              <span className="self-status">{task.author.displayName}</span>
+            </div>
+            <p className="self-text">{task.text}</p>
+            <Requested task={task} />
+            <div className="self-actions">
+              <button
+                type="button"
+                className="tasks-action"
+                disabled={pendingId !== null}
+                onClick={() => void act(task, "approve")}
+              >
+                Передать командиру
+              </button>
+              <button
+                type="button"
+                className="tasks-action"
+                disabled={pendingId !== null}
+                onClick={() => setOpen(open === task.id ? null : task.id)}
+              >
+                Отклонить
+              </button>
+            </div>
+            {open === task.id ? (
+              <div className="self-decline">
+                <label className="self-field">
+                  <span>Причина (участник увидит её в истории)</span>
+                  <textarea
+                    value={reason}
+                    maxLength={2000}
+                    onChange={(event) => setReason(event.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="tasks-action"
+                  disabled={pendingId !== null || reason.trim() === ""}
+                  onClick={() => void act(task, "decline")}
+                >
+                  Отклонить отчёт
+                </button>
+              </div>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// Commander queue: sets the fund for points and XP, then forwards to acceptance, or declines.
+function DecisionQueue() {
+  const { csrfToken, loseAccess } = useAuthorizedSession();
+  const client = useQueryClient();
+  const waiting = useSelfList("commander");
+  const [amounts, setAmounts] = useState<
+    Record<string, { points: string; xp: string }>
+  >({});
+  const [reason, setReason] = useState<Record<string, string>>({});
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const key = useRef(new Map<string, string>());
+
+  if (!waiting.data?.length) return null;
+
+  async function act(task: SelfTask, decision: "forward" | "decline") {
+    if (pendingId) return;
+    const current = amounts[task.id] ?? {
+      points: String(task.requestedPoints),
+      xp: String(task.requestedXp ?? 0),
+    };
+    const intent = `${task.id}:${task.version}:${decision}`;
+    const idem = key.current.get(intent) ?? crypto.randomUUID();
+    key.current.set(intent, idem);
+    const fundPoints = Number(current.points);
+    const fundXp = Number(current.xp);
+    if (
+      decision === "forward" &&
+      (!Number.isInteger(fundPoints) ||
+        !Number.isInteger(fundXp) ||
+        fundPoints < 0 ||
+        fundXp < 0)
+    ) {
+      setMessage("Баллы и XP — целые числа от 0.");
+      return;
+    }
+    const body =
+      decision === "forward"
+        ? { decision, expectedVersion: task.version, fundPoints, fundXp }
+        : {
+            decision,
+            expectedVersion: task.version,
+            reason: reason[task.id] ?? "",
+          };
+    setPendingId(task.id);
+    setMessage(null);
+    const outcome = await post(
+      `/${task.id}/decide`,
+      body,
+      csrfToken,
+      idem,
+      loseAccess,
+    );
+    setPendingId(null);
+    if (outcome.ok === "unconfirmed") {
+      setMessage(
+        "Ответ не получен. Нажмите кнопку ещё раз: повтор не создаст второе решение.",
+      );
+      return;
+    }
+    key.current.delete(intent);
+    if (!outcome.ok) setMessage(outcome.message);
+    await client.invalidateQueries({ queryKey: SELF_KEY });
+    await client.invalidateQueries({ queryKey: ["review-queue"] });
+  }
+
+  return (
+    <section className="self-section" aria-label="Ждут решения командира">
+      <h3>Ждут решения командира</h3>
+      {message ? (
+        <p role="alert" className="self-message">
+          {message}
+        </p>
+      ) : null}
+      <ul className="self-list">
+        {waiting.data.map((task) => {
+          const current = amounts[task.id] ?? {
+            points: String(task.requestedPoints),
+            xp: String(task.requestedXp ?? 0),
+          };
+          return (
+            <li key={task.id} className="self-card">
+              <div className="self-card-head">
+                <strong>{task.title}</strong>
+                <span className="self-status">{task.author.displayName}</span>
+              </div>
+              <p className="self-text">{task.text}</p>
+              <Requested task={task} />
+              <div className="self-row">
+                <label className="self-field">
+                  <span>Начислить баллов</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={100000}
+                    value={current.points}
+                    onChange={(event) =>
+                      setAmounts((all) => ({
+                        ...all,
+                        [task.id]: { ...current, points: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="self-field">
+                  <span>Начислить XP</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={100000}
+                    value={current.xp}
+                    onChange={(event) =>
+                      setAmounts((all) => ({
+                        ...all,
+                        [task.id]: { ...current, xp: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <div className="self-actions">
+                <button
+                  type="button"
+                  className="tasks-action"
+                  disabled={pendingId !== null}
+                  onClick={() => void act(task, "forward")}
+                >
+                  Передать на приёмку
+                </button>
+              </div>
+              <div className="self-decline">
+                <label className="self-field">
+                  <span>Причина отказа</span>
+                  <textarea
+                    value={reason[task.id] ?? ""}
+                    maxLength={2000}
+                    onChange={(event) =>
+                      setReason((all) => ({
+                        ...all,
+                        [task.id]: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="tasks-action"
+                  disabled={
+                    pendingId !== null || !(reason[task.id] ?? "").trim()
+                  }
+                  onClick={() => void act(task, "decline")}
+                >
+                  Отклонить
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+// «Свои задачи»: отчёт о сделанной задаче, очередь проверки и очередь командира.
+// Пустые очереди скрыты: видны только те, что относятся к этому человеку.
+export function SelfTasksPanel() {
+  return (
+    <div className="self-panel">
+      <p className="self-hint">
+        Расскажите о задаче, которую уже выполнили. Проверяющий подтвердит её и
+        передаст командиру, а баллы и XP назначит командир.
+      </p>
+      <ReportForm />
+      <MyReports />
+      <VerifyQueue />
+      <DecisionQueue />
+    </div>
+  );
+}

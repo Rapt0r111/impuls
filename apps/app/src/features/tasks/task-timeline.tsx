@@ -42,6 +42,10 @@ const labels = {
   accepted: "Результат принят",
   edited: "Изменён черновик",
   cancelled: "Задача отменена",
+  proposed: "Отчёт о самостоятельной задаче",
+  verified: "Проверяющий передал командиру",
+  approved: "Командир назначил баллы и передал на приёмку",
+  declined: "Отчёт отклонён",
 } as const;
 const statuses = {
   draft: "Черновик",
@@ -51,6 +55,8 @@ const statuses = {
   needs_work: "На доработке",
   accepted: "Принята",
   cancelled: "Отменена",
+  awaiting_verification: "Ждёт проверяющего",
+  awaiting_commander: "Ждёт командира",
 } as const;
 
 export function TaskTimeline({ taskId }: { taskId: string }) {

@@ -24,6 +24,7 @@ import { TaskHistory } from "./task-history";
 import { TaskTimeline } from "./task-timeline";
 import { Home } from "@/features/home/home";
 import { ReviewQueue } from "@/features/reviews/review-queue";
+import { SelfTasksPanel } from "@/features/self-tasks/self-tasks";
 import { AccountLedger } from "@/features/ledger/account-ledger";
 import { TaskManagement } from "@/features/task-management/task-management";
 import { Leaderboard } from "@/features/ranking/leaderboard";
@@ -215,6 +216,7 @@ function TaskListContent() {
   const { confirmLeave, loseAccess } = useAuthorizedSession();
   // Пока участник не выбрал раздел сам, открывается первый непустой.
   const [chosen, setChosen] = useState<Segment | null>(null);
+  const [selfOpen, setSelfOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useTelegramBack(
     selectedId !== null,
@@ -263,6 +265,28 @@ function TaskListContent() {
     tasks.error instanceof TaskRequestError &&
     (tasks.error.status === 401 || tasks.error.status === 403);
   const selected = allItems.find((task) => task.id === selectedId);
+
+  if (selfOpen) {
+    return (
+      <section className="tasks-section" aria-labelledby="tasks-title">
+        <div className="tasks-heading">
+          <h2 id="tasks-title">Задачи</h2>
+        </div>
+        <button
+          type="button"
+          className="screen-back"
+          aria-label="Свои задачи: вернуться к задачам"
+          onClick={() => setSelfOpen(false)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          Задачи
+        </button>
+        <SelfTasksPanel />
+      </section>
+    );
+  }
 
   if (selectedId) {
     const due = selected ? dueInfo(selected.dueAt, selected.status) : null;
@@ -370,6 +394,16 @@ function TaskListContent() {
       <div className="tasks-heading">
         <h2 id="tasks-title">Задачи</h2>
       </div>
+      <button
+        type="button"
+        className="open-tasks-banner"
+        onClick={() => setSelfOpen(true)}
+      >
+        <span>
+          <strong>Свои задачи</strong>
+          <small>Отчёт о том, что уже сделали</small>
+        </span>
+      </button>
       {segment === "open" ? (
         <button
           type="button"
