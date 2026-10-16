@@ -176,7 +176,9 @@ for (const width of [320, 360, 390]) {
   );
   assert.ok(
     await page
-      .getByText("Уровни: не заданы → 2-й с 100 XP, 3-й с 250 XP")
+      .getByText(
+        "Уровни: не заданы → 1-й уровень с 0 XP, 2-й уровень с 100 XP, 3-й уровень с 250 XP",
+      )
       .isVisible(),
   );
   assert.equal(await page.getByText(/Часовой пояс месяца:/).count(), 0);

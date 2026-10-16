@@ -191,11 +191,15 @@ try {
       .getByRole("rowheader", { name: "Учебный участник 24", exact: true })
       .waitFor();
     assert.equal(await f.page.locator(".ranking-table tbody tr").count(), 24);
-    await f.page.getByLabel("Месяц").fill("2026-08");
+    await f.page
+      .getByRole("textbox", { name: "Месяц", exact: true })
+      .fill("2026-08");
     await f.page
       .getByText("В этом месяце ещё нет положительного XP.", { exact: false })
       .waitFor();
-    await f.page.getByLabel("Месяц").fill("2026-10");
+    await f.page
+      .getByRole("textbox", { name: "Месяц", exact: true })
+      .fill("2026-10");
     await f.page
       .getByRole("rowheader", { name: "Учебный участник 1", exact: true })
       .waitFor();

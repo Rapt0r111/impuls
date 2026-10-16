@@ -319,7 +319,9 @@ const url = process.env.TEST_DATABASE_URL,
         await page
           .getByRole("button", { name: "Рейтинг", exact: true })
           .click();
-        await page.getByLabel("Месяц").fill("2026-09");
+        await page
+          .getByRole("textbox", { name: "Месяц", exact: true })
+          .fill("2026-09");
         await page
           .getByRole("rowheader", { name: "Synthetic ranked alias 0" })
           .waitFor();
