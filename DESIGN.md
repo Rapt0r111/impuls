@@ -1,5 +1,5 @@
 ---
-name: "Импульс"
+name: "Стимул"
 description: "Technological research centre: interactive Mini App demonstration and readable project documentation."
 colors:
   bg: "#08151c"
@@ -129,7 +129,7 @@ components:
     padding: "15px"
 ---
 
-# Design System: Импульс
+# Design System: Стимул
 
 Локальный эксплуатационный срез от 05.10.2026 (000028/ADR-0020) добавляет только worker CLI aggregate, heartbeat, stop helper и runbook. Новых пользовательских экранов/HTTP API, визуальных или motion изменений нет. Worker status доступен отдельной service role и не заменяет exact-scope UI уведомлений или подтверждённую историю возврата. Контракт: docs/implementation/2026-10-05-worker-observability-slice.md; результаты: docs/verification/2026-10-05-worker-observability.md.
 

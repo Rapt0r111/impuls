@@ -2,9 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Импульс",
-    short_name: "Импульс",
-    description: "Рабочее приложение Импульс",
+    name: "Стимул",
+    short_name: "Стимул",
+    description:
+      "Рабочее приложение Стимул — платформа мотивации и учёта задач научной роты",
     start_url: "/",
     display: "standalone",
     background_color: "#08151c",

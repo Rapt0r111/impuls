@@ -36,21 +36,29 @@ const fullBleedMark = replaceOnce(
   "фон знака",
 );
 
-// Упрощённый знак для favicon: без свечения и тонких линий, чтобы пульс
-// оставался различим в 16–32 px. Геометрия и цвета те же, что в logo-mark.svg.
+// Упрощённый знак для favicon: морковка с характерными кольцами и зелёной ботвой.
+// Чётко различим в 16–32 px.
 const faviconMark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <radialGradient id="bg" cx="50%" cy="30%" r="75%">
-      <stop offset="0%" stop-color="#163842" />
-      <stop offset="100%" stop-color="#061016" />
+      <stop offset="0%" stop-color="#143644" />
+      <stop offset="100%" stop-color="#050e14" />
     </radialGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)" />
-  <rect x="96" y="112" width="64" height="288" rx="18" fill="#70e1c2" />
-  <rect x="352" y="112" width="64" height="288" rx="18" fill="#70e1c2" />
-  <path d="M 132 352 L 196 352 L 226 392 L 256 130 L 286 322 L 316 212 L 350 212 L 392 164"
-        fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="256" cy="130" r="30" fill="#f6d083" />
+  <!-- Leaves -->
+  <path d="M 256 195 C 248 150, 244 110, 256 75 C 268 110, 264 150, 256 195 Z" fill="#00f0b5" />
+  <path d="M 248 190 C 230 155, 192 120, 156 108 C 182 142, 220 178, 242 194 Z" fill="#00f0b5" />
+  <path d="M 264 190 C 282 155, 320 120, 356 108 C 330 142, 292 178, 270 194 Z" fill="#00f0b5" />
+  <!-- Body -->
+  <path d="M 186 198 C 186 182, 326 182, 326 198 C 326 248, 288 340, 258 406 C 257 408, 255 408, 254 406 C 224 340, 186 248, 186 198 Z" fill="#ff7700" />
+  <!-- Tech rings -->
+  <path d="M 204 240 C 226 248, 286 248, 308 240" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+  <path d="M 218 290 C 236 298, 276 298, 294 290" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" />
+  <path d="M 234 340 C 246 346, 266 346, 278 340" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+  <!-- Spark node -->
+  <circle cx="256" cy="188" r="16" fill="#ffbe3b" />
+  <circle cx="256" cy="188" r="7" fill="#ffffff" />
 </svg>
 `;
 

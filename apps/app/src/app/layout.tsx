@@ -23,8 +23,9 @@ const manrope = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Импульс",
-  description: "Рабочее приложение Импульс",
+  title: "Стимул",
+  description:
+    "Рабочее приложение Стимул — платформа мотивации и учёта задач научной роты",
   robots: { index: false, follow: false },
 };
 

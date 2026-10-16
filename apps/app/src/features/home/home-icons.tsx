@@ -108,41 +108,76 @@ export const ReviewList = (p: Props) => (
   </svg>
 );
 
-// Знак приложения из макета: пульс между двумя столбцами.
+// Знак приложения: тактическая кибер-морковка «Стимул» (символ мотивации и поощрения).
 export function Logo() {
   return (
     <svg viewBox="0 0 512 512" width="100%" height="100%" aria-hidden="true">
+      <defs>
+        <radialGradient id="homeLogoBg" cx="50%" cy="30%" r="75%">
+          <stop offset="0%" stopColor="#143644" />
+          <stop offset="60%" stopColor="#0a1d26" />
+          <stop offset="100%" stopColor="#050e14" />
+        </radialGradient>
+        <linearGradient id="homeCarrotBody" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ff9d1e" />
+          <stop offset="50%" stopColor="#ff6a00" />
+          <stop offset="100%" stopColor="#d43800" />
+        </linearGradient>
+      </defs>
       <rect
         x="24"
         y="24"
         width="464"
         height="464"
         rx="108"
-        fill="#0d242e"
-        stroke="#70e1c2"
+        fill="url(#homeLogoBg)"
+        stroke="#00f0b5"
         strokeOpacity="0.5"
-        strokeWidth="10"
+        strokeWidth="8"
       />
-      <rect x="124" y="128" width="48" height="256" rx="14" fill="#52bda4" />
-      <rect x="340" y="128" width="48" height="256" rx="14" fill="#328a7d" />
+      {/* Leaves */}
       <path
-        d="M 148 340 L 200 340 L 228 368 L 256 142 L 284 316 L 312 210 L 336 210 L 364 172"
-        fill="none"
-        stroke="#70e1c2"
-        strokeWidth="22"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.5"
+        d="M 256 195 C 248 150, 244 110, 256 75 C 268 110, 264 150, 256 195 Z"
+        fill="#00f0b5"
       />
       <path
-        d="M 148 340 L 200 340 L 228 368 L 256 142 L 284 316 L 312 210 L 336 210 L 364 172"
+        d="M 248 190 C 230 155, 192 120, 156 108 C 182 142, 220 178, 242 194 Z"
+        fill="#00f0b5"
+      />
+      <path
+        d="M 264 190 C 282 155, 320 120, 356 108 C 330 142, 292 178, 270 194 Z"
+        fill="#00f0b5"
+      />
+      {/* Carrot Body */}
+      <path
+        d="M 186 198 C 186 182, 326 182, 326 198 C 326 248, 288 340, 258 406 C 257 408, 255 408, 254 406 C 224 340, 186 248, 186 198 Z"
+        fill="url(#homeCarrotBody)"
+      />
+      {/* Energy Rings */}
+      <path
+        d="M 198 234 C 224 244, 288 244, 314 234"
         fill="none"
         stroke="#ffffff"
-        strokeWidth="7"
+        strokeWidth="5"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
-      <circle cx="256" cy="142" r="14" fill="#f6d083" />
+      <path
+        d="M 214 286 C 234 294, 278 294, 298 286"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 230 338 C 244 344, 268 344, 282 338"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+      {/* Spark */}
+      <circle cx="256" cy="188" r="14" fill="#ffbe3b" />
+      <circle cx="256" cy="188" r="6" fill="#ffffff" />
     </svg>
   );
 }

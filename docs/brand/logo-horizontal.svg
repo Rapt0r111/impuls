@@ -7,25 +7,14 @@
       <stop offset="100%" stop-color="#08151c" />
     </linearGradient>
 
-    <!-- Pillar Gradients -->
-    <linearGradient id="hPillarLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a8f5e1" />
-      <stop offset="100%" stop-color="#2c726d" />
-    </linearGradient>
-    <linearGradient id="hPillarRight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#70e1c2" />
-      <stop offset="100%" stop-color="#184b4e" />
-    </linearGradient>
-
-    <linearGradient id="hPulseGlow" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#70e1c2" />
-      <stop offset="48%" stop-color="#ffffff" />
-      <stop offset="52%" stop-color="#f6d083" />
-      <stop offset="100%" stop-color="#70e1c2" />
+    <!-- Kinetic Arc Gradients -->
+    <linearGradient id="hArcGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f0b5" />
+      <stop offset="100%" stop-color="#ffffff" />
     </linearGradient>
 
     <linearGradient id="textGold" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f6d083" />
+      <stop offset="0%" stop-color="#ffbe3b" />
       <stop offset="100%" stop-color="#ffdca0" />
     </linearGradient>
 
@@ -43,60 +32,62 @@
 
   <!-- Subtle grid dots in background -->
   <g opacity="0.12">
-    <circle cx="280" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="340" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="400" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="460" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="520" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="580" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="640" cy="40" r="1.5" fill="#70e1c2" />
-    <circle cx="700" cy="40" r="1.5" fill="#70e1c2" />
+    <circle cx="280" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="340" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="400" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="460" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="520" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="580" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="640" cy="40" r="1.5" fill="#00f0b5" />
+    <circle cx="700" cy="40" r="1.5" fill="#00f0b5" />
 
-    <circle cx="280" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="340" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="400" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="460" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="520" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="580" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="640" cy="120" r="1.5" fill="#70e1c2" />
-    <circle cx="700" cy="120" r="1.5" fill="#70e1c2" />
+    <circle cx="280" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="340" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="400" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="460" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="520" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="580" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="640" cy="120" r="1.5" fill="#00f0b5" />
+    <circle cx="700" cy="120" r="1.5" fill="#00f0b5" />
   </g>
 
   <!-- BRAND MARK (Scaled and centered at left, X: 40..152, Y: 24..136) -->
   <g transform="translate(40, 24)">
     <!-- Base Squircle -->
-    <rect width="112" height="112" rx="28" fill="#0d242e" stroke="#70e1c2" stroke-opacity="0.45" stroke-width="1.5" />
+    <rect width="112" height="112" rx="28" fill="#0d242e" stroke="#00f0b5" stroke-opacity="0.5" stroke-width="1.5" />
     
     <!-- Reticle arc -->
-    <circle cx="56" cy="56" r="40" fill="none" stroke="#70e1c2" stroke-width="1" stroke-dasharray="2 4" opacity="0.25" />
+    <circle cx="56" cy="56" r="40" fill="none" stroke="#00f0b5" stroke-width="1" stroke-dasharray="2 4" opacity="0.25" />
 
-    <!-- Left Pillar -->
-    <rect x="26" y="27" width="11" height="58" rx="3.5" fill="url(#hPillarLeft)" />
-    <!-- Right Pillar -->
-    <rect x="75" y="27" width="11" height="58" rx="3.5" fill="url(#hPillarRight)" />
-
-    <!-- Pulse Wave -->
-    <path d="M 32 75 L 43 75 L 49 81 L 56 31 L 62 69 L 69 46 L 74 46 L 80 37"
-          fill="none" stroke="url(#hPulseGlow)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"
-          filter="url(#hGlow)" />
-    <path d="M 32 75 L 43 75 L 49 81 L 56 31 L 62 69 L 69 46 L 74 46 L 80 37"
-          fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
-
-    <!-- Apex Spark -->
-    <circle cx="56" cy="31" r="2.8" fill="#f6d083" />
+    <!-- Scaled Cyber-Carrot Mark -->
+    <g transform="translate(0, 0) scale(0.21875)">
+      <!-- Leaves -->
+      <path d="M 256 195 C 248 150, 244 110, 256 75 C 268 110, 264 150, 256 195 Z" fill="#00f0b5" />
+      <path d="M 248 190 C 230 155, 192 120, 156 108 C 182 142, 220 178, 242 194 Z" fill="#00f0b5" />
+      <path d="M 264 190 C 282 155, 320 120, 356 108 C 330 142, 292 178, 270 194 Z" fill="#00f0b5" />
+      <!-- Carrot Body -->
+      <path d="M 186 198 C 186 182, 326 182, 326 198 C 326 248, 288 340, 258 406 C 257 408, 255 408, 254 406 C 224 340, 186 248, 186 198 Z" fill="#ff7700" />
+      <!-- Energy Rings -->
+      <path d="M 198 234 C 224 244, 288 244, 314 234" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+      <path d="M 214 286 C 234 294, 278 294, 298 286" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" />
+      <path d="M 230 338 C 244 344, 268 344, 282 338" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" />
+      <!-- Spark -->
+      <circle cx="256" cy="188" r="16" fill="#ffbe3b" />
+      <circle cx="256" cy="188" r="7" fill="#ffffff" />
+    </g>
   </g>
 
-  <!-- WORDMARK: ИМПУЛЬС -->
+  <!-- WORDMARK: СТИМУЛ -->
   <g transform="translate(182, 78)">
     <text font-family="'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif"
           font-size="44" font-weight="800" letter-spacing="4" fill="#edf5f2">
-      ИМПУЛЬС
+      СТИМУЛ
     </text>
   </g>
 
   <!-- BADGE / PILL: НАУЧНАЯ РОТА -->
-  <g transform="translate(485, 48)">
-    <rect width="124" height="26" rx="6" fill="#143935" stroke="#70e1c2" stroke-opacity="0.5" stroke-width="1" />
+  <g transform="translate(470, 48)">
+    <rect width="124" height="26" rx="6" fill="#143935" stroke="#00f0b5" stroke-opacity="0.5" stroke-width="1" />
     <text x="62" y="17" text-anchor="middle"
           font-family="'Manrope', system-ui, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#99eacf">
       НАУЧНАЯ РОТА
@@ -107,12 +98,12 @@
   <g transform="translate(184, 112)">
     <text font-family="'Manrope', system-ui, sans-serif"
           font-size="12" font-weight="500" letter-spacing="2" fill="#8ca6af">
-      СИСТЕМА УЧЁТА ЗАДАЧ • РЕЙТИНГ • ПООЩРЕНИЯ
+      СИСТЕМА МОТИВАЦИИ • РЕЙТИНГ • ПООЩРЕНИЯ
     </text>
   </g>
 
   <!-- Accent Energy Bar Divider -->
   <rect x="184" y="88" width="530" height="1.5" fill="#24424e" />
-  <rect x="184" y="88" width="60" height="1.5" fill="#70e1c2" opacity="0.8" />
-  <circle cx="244" cy="88.75" r="2.5" fill="#f6d083" />
+  <rect x="184" y="88" width="60" height="1.5" fill="#00f0b5" opacity="0.8" />
+  <circle cx="244" cy="88.75" r="2.5" fill="#ffbe3b" />
 </svg>

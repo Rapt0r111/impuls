@@ -306,7 +306,7 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                 aria-hidden="true"
                 unoptimized
               />
-              <span className="access-brand">Импульс</span>
+              <span className="access-brand">Стимул</span>
             </header>
           ) : null}
           <section

@@ -2,40 +2,58 @@
   <defs>
     <!-- Background Gradients -->
     <radialGradient id="bgGlow" cx="50%" cy="30%" r="75%">
-      <stop offset="0%" stop-color="#163842" />
-      <stop offset="60%" stop-color="#0b1b23" />
-      <stop offset="100%" stop-color="#061016" />
+      <stop offset="0%" stop-color="#143644" />
+      <stop offset="60%" stop-color="#0a1d26" />
+      <stop offset="100%" stop-color="#050e14" />
     </radialGradient>
     <linearGradient id="squircleBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#70e1c2" stop-opacity="0.6" />
-      <stop offset="40%" stop-color="#2a5360" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#0e2630" stop-opacity="0.8" />
+      <stop offset="0%" stop-color="#00f0b5" stop-opacity="0.8" />
+      <stop offset="40%" stop-color="#ff9900" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0c2936" stop-opacity="0.9" />
     </linearGradient>
 
-    <!-- Pillar Gradients -->
-    <linearGradient id="pillarLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a8f5e1" />
-      <stop offset="35%" stop-color="#55cbb0" />
-      <stop offset="100%" stop-color="#184b4e" />
-    </linearGradient>
-    <linearGradient id="pillarRight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#70e1c2" />
-      <stop offset="65%" stop-color="#2c726d" />
-      <stop offset="100%" stop-color="#12373c" />
+    <!-- Carrot Body Gradient -->
+    <linearGradient id="carrotBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9d1e" />
+      <stop offset="40%" stop-color="#ff6a00" />
+      <stop offset="100%" stop-color="#d43800" />
     </linearGradient>
 
-    <!-- Pulse Wave Gradients -->
-    <linearGradient id="pulseGlow" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#70e1c2" />
-      <stop offset="48%" stop-color="#ffffff" />
-      <stop offset="52%" stop-color="#f6d083" />
-      <stop offset="100%" stop-color="#70e1c2" />
+    <!-- Carrot Facet Highlight -->
+    <linearGradient id="carrotHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
+      <stop offset="35%" stop-color="#ffbe3b" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#ff6a00" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Cyber Leaf Gradients -->
+    <linearGradient id="leafCenter" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#00a875" />
+      <stop offset="60%" stop-color="#00f0b5" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+    <linearGradient id="leafLeft" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#008a60" />
+      <stop offset="70%" stop-color="#00f0b5" />
+      <stop offset="100%" stop-color="#99fadc" />
+    </linearGradient>
+    <linearGradient id="leafRight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#008a60" />
+      <stop offset="70%" stop-color="#00f0b5" />
+      <stop offset="100%" stop-color="#99fadc" />
+    </linearGradient>
+
+    <!-- Spark & Energy Core -->
+    <linearGradient id="sparkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="50%" stop-color="#ffbe3b" />
+      <stop offset="100%" stop-color="#ff8800" />
     </linearGradient>
 
     <!-- Glow Filters -->
     <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="8" result="blur1" />
-      <feGaussianBlur stdDeviation="20" result="blur2" />
+      <feGaussianBlur stdDeviation="18" result="blur2" />
       <feMerge>
         <feMergeNode in="blur2" />
         <feMergeNode in="blur1" />
@@ -57,50 +75,89 @@
 
   <!-- Technical Reticle & Grid Details (Subtle) -->
   <g opacity="0.18">
-    <circle cx="256" cy="256" r="170" fill="none" stroke="#70e1c2" stroke-width="1.5" stroke-dasharray="6 8" />
-    <circle cx="256" cy="256" r="90" fill="none" stroke="#70e1c2" stroke-width="1" stroke-dasharray="3 5" />
-    <line x1="256" y1="56" x2="256" y2="76" stroke="#70e1c2" stroke-width="2" />
-    <line x1="256" y1="436" x2="256" y2="456" stroke="#70e1c2" stroke-width="2" />
-    <line x1="56" y1="256" x2="76" y2="256" stroke="#70e1c2" stroke-width="2" />
-    <line x1="436" y1="256" x2="456" y2="256" stroke="#70e1c2" stroke-width="2" />
+    <circle cx="256" cy="256" r="175" fill="none" stroke="#00f0b5" stroke-width="1.5" stroke-dasharray="6 8" />
+    <circle cx="256" cy="256" r="105" fill="none" stroke="#ff9900" stroke-width="1" stroke-dasharray="3 5" />
+    <line x1="256" y1="52" x2="256" y2="76" stroke="#00f0b5" stroke-width="2" />
+    <line x1="256" y1="436" x2="256" y2="460" stroke="#00f0b5" stroke-width="2" />
+    <line x1="52" y1="256" x2="76" y2="256" stroke="#00f0b5" stroke-width="2" />
+    <line x1="436" y1="256" x2="460" y2="256" stroke="#00f0b5" stroke-width="2" />
   </g>
 
-  <!-- Left Monolith Pillar of "И" -->
-  <rect x="124" y="128" width="48" height="256" rx="14" fill="url(#pillarLeft)" filter="url(#coreGlow)" />
-  <rect x="130" y="134" width="10" height="244" rx="5" fill="#ffffff" opacity="0.35" />
+  <!-- AMBIENT ENERGY GLOW BEHIND CARROT -->
+  <g opacity="0.3" filter="url(#neonGlow)">
+    <!-- Leaves halo -->
+    <circle cx="256" cy="140" r="55" fill="#00f0b5" />
+    <!-- Body halo -->
+    <ellipse cx="256" cy="290" rx="60" ry="90" fill="#ff7700" />
+  </g>
 
-  <!-- Right Monolith Pillar of "И" -->
-  <rect x="340" y="128" width="48" height="256" rx="14" fill="url(#pillarRight)" filter="url(#coreGlow)" />
-  <rect x="346" y="134" width="10" height="244" rx="5" fill="#ffffff" opacity="0.25" />
+  <!-- CYBERNETIC CARROT TOP (LEAVES / КВАНТОВАЯ БОТВА) -->
+  <!-- Left Leaf Plume -->
+  <path d="M 248 190 C 230 155, 192 120, 156 108 C 182 142, 220 178, 242 194 Z"
+        fill="url(#leafLeft)" filter="url(#coreGlow)" />
+  <path d="M 248 190 C 230 155, 192 120, 156 108"
+        fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
 
-  <!-- Ambient Wave Glow behind the pulse -->
-  <path d="M 148 340 L 200 340 L 228 368 L 256 142 L 284 316 L 312 210 L 336 210 L 364 172"
-        fill="none" stroke="#70e1c2" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"
-        opacity="0.15" filter="url(#neonGlow)" />
+  <!-- Right Leaf Plume -->
+  <path d="M 264 190 C 282 155, 320 120, 356 108 C 330 142, 292 178, 270 194 Z"
+        fill="url(#leafRight)" filter="url(#coreGlow)" />
+  <path d="M 264 190 C 282 155, 320 120, 356 108"
+        fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
 
-  <!-- Dynamic Impulse Line (Connecting diagonal of "И" via energy pulse) -->
-  <path d="M 148 340 L 200 340 L 228 368 L 256 142 L 284 316 L 312 210 L 336 210 L 364 172"
-        fill="none" stroke="url(#pulseGlow)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"
-        filter="url(#neonGlow)" />
+  <!-- Center Tall Plume (Vector / Antenna) -->
+  <path d="M 256 195 C 248 150, 244 110, 256 75 C 268 110, 264 150, 256 195 Z"
+        fill="url(#leafCenter)" filter="url(#coreGlow)" />
+  <line x1="256" y1="190" x2="256" y2="80" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+  <!-- Apex Node on Center Leaf -->
+  <circle cx="256" cy="75" r="5" fill="#ffffff" filter="url(#coreGlow)" />
 
-  <!-- Inner High-Intensity White Core -->
-  <path d="M 148 340 L 200 340 L 228 368 L 256 142 L 284 316 L 312 210 L 336 210 L 364 172"
-        fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Side Energy Nodes -->
+  <circle cx="156" cy="108" r="4" fill="#00f0b5" />
+  <circle cx="356" cy="108" r="4" fill="#00f0b5" />
 
-  <!-- Peak Impulse Nodes -->
-  <!-- Top Apex Energy Spark (Gold) -->
-  <circle cx="256" cy="142" r="10" fill="#f6d083" filter="url(#coreGlow)" />
-  <circle cx="256" cy="142" r="4.5" fill="#ffffff" />
+  <!-- CARROT BODY (ГРАНЁНЫЙ ТАКТИЧЕСКИЙ КОРПУС МОРКОВКИ) -->
+  <!-- Outer Body Path -->
+  <path d="M 186 198 C 186 182, 326 182, 326 198 C 326 248, 288 340, 258 406 C 257 408, 255 408, 254 406 C 224 340, 186 248, 186 198 Z"
+        fill="url(#carrotBody)" filter="url(#coreGlow)" />
 
-  <!-- Secondary Nodes -->
-  <circle cx="228" cy="368" r="6" fill="#70e1c2" />
-  <circle cx="284" cy="316" r="6" fill="#70e1c2" />
-  <circle cx="312" cy="210" r="5" fill="#a8f5e1" />
+  <!-- Facet Left Specular Highlight -->
+  <path d="M 188 198 C 188 184, 256 182, 256 182 C 256 220, 240 330, 256 406 C 240 360, 196 270, 188 198 Z"
+        fill="url(#carrotHighlight)" />
+
+  <!-- CYBERNETIC ENERGY RINGS (ХАРАКТЕРНЫЕ БОРОЗДКИ МОРКОВКИ) -->
+  <!-- Ring 1 (Top) -->
+  <path d="M 198 234 C 224 244, 288 244, 314 234"
+        fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9" />
+  <path d="M 198 234 C 224 244, 288 244, 314 234"
+        fill="none" stroke="#ffbe3b" stroke-width="7" stroke-linecap="round" opacity="0.4" filter="url(#coreGlow)" />
+
+  <!-- Ring 2 (Middle) -->
+  <path d="M 214 286 C 234 294, 278 294, 298 286"
+        fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9" />
+  <path d="M 214 286 C 234 294, 278 294, 298 286"
+        fill="none" stroke="#ffbe3b" stroke-width="6" stroke-linecap="round" opacity="0.4" filter="url(#coreGlow)" />
+
+  <!-- Ring 3 (Lower) -->
+  <path d="M 230 338 C 244 344, 268 344, 282 338"
+        fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
+  <path d="M 230 338 C 244 344, 268 344, 282 338"
+        fill="none" stroke="#ffbe3b" stroke-width="5" stroke-linecap="round" opacity="0.4" filter="url(#coreGlow)" />
+
+  <!-- Precision Kinetic Tip Indicator -->
+  <circle cx="256" cy="406" r="4.5" fill="#ffffff" filter="url(#coreGlow)" />
+
+  <!-- CENTRAL CATALYST SPARK (УЗЕЛ СТИМУЛА НА СТЫКЕ БОТВЫ И КОРНЯ) -->
+  <g transform="translate(256, 188)">
+    <circle cx="0" cy="0" r="22" fill="#ffbe3b" opacity="0.3" filter="url(#neonGlow)" />
+    <!-- 4-point Diamond Spark -->
+    <path d="M 0 -18 L 5 -5 L 18 0 L 5 5 L 0 18 L -5 5 L -18 0 L -5 -5 Z" fill="url(#sparkGrad)" filter="url(#coreGlow)" />
+    <circle cx="0" cy="0" r="4" fill="#ffffff" />
+  </g>
 
   <!-- Micro Technical Coordinates Label -->
-  <g opacity="0.45" transform="translate(256, 428)">
-    <text text-anchor="middle" font-family="Manrope, system-ui, sans-serif" font-size="11" font-weight="700" letter-spacing="3" fill="#a0bec8">
-      IMPULSE // R-01 CORE
+  <g opacity="0.45" transform="translate(256, 442)">
+    <text text-anchor="middle" font-family="Manrope, system-ui, sans-serif" font-size="10.5" font-weight="700" letter-spacing="3" fill="#a0bec8">
+      STIMUL // CARROT PROTOCOL
     </text>
   </g>
 </svg>

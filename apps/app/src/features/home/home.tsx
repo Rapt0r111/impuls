@@ -64,10 +64,13 @@ const seasonLabel = (season: string) => {
 };
 
 // Подсказка новичку видна, пока нет ни одного начисления; её можно скрыть.
-const GUIDE_KEY = "impuls.home.guide.hidden";
+const GUIDE_KEY = "stimul.home.guide.hidden";
 function readGuideHidden() {
   try {
-    return window.localStorage.getItem(GUIDE_KEY) === "1";
+    return (
+      window.localStorage.getItem(GUIDE_KEY) === "1" ||
+      window.localStorage.getItem("impuls.home.guide.hidden") === "1"
+    );
   } catch {
     return false;
   }
@@ -85,7 +88,7 @@ function HowItWorks({ onHide }: { onHide: () => void }) {
         <li>
           Откройте задачу, нажмите «Начать работу», затем отправьте отчёт.
         </li>
-        <li>Проверяющий принимает отчёт, и вы получаете XP и баллы.</li>
+        <li>Проверяющий принимает отчёт, и вы получаете XP и баллы Стимула.</li>
         <li>
           XP поднимает вас в рейтинге, а баллы можно обменять в разделе
           «Поощрения».
@@ -100,7 +103,7 @@ function HowItWorks({ onHide }: { onHide: () => void }) {
 
 // Последний показанный уровень хранится на устройстве по участнику: экран нового
 // уровня виден один раз после повышения, а при первом запуске ничего не празднуется.
-const levelKey = (userId: string) => `impuls.home.level.seen.${userId}`;
+const levelKey = (userId: string) => `stimul.home.level.seen.${userId}`;
 function readSeenLevel(userId: string) {
   try {
     const raw = window.localStorage.getItem(levelKey(userId));
