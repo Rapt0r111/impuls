@@ -273,7 +273,7 @@ export function ParticipantProfile() {
                   </strong>
                 </p>
                 <p>{data.firstResult.task.title}</p>
-                <p>{date(data.firstResult.grantedAt)} МСК</p>
+                <p>{date(data.firstResult.grantedAt)}</p>
                 {data.firstResult.sourceCorrected ? (
                   <p>
                     Сохранено основание первого результата. Начисление по нему

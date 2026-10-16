@@ -230,7 +230,7 @@ export function AuditLog() {
               </select>
             </label>
           </div>
-          <p className="audit-asof">Обновлено {date(first.updatedAt)} МСК.</p>
+          <p className="audit-asof">Обновлено {date(first.updatedAt)}.</p>
         </>
       ) : null}
       {query.isPending ? (
@@ -270,9 +270,7 @@ export function AuditLog() {
               <h3>{actionNames[item.action]}</h3>
               <p className="audit-meta">
                 {item.actor.displayName} ·{" "}
-                <time dateTime={item.occurredAt}>
-                  {date(item.occurredAt)} МСК
-                </time>
+                <time dateTime={item.occurredAt}>{date(item.occurredAt)}</time>
               </p>
               {item.creation ? (
                 <p className="audit-task">
@@ -301,7 +299,7 @@ export function AuditLog() {
                   </p>
                   <p>
                     {item.access.validUntil
-                      ? `Срок права: до ${date(item.access.validUntil)} МСК.`
+                      ? `Срок права: до ${date(item.access.validUntil)}.`
                       : "Срок права: без ограничения."}
                   </p>
                 </div>
@@ -321,7 +319,7 @@ export function AuditLog() {
                   <p>
                     {item.action === "member.admit"
                       ? item.member.validUntil
-                        ? `Срок допуска: до ${date(item.member.validUntil)} МСК.`
+                        ? `Срок допуска: до ${date(item.member.validUntil)}.`
                         : "Срок допуска: без ограничения."
                       : `Снято прав: ${item.member.revokedBindings}.${
                           item.member.userDeactivated
@@ -341,7 +339,7 @@ export function AuditLog() {
               {item.quota ? (
                 <p className="audit-task">
                   Всего мест при публикации: {item.quota.capacity} ·{" "}
-                  {date(item.quota.startsAt)} — {date(item.quota.endsAt)} МСК.
+                  {date(item.quota.startsAt)} — {date(item.quota.endsAt)}.
                 </p>
               ) : null}
               {item.task ? (
@@ -403,17 +401,17 @@ export function AuditLog() {
                     </div>
                     <div>
                       <dt>Начало периода квоты</dt>
-                      <dd>{date(item.reward.periodStart)} МСК</dd>
+                      <dd>{date(item.reward.periodStart)}</dd>
                     </div>
                     <div>
                       <dt>Конец периода квоты</dt>
-                      <dd>{date(item.reward.periodEnd)} МСК</dd>
+                      <dd>{date(item.reward.periodEnd)}</dd>
                     </div>
                     <div>
                       <dt>Сохранённый срок резерва</dt>
                       <dd>
                         {item.reward.expiresAt
-                          ? `${date(item.reward.expiresAt)} МСК`
+                          ? date(item.reward.expiresAt)
                           : "Не задан"}
                       </dd>
                     </div>

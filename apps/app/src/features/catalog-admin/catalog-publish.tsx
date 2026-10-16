@@ -332,8 +332,7 @@ export function CatalogPublish({
                 />
               </label>
               <p id={`${id}-schedule`} className="notification-note">
-                Укажите UTC. Подтверждение покажет время МСК (UTC+3). Сервер
-                отклонит прошедшую дату.
+                Укажите время в UTC. Сервер отклонит прошедшую дату.
               </p>
             </>
           ) : null}

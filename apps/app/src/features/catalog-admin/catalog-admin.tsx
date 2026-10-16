@@ -171,7 +171,7 @@ export function CatalogAdmin() {
           ) : null}
           {query.isError ? (
             <p className="notification-asof">
-              Показаны данные на {date(data.updatedAt)} МСК.
+              Показаны данные на {date(data.updatedAt)}.
             </p>
           ) : null}
           {data.canCreate && data.canPublish && data.canPublishQuota ? (
@@ -381,7 +381,7 @@ export function CatalogAdmin() {
                         <h4>Текущая квота</h4>
                         <p className="notification-note">
                           {date(item.quota.startsAt)} —{" "}
-                          {date(item.quota.endsAt)} МСК
+                          {date(item.quota.endsAt)}
                         </p>
                         <dl className="notification-counts">
                           {(

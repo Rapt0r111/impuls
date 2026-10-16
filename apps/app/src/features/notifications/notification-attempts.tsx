@@ -152,7 +152,6 @@ export function NotificationAttempts({
                 <time dateTime={data.updatedAt}>
                   {notificationDate(data.updatedAt)}
                 </time>{" "}
-                МСК.{" "}
                 {query.isError
                   ? "Показаны ранее прочитанные записи."
                   : "Записи не изменяются; новые видны после обновления."}
@@ -172,8 +171,7 @@ export function NotificationAttempts({
                         Записано{" "}
                         <time dateTime={event.recordedAt}>
                           {notificationDate(event.recordedAt)}
-                        </time>{" "}
-                        МСК
+                        </time>
                       </p>
                       <details className="notification-identity">
                         <summary>Идентификатор события</summary>

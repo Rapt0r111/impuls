@@ -358,7 +358,7 @@ export function AccessAdmin() {
                       <span>
                         {actionLabels[b.action]}
                         {b.validUntil
-                          ? ` · до ${dateTime.format(new Date(b.validUntil))} МСК`
+                          ? ` · до ${dateTime.format(new Date(b.validUntil))}`
                           : " · без срока"}
                       </span>
                       {data.canManage && !m.isSelf ? (
@@ -475,7 +475,7 @@ export function AccessAdmin() {
                       return;
                     }
                     const term = validUntil
-                      ? ` до ${dateTime.format(validUntil)} МСК`
+                      ? ` до ${dateTime.format(validUntil)}`
                       : " без срока";
                     stage({
                       path: "grants",

@@ -259,7 +259,7 @@ try {
             ".catalog-publication .admin-catalog-terms .notification-note",
           )
           .innerText(),
-        /Начало действия:[\s\S]*МСК/,
+        /Начало действия:\s*\d/,
       );
       f.setDelay(150);
       const button = f.page.getByRole("button", {
