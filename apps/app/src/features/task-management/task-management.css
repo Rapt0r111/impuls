@@ -111,9 +111,7 @@
 }
 
 .task-mgmt__fields input,
-.task-mgmt__fields select,
-.task-mgmt__fields textarea,
-.task-mgmt__assign select {
+.task-mgmt__fields textarea {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -133,9 +131,7 @@
 }
 
 .task-mgmt__fields input:disabled,
-.task-mgmt__fields select:disabled,
-.task-mgmt__fields textarea:disabled,
-.task-mgmt__assign select:disabled {
+.task-mgmt__fields textarea:disabled {
   opacity: 0.65;
 }
 

@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption, selectTrigger } from "./select-option.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
   process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -562,7 +563,7 @@ try {
     await f.page
       .getByRole("button", { name: "Обновить события", exact: true })
       .click();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".notification-events").count(), 0);
@@ -814,7 +815,7 @@ try {
     f.setDelay(700);
     f.setValue(999);
     await refresh(f).click();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(
@@ -824,7 +825,7 @@ try {
       0,
     );
     assert.equal(
-      await f.page.getByLabel("Область", { exact: true }).inputValue(),
+      await selectTrigger(f.page, "Область").getAttribute("data-value"),
       other,
     );
     await f.page.evaluate(() => window.__back?.());
@@ -1063,7 +1064,7 @@ try {
     f.setAttemptDelay(700);
     await f.page.getByText("Журнал попыток", { exact: true }).click();
     await f.page.getByText("Загружаем журнал попыток…").waitFor();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page.getByText(/Уведомлений пока не было/).waitFor();
     await f.page.waitForTimeout(850);
     await f.page.getByText("Журнал попыток", { exact: true }).click();

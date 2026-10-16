@@ -16,6 +16,7 @@ import {
   useManyScopes,
 } from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
+import { Select } from "@/shared/ui/select";
 import { TaskTimeline } from "@/features/tasks/task-timeline";
 import { TaskHistory } from "@/features/tasks/task-history";
 
@@ -363,24 +364,24 @@ function ReturnForm({
                 )}
                 {bonuses.length > 0 && (
                   <>
-                    <label htmlFor="review-bonus">
+                    <label id="review-bonus-label">
                       Бонус (не более одного)
                     </label>
-                    <select
-                      id="review-bonus"
+                    <Select
+                      labelledBy="review-bonus-label"
                       value={bonusCode}
-                      onChange={(event) => {
-                        setBonusCode(event.target.value);
+                      onValueChange={(next) => {
+                        setBonusCode(next);
                         setConfirmed(false);
                       }}
-                    >
-                      <option value="">Без бонуса</option>
-                      {bonuses.map((b) => (
-                        <option key={b.code} value={b.code}>
-                          {b.title} (+{b.xp} XP / +{b.points} баллов)
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "Без бонуса" },
+                        ...bonuses.map((b) => ({
+                          value: b.code,
+                          label: `${b.title} (+${b.xp} XP / +${b.points} баллов)`,
+                        })),
+                      ]}
+                    />
                   </>
                 )}
               </fieldset>

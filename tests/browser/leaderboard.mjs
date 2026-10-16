@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption, selectTrigger } from "./select-option.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
@@ -198,8 +199,8 @@ try {
     await f.page
       .getByRole("rowheader", { name: "Учебный участник 1", exact: true })
       .waitFor();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByLabel("Область", { exact: true }).waitFor();
+    await selectOption(f.page, "Область", other);
+    await selectTrigger(f.page, "Область").waitFor();
     await close(f);
   }
   for (const mode of [

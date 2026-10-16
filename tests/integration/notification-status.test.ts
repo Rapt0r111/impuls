@@ -14,6 +14,7 @@ import {
   notificationEventsResponseSchema,
   notificationEventsCursorSchema,
 } from "../../packages/contracts/src/notification-status";
+import { selectOption, selectTrigger } from "../browser/select-option.mjs";
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
 (url ? describe : describe.skip)("F08 exact-scope simulation status", () => {
@@ -639,9 +640,9 @@ const url = process.env.TEST_DATABASE_URL,
           .getByRole("heading", { name: "Состояние уведомлений" })
           .waitFor();
         // Two permitted scopes are sorted; explicitly select the populated scope.
-        const selector = page.getByLabel("Область", { exact: true });
+        const selector = selectTrigger(page, "Область");
         await selector.waitFor();
-        await selector.selectOption(scope);
+        await selectOption(page, "Область", scope);
         await page
           .locator(".notification-counts dt")
           .filter({ hasText: "Ожидают повтора" })

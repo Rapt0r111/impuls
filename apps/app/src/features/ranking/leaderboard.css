@@ -8,7 +8,6 @@
   min-width: 0;
   align-items: stretch;
 }
-.ranking-filters select,
 .ranking-filters input {
   width: 100%;
   min-width: 0;
@@ -187,7 +186,6 @@
   gap: 12px;
   margin: 4px 0 16px;
 }
-.ranking-filters select,
 .ranking-filters input {
   border-radius: 14px;
   background: rgb(255 255 255 / 0.07);

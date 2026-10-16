@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { Select } from "@/shared/ui/select";
 import { actionLabels } from "./action-labels";
 import { MemberAdmin } from "./member-admin";
 import "../notifications/notification-status.css";
@@ -317,25 +318,21 @@ export function AccessAdmin() {
         Кто что может делать. Свои права изменить нельзя.
       </p>
       {accessScopes.length > 1 ? (
-        <label className="tasks-filter notification-scope">
-          <span>Область</span>
-          <select
+        <div className="tasks-filter notification-scope">
+          <span id={`${id}-scope-label`}>Область</span>
+          <Select
+            labelledBy={`${id}-scope-label`}
             value={scope}
-            onChange={(event) => {
+            onValueChange={(next) => {
               if (confirmLeave()) {
                 reset();
                 setSubjectId("");
-                setScope(event.target.value);
+                setScope(next);
               }
             }}
-          >
-            {accessScopes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={accessScopes.map((s) => ({ value: s.id, label: s.name }))}
+          />
+        </div>
       ) : null}
       {query.isPending && scope ? (
         <p className="tasks-state" role="status">
@@ -500,41 +497,40 @@ export function AccessAdmin() {
                     Выдать право
                   </h4>
                   <div className="catalog-publication-field">
-                    <label htmlFor={`${id}-subject`}>Участник</label>
-                    <select
-                      id={`${id}-subject`}
-                      required
+                    <label id={`${id}-subject-label`}>Участник</label>
+                    <Select
+                      labelledBy={`${id}-subject-label`}
                       value={subjectId}
-                      onChange={(event) => setSubjectId(event.target.value)}
-                    >
-                      <option value="">Выберите участника</option>
-                      {members
-                        .filter((m) => !m.isSelf)
-                        .map((m) => (
-                          <option key={m.userId} value={m.userId}>
-                            {m.displayName}
-                          </option>
-                        ))}
-                    </select>
+                      onValueChange={setSubjectId}
+                      options={[
+                        { value: "", label: "Выберите участника" },
+                        ...members
+                          .filter((m) => !m.isSelf)
+                          .map((m) => ({
+                            value: m.userId,
+                            label: m.displayName,
+                          })),
+                      ]}
+                    />
                   </div>
                   <div className="catalog-publication-field">
-                    <label htmlFor={`${id}-action`}>Право</label>
-                    <select
-                      id={`${id}-action`}
+                    <label id={`${id}-action-label`}>Право</label>
+                    <Select
+                      labelledBy={`${id}-action-label`}
                       value={action}
-                      onChange={(event) => setAction(event.target.value)}
-                    >
-                      <option value={COMMANDER}>
-                        Командир: задачи, проверка, заявки
-                      </option>
-                      <optgroup label="Отдельное право">
-                        {grantableActions.map((a) => (
-                          <option key={a} value={a}>
-                            {actionLabels[a]}
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
+                      onValueChange={setAction}
+                      options={[
+                        {
+                          value: COMMANDER,
+                          label: "Командир: задачи, проверка, заявки",
+                        },
+                        ...grantableActions.map((a) => ({
+                          value: a,
+                          label: actionLabels[a],
+                          group: "Отдельное право",
+                        })),
+                      ]}
+                    />
                   </div>
                   <div className="catalog-publication-field">
                     <label htmlFor={`${id}-until`}>

@@ -10,6 +10,7 @@ import {
 } from "@impuls/contracts";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { Select } from "@/shared/ui/select";
 import "./rules-admin.css";
 
 // Бонус задаётся одной долей фонда; название прежнего бонуса сохраняется, пока доля та же.
@@ -432,19 +433,21 @@ function RulesForm({
           <fieldset>
             <legend>Награда при приёмке</legend>
             <label>
-              <span>Минимум, который получит исполнитель</span>
-              <select
+              <span id="rules-min-percent-label">
+                Минимум, который получит исполнитель
+              </span>
+              <Select
+                labelledBy="rules-min-percent-label"
                 value={minPercent}
-                onChange={(e) => edit(setMinPercent)(e.target.value)}
-              >
-                {minChoices.map((value) => (
-                  <option key={value} value={String(value)}>
-                    {value === 100
+                onValueChange={edit(setMinPercent)}
+                options={minChoices.map((value) => ({
+                  value: String(value),
+                  label:
+                    value === 100
                       ? "Вся награда — снижать нельзя"
-                      : `${value} % награды`}
-                  </option>
-                ))}
-              </select>
+                      : `${value} % награды`,
+                }))}
+              />
             </label>
             <p className="notification-note">
               Проверяющий выбирает сумму от этого минимума до полной награды

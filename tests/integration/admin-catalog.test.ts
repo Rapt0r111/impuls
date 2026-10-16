@@ -13,6 +13,7 @@ import {
   adminCatalogQuotasCursorSchema,
   adminCatalogQuotasResponseSchema,
 } from "../../packages/contracts/src/admin-catalog";
+import { selectOption } from "../browser/select-option.mjs";
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
 (url ? describe : describe.skip)("F07 scoped catalog inspection", () => {
@@ -718,7 +719,7 @@ const url = process.env.TEST_DATABASE_URL,
         await page
           .getByRole("button", { name: "Управление каталогом", exact: true })
           .click();
-        await page.getByLabel("Область", { exact: true }).selectOption(scope);
+        await selectOption(page, "Область", scope);
         await page.locator(".admin-catalog-items li").first().waitFor();
         expect(await page.locator(".admin-catalog-items > li").count()).toBe(3);
         expect(

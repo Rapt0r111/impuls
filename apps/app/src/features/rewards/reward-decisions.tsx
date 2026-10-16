@@ -14,6 +14,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
+import { Select } from "@/shared/ui/select";
 import "./rewards.css";
 
 class ReviewError extends Error {
@@ -313,23 +314,22 @@ export function RewardDecisions({
           {!fulfilling && (
             <label className="ranking-field reward-scope">
               <span id="reward-decision-label">Решение</span>
-              <select
-                aria-labelledby="reward-decision-label"
+              <Select
+                labelledBy="reward-decision-label"
                 value={decision}
                 disabled={locked || outcome === "conflict"}
-                onChange={(e) => {
-                  setDecision(
-                    e.target.value as "approve" | "reject" | "expire",
-                  );
+                onValueChange={(next) => {
+                  setDecision(next as "approve" | "reject" | "expire");
                   setConfirmed(false);
                 }}
-              >
-                <option value="approve">Одобрить</option>
-                <option value="reject">Отказать</option>
-                {selection.redemption.expiresAt && (
-                  <option value="expire">Истечение срока</option>
-                )}
-              </select>
+                options={[
+                  { value: "approve", label: "Одобрить" },
+                  { value: "reject", label: "Отказать" },
+                  ...(selection.redemption.expiresAt
+                    ? [{ value: "expire", label: "Истечение срока" }]
+                    : []),
+                ]}
+              />
             </label>
           )}
           <p>
@@ -429,20 +429,19 @@ export function RewardDecisions({
             <>
               {first.scopes.length > 1 && (
                 <label className="ranking-field reward-scope">
-                  <span>
+                  <span id="reward-scope-label">
                     {fulfilling ? "Область выдачи" : "Область решения"}
                   </span>
-                  <select
+                  <Select
+                    labelledBy="reward-scope-label"
                     value={scope || first.scope?.id || ""}
                     disabled={queue.isFetching}
-                    onChange={(e) => setScope(e.target.value)}
-                  >
-                    {first.scopes.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={setScope}
+                    options={first.scopes.map((s) => ({
+                      value: s.id,
+                      label: s.name,
+                    }))}
+                  />
                 </label>
               )}
               <p className="ledger-asof">

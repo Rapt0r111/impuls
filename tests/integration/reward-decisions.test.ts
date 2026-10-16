@@ -21,6 +21,7 @@ import {
 import { accountLedgerResponseSchema } from "../../packages/contracts/src/ledger";
 import { readAudit } from "../../packages/domain/src/admin/audit";
 import { auditResponseSchema } from "../../packages/contracts/src/audit";
+import { selectOption } from "../browser/select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -905,9 +906,7 @@ const url = process.env.TEST_DATABASE_URL,
             .click();
           const row = page.locator(`[data-redemption-id="${f2.id}"]`);
           await row.getByRole("button", { name: "Рассмотреть заявку" }).click();
-          await page
-            .getByLabel("Решение", { exact: true })
-            .selectOption("expire");
+          await selectOption(page, "Решение", "expire");
           await page.getByLabel("Причина решения").fill(body.reason);
           await page.getByRole("checkbox").check();
           await page

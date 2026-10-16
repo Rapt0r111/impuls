@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
+import { selectOption, selectTrigger } from "./select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
@@ -90,8 +91,8 @@ for (const width of [320, 360, 390]) {
     .click();
   await page.getByText("Реальный участник").first().waitFor();
   if (width === 320) {
-    await page.getByLabel("Участник", { exact: true }).selectOption(memberId);
-    await page.getByLabel("Право", { exact: true }).selectOption("task.assign");
+    await selectOption(page, "Участник", memberId);
+    await selectOption(page, "Право", "task.assign");
     await page.getByLabel("Основание выдачи").fill("Реальная выдача");
     await page.getByRole("button", { name: "Проверить выдачу" }).click();
     assert.equal(await count(live), 0, "preview writes nothing");
@@ -111,10 +112,8 @@ for (const width of [320, 360, 390]) {
     // «Командир» выдаёт весь набор прав одним подтверждением.
     const commander =
       "SELECT count(*) n FROM impuls.role_bindings WHERE user_id=$1 AND scope_id=$2 AND revoked_at IS NULL AND action IN ('task.view','task.create','task.assign','task.edit','task.cancel','task.review','reward.decide','reward.fulfill')";
-    await page.getByLabel("Участник", { exact: true }).selectOption(memberId);
-    await page
-      .getByLabel("Право", { exact: true })
-      .selectOption("preset:commander");
+    await selectOption(page, "Участник", memberId);
+    await selectOption(page, "Право", "preset:commander");
     await page.getByLabel("Основание выдачи").fill("Командир пилота");
     await page.getByRole("button", { name: "Проверить выдачу" }).click();
     await page.getByText(/Сделать Реальный участник командиром/).waitFor();
@@ -123,10 +122,8 @@ for (const width of [320, 360, 390]) {
     await page.getByText(/^Выдано прав: 8\./).waitFor();
     assert.equal(await count(commander), 8);
     assert.equal(await count(changes), 10);
-    await page.getByLabel("Участник", { exact: true }).selectOption(memberId);
-    await page
-      .getByLabel("Право", { exact: true })
-      .selectOption("preset:commander");
+    await selectOption(page, "Участник", memberId);
+    await selectOption(page, "Право", "preset:commander");
     await page.getByLabel("Основание выдачи").fill("Повтор");
     await page.getByRole("button", { name: "Проверить выдачу" }).click();
     await page.getByText("У участника уже есть все права командира.").waitFor();
@@ -173,10 +170,9 @@ for (const width of [320, 360, 390]) {
     await page
       .getByRole("button", { name: "Отозвать допуск", exact: true })
       .click();
-    await page
-      .locator("select")
-      .last()
-      .selectOption({ label: "Допущенный участник" });
+    await selectOption(page, selectTrigger(page, "Участник").last(), {
+      label: "Допущенный участник",
+    });
     await page
       .getByLabel("Основание отзыва")
       .last()

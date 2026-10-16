@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { optionTexts, selectOption, selectTrigger } from "./select-option.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
@@ -251,21 +252,18 @@ async function close(f) {
   scenarios += 1;
 }
 const grant = async (f, reason = "Синтетическая выдача") => {
-  await f.page.getByLabel("Участник", { exact: true }).selectOption(member);
-  await f.page.getByLabel("Право", { exact: true }).selectOption("task.assign");
+  await selectOption(f.page, "Участник", member);
+  await selectOption(f.page, "Право", "task.assign");
   await f.page.getByLabel("Основание выдачи").fill(reason);
   await f.page.getByRole("button", { name: "Проверить выдачу" }).click();
 };
 
 for (const width of [320, 360, 390]) {
   const f = await fixture(width);
-  assert.equal(await f.page.getByLabel("Участник", { exact: true }).count(), 1);
+  assert.equal(await selectTrigger(f.page, "Участник").count(), 1);
   assert.equal(
-    await f.page
-      .getByLabel("Участник", { exact: true })
-      .locator("option", { hasText: "Учебный администратор" })
-      .count(),
-    0,
+    (await optionTexts(f.page, "Участник")).includes("Учебный администратор"),
+    false,
     "self is not a recipient",
   );
   assert.equal(
@@ -506,13 +504,14 @@ for (const width of [320, 360, 390]) {
   await f.page
     .getByRole("button", { name: "Отозвать допуск", exact: true })
     .click();
-  const select = f.page.locator("select").last();
+  // Two member pickers exist (grant and removal); the removal form is the last one.
+  const removal = selectTrigger(f.page, "Участник").last();
   assert.deepEqual(
-    await select.locator("option").allTextContents(),
+    await optionTexts(f.page, removal),
     ["Выберите участника", "Учебный участник"],
     "the actor is not offered for removal",
   );
-  await select.selectOption({ label: "Учебный участник" });
+  await selectOption(f.page, removal, { label: "Учебный участник" });
   await f.page
     .getByLabel("Основание отзыва")
     .last()

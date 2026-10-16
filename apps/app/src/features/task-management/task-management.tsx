@@ -1,6 +1,7 @@
 "use client";
 
 import { IntInput } from "@/shared/ui/int-input";
+import { Select } from "@/shared/ui/select";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
@@ -31,6 +32,12 @@ import {
 import { TaskTimeline } from "@/features/tasks/task-timeline";
 import { TaskHistory } from "@/features/tasks/task-history";
 import "./task-management.css";
+
+const priorityOptions = [
+  { value: "normal", label: "Штатный" },
+  { value: "high", label: "Высокий" },
+  { value: "critical", label: "Критический" },
+];
 
 type ScopeOption = TaskManagementOptionsResponse["scopes"][number];
 type Draft = Omit<TaskCreateRequest, "dueAt"> & { dueAt: string };
@@ -573,22 +580,19 @@ export function TaskManagement() {
                 {singleScope ? null : (
                   <label>
                     <span id="task-mgmt-scope-label">Область</span>
-                    <select
-                      aria-labelledby="task-mgmt-scope-label"
+                    <Select
+                      labelledBy="task-mgmt-scope-label"
                       value={scopeId}
                       disabled={pending || uncertain}
-                      onChange={(event) =>
-                        setField("scopeId", event.target.value)
-                      }
-                      required
-                    >
-                      <option value="">Выберите область</option>
-                      {createScopes.map((scope) => (
-                        <option key={scope.id} value={scope.id}>
-                          {scope.name}
-                        </option>
-                      ))}
-                    </select>
+                      onValueChange={(next) => setField("scopeId", next)}
+                      options={[
+                        { value: "", label: "Выберите область" },
+                        ...createScopes.map((scope) => ({
+                          value: scope.id,
+                          label: scope.name,
+                        })),
+                      ]}
+                    />
                   </label>
                 )}
                 <label className="task-mgmt__wide">
@@ -631,21 +635,15 @@ export function TaskManagement() {
                 </label>
                 <label>
                   <span id="task-mgmt-priority-label">Приоритет</span>
-                  <select
-                    aria-labelledby="task-mgmt-priority-label"
+                  <Select
+                    labelledBy="task-mgmt-priority-label"
                     value={draft.priority}
                     disabled={pending || uncertain}
-                    onChange={(event) =>
-                      setField(
-                        "priority",
-                        event.target.value as Draft["priority"],
-                      )
+                    onValueChange={(next) =>
+                      setField("priority", next as Draft["priority"])
                     }
-                  >
-                    <option value="normal">Штатный</option>
-                    <option value="high">Высокий</option>
-                    <option value="critical">Критический</option>
-                  </select>
+                    options={priorityOptions}
+                  />
                 </label>
                 <label>
                   <span id="task-mgmt-due-label">Срок</span>
@@ -682,28 +680,28 @@ export function TaskManagement() {
               {currentScope ? (
                 <label className="task-mgmt__wide">
                   <span id="task-mgmt-who-label">Кто выполняет</span>
-                  <select
-                    aria-labelledby="task-mgmt-who-label"
+                  <Select
+                    labelledBy="task-mgmt-who-label"
                     value={draft.openForClaim ? "open" : newAssignee}
                     disabled={pending || uncertain}
-                    onChange={(event) => {
-                      const value = event.target.value;
+                    onValueChange={(value) => {
                       setField("openForClaim", value === "open");
                       setNewAssignee(value === "open" ? "" : value);
                     }}
-                  >
-                    <option value="">Назначу позже (черновик)</option>
-                    <option value="open">
-                      Любой участник: свободная задача
-                    </option>
-                    {currentScope.canAssign
-                      ? currentScope.assignees.map((person) => (
-                          <option key={person.id} value={person.id}>
-                            {person.displayName}
-                          </option>
-                        ))
-                      : null}
-                  </select>
+                    options={[
+                      { value: "", label: "Назначу позже (черновик)" },
+                      {
+                        value: "open",
+                        label: "Любой участник: свободная задача",
+                      },
+                      ...(currentScope.canAssign
+                        ? currentScope.assignees.map((person) => ({
+                            value: person.id,
+                            label: person.displayName,
+                          }))
+                        : []),
+                    ]}
+                  />
                 </label>
               ) : null}
               <button
@@ -946,19 +944,19 @@ function TaskRow({
                     ? `Участник области «${scope.name}»`
                     : "Кому назначить"}
                 </span>
-                <select
-                  aria-labelledby={`task-mgmt-assignee-label-${task.id}`}
+                <Select
+                  labelledBy={`task-mgmt-assignee-label-${task.id}`}
                   value={selectedAssignee}
                   disabled={disabled}
-                  onChange={(event) => onSelect(event.target.value)}
-                >
-                  <option value="">Выберите исполнителя</option>
-                  {scope.assignees.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.displayName}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={onSelect}
+                  options={[
+                    { value: "", label: "Выберите исполнителя" },
+                    ...scope.assignees.map((person) => ({
+                      value: person.id,
+                      label: person.displayName,
+                    })),
+                  ]}
+                />
               </label>
               <button
                 type="button"
@@ -1149,20 +1147,14 @@ function TaskChangeForm({
             </label>
             <label>
               <span id={`${labelId}-priority`}>Приоритет</span>
-              <select
-                aria-labelledby={`${labelId}-priority`}
+              <Select
+                labelledBy={`${labelId}-priority`}
                 value={f.priority}
-                onChange={(e) =>
-                  field(
-                    "priority",
-                    e.target.value as TaskEditRequest["priority"],
-                  )
+                onValueChange={(next) =>
+                  field("priority", next as TaskEditRequest["priority"])
                 }
-              >
-                <option value="normal">Штатный</option>
-                <option value="high">Высокий</option>
-                <option value="critical">Критический</option>
-              </select>
+                options={priorityOptions}
+              />
             </label>
             <label>
               <span id={`${labelId}-due`}>Срок (UTC)</span>

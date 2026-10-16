@@ -7,6 +7,7 @@ import {
   notificationAttemptsCursorSchema,
   notificationAttemptsResponseSchema,
 } from "../../packages/contracts/src/notification-attempts";
+import { selectOption } from "../browser/select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -369,7 +370,7 @@ const url = process.env.TEST_DATABASE_URL,
         await page
           .getByRole("button", { name: "Состояние уведомлений", exact: true })
           .click();
-        await page.getByLabel("Область", { exact: true }).selectOption(scope);
+        await selectOption(page, "Область", scope);
         const journal = page.locator(".notification-attempt-history");
         await journal.waitFor();
         expect(calls).toBe(0);

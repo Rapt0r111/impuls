@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
 import { leaveHome, openReviewQueue } from "./home-fallback.mjs";
+import { selectOption, selectTrigger } from "./select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
@@ -137,20 +138,18 @@ const taskState = async () =>
     .click();
   // Одна область — поля нет, задача создаётся в ней.
   await p.getByLabel("Название", { exact: true }).waitFor();
-  if (await p.getByLabel("Область", { exact: true }).count())
-    await p.getByLabel("Область", { exact: true }).selectOption(scope);
+  if (await selectTrigger(p, "Область").count())
+    await selectOption(p, "Область", scope);
   await p.getByLabel("Название", { exact: true }).fill(title);
   await p
     .getByLabel("Критерии результата", { exact: true })
     .fill("Источники приложены и проверены.");
   // Категория не заполнена: сервер получает «Без категории».
-  await p.getByLabel("Приоритет", { exact: true }).selectOption("high");
+  await selectOption(p, "Приоритет", "high");
   await p.getByLabel("Срок", { exact: true }).fill("2035-01-01T12:00");
   await p.getByLabel("Фонд XP", { exact: true }).fill("17");
   await p.getByLabel("Фонд баллов", { exact: true }).fill("9");
-  await p
-    .getByLabel("Кто выполняет", { exact: true })
-    .selectOption(participant);
+  await selectOption(p, "Кто выполняет", participant);
   await p
     .getByRole("button", { name: "Создать и назначить", exact: true })
     .click();

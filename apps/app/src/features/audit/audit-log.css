@@ -22,19 +22,6 @@
   min-width: 0;
   align-items: stretch;
 }
-.audit-filters select {
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 10px;
-  color: var(--color-ink);
-  background: var(--color-bg);
-  border: 1px solid var(--color-line);
-  border-radius: 8px;
-  font: inherit;
-  font-size: 16px;
-  color-scheme: dark;
-}
 .audit-section p,
 .audit-section dt,
 .audit-section dd {
