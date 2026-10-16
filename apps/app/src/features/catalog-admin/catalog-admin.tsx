@@ -18,6 +18,7 @@ import { QuotaPublish } from "./quota-publish";
 import { RewardQuickCreate } from "./reward-quick-create";
 import { RewardBadge } from "../rewards/reward-visual";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
+import { Select } from "@/shared/ui/select";
 import {
   CatalogError,
   CatalogTerms,
@@ -150,23 +151,21 @@ export function CatalogAdmin() {
           {data.scopes.length > 1 ? (
             <label className="tasks-filter notification-scope">
               <span id="admin-catalog-scope-label">Область</span>
-              <select
-                aria-labelledby="admin-catalog-scope-label"
+              <Select
+                labelledBy="admin-catalog-scope-label"
                 value={scope || data.scope.id}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   if (!confirmLeave()) return;
                   setEditing(null);
                   setNotice("");
-                  setScope(event.target.value);
+                  setScope(next);
                   setCursor("");
                 }}
-              >
-                {data.scopes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                options={data.scopes.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                }))}
+              />
             </label>
           ) : null}
           {query.isError ? (

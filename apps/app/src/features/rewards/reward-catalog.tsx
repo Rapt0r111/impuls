@@ -17,6 +17,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
+import { Select } from "@/shared/ui/select";
 import "./rewards.css";
 import { RewardDecisions } from "./reward-decisions";
 import { RewardBadge } from "./reward-visual";
@@ -509,19 +510,18 @@ export function RewardCatalog() {
                     ) : null}
                   </div>
                   {first.scopes.length > 1 && (
-                    <label className="tasks-filter reward-scope">
-                      Область
-                      <select
+                    <div className="tasks-filter reward-scope">
+                      <span id="reward-catalog-scope-label">Область</span>
+                      <Select
+                        labelledBy="reward-catalog-scope-label"
                         value={scope || first.scope?.id || ""}
-                        onChange={(e) => setScope(e.target.value)}
-                      >
-                        {first.scopes.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                        onValueChange={setScope}
+                        options={first.scopes.map((s) => ({
+                          value: s.id,
+                          label: s.name,
+                        }))}
+                      />
+                    </div>
                   )}
                   {items.length === 0 ? (
                     <p className="tasks-empty">

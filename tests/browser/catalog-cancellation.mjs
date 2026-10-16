@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption } from "./select-option.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -455,7 +456,7 @@ try {
         .getByRole("button", { name: "Отменяем…", exact: true })
         .waitFor();
       f.page.once("dialog", (d) => d.accept());
-      await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+      await selectOption(f.page, "Область", other);
       await f.page
         .getByText("Поощрений пока нет.", {
           exact: true,

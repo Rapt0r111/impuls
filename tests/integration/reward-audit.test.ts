@@ -11,6 +11,7 @@ import {
   auditQuerySchema,
   auditResponseSchema,
 } from "../../packages/contracts/src/audit";
+import { selectOption } from "../browser/select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -535,9 +536,7 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .getByRole("button", { name: "Журнал действий", exact: true })
             .click();
-          await page
-            .getByLabel("Действие", { exact: true })
-            .selectOption("reward.fulfill");
+          await selectOption(page, "Действие", "reward.fulfill");
           const entry = page.locator(".audit-list > li");
           await entry
             .getByText("Позиция при подаче: Сохранённый знак", { exact: true })

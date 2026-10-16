@@ -18,6 +18,7 @@ import {
   auditQuerySchema,
   auditResponseSchema,
 } from "../../packages/contracts/src/audit";
+import { selectOption } from "../browser/select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -526,9 +527,7 @@ const url = process.env.TEST_DATABASE_URL,
         await expect
           .poll(() => page.locator(".audit-list > li").count())
           .toBe(31);
-        await page
-          .getByLabel("Действие", { exact: true })
-          .selectOption("ledger.correct");
+        await selectOption(page, "Действие", "ledger.correct");
         await page.getByText("Recorded correction", { exact: false }).waitFor();
         expect(await page.locator(".audit-list > li").count()).toBe(1);
         await admin.query(

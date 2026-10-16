@@ -5,6 +5,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import pg from "pg";
 import { auditLayout } from "./layout-audit.mjs";
+import { selectOption } from "./select-option.mjs";
 
 // F06/F07 decision and fulfilment through the real app and database (no API
 // mocks): approve then fulfil, two deciders race for one request, and a
@@ -207,8 +208,7 @@ async function review(s, title, decision) {
     .getByRole("button", { name: "Рассмотреть заявку", exact: true })
     .click();
   await s.page.getByRole("heading", { name: "Подтвердите решение" }).waitFor();
-  if (decision)
-    await s.page.getByLabel("Решение", { exact: true }).selectOption(decision);
+  if (decision) await selectOption(s.page, "Решение", decision);
   await s.page.getByLabel("Причина решения", { exact: true }).fill(reason);
   await s.page.getByRole("checkbox").check();
 }

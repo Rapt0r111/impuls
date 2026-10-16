@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption } from "./select-option.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
@@ -488,13 +489,11 @@ try {
       .getByRole("button", { name: "Обновить журнал", exact: true })
       .waitFor();
     await capture(f, `audit-${width}.png`);
-    await f.page
-      .getByLabel("Действие", { exact: true })
-      .selectOption("ledger.correct");
+    await selectOption(f.page, "Действие", "ledger.correct");
     await f.page.waitForFunction(
       () => document.querySelectorAll(".audit-list > li").length === 1,
     );
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page
       .getByText("Записанных действий по выбранному фильтру нет.")
       .waitFor();
@@ -526,7 +525,7 @@ try {
     assert.ok((await summary.boundingBox()).height >= 44);
     await capture(f, `audit-rewards-${width}.png`);
     for (const action of rewardActions) {
-      await f.page.getByLabel("Действие", { exact: true }).selectOption(action);
+      await selectOption(f.page, "Действие", action);
       await f.page.waitForFunction(
         () => document.querySelectorAll(".audit-list > li").length === 1,
       );
@@ -579,7 +578,7 @@ try {
           await capture(f, `audit-${action.split(".")[1]}-320.png`);
       }
     }
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page
       .getByText("Записанных действий по выбранному фильтру нет.")
       .waitFor();

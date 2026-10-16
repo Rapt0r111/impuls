@@ -12,6 +12,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { Select } from "@/shared/ui/select";
 import "./audit-log.css";
 import { actionLabels } from "@/features/access-admin/action-labels";
 import { CatalogTerms } from "../catalog-admin/catalog-terms";
@@ -201,33 +202,31 @@ export function AuditLog() {
             {first.scopes.length > 1 ? (
               <label className="tasks-filter">
                 <span id="audit-scope-label">Область</span>
-                <select
-                  aria-labelledby="audit-scope-label"
+                <Select
+                  labelledBy="audit-scope-label"
                   value={scope || first.scope.id}
-                  onChange={(e) => setScope(e.target.value)}
-                >
-                  {first.scopes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setScope}
+                  options={first.scopes.map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                  }))}
+                />
               </label>
             ) : null}
             <label className="tasks-filter">
               <span id="audit-action-label">Действие</span>
-              <select
-                aria-labelledby="audit-action-label"
+              <Select
+                labelledBy="audit-action-label"
                 value={action}
-                onChange={(e) => setAction(e.target.value as Action | "all")}
-              >
-                <option value="all">Все действия</option>
-                {Object.entries(actionNames).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(next) => setAction(next as Action | "all")}
+                options={[
+                  { value: "all", label: "Все действия" },
+                  ...Object.entries(actionNames).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                ]}
+              />
             </label>
           </div>
           <p className="audit-asof">Обновлено {date(first.updatedAt)}.</p>

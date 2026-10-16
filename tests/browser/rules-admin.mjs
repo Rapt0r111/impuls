@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectTrigger } from "./select-option.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const actor = "a1111111-1111-4111-8111-111111111111";
@@ -131,7 +132,10 @@ for (const width of [320, 360, 390]) {
   );
   // Fields are filled with the current settings.
   assert.equal(
-    await page.getByLabel("Минимум, который получит исполнитель").inputValue(),
+    await selectTrigger(
+      page,
+      "Минимум, который получит исполнитель",
+    ).getAttribute("data-value"),
     "50",
   );
   assert.equal(await page.getByLabel("Бонус 2, %").inputValue(), "25");
@@ -172,7 +176,9 @@ for (const width of [320, 360, 390]) {
   );
   assert.ok(
     await page
-      .getByText("Уровни: не заданы → 2-й с 100 XP, 3-й с 250 XP")
+      .getByText(
+        "Уровни: не заданы → 1-й уровень с 0 XP, 2-й уровень с 100 XP, 3-й уровень с 250 XP",
+      )
       .isVisible(),
   );
   assert.equal(await page.getByText(/Часовой пояс месяца:/).count(), 0);

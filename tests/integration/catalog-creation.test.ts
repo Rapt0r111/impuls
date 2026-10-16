@@ -10,6 +10,7 @@ import { readRewardCatalog } from "../../packages/domain/src/rewards/read";
 import { createCsrfToken } from "../../packages/domain/src/auth/session";
 import { catalogCreationResponseSchema } from "../../packages/contracts/src/catalog-creation";
 import { auditResponseSchema } from "../../packages/contracts/src/audit";
+import { selectOption, selectTrigger } from "../browser/select-option.mjs";
 
 const url = process.env.TEST_DATABASE_URL,
   origin = process.env.TEST_APP_ORIGIN;
@@ -595,8 +596,8 @@ const url = process.env.TEST_DATABASE_URL,
           await page
             .locator('.admin-catalog-section[aria-busy="false"]')
             .waitFor();
-          const scopeField = page.getByLabel("Область", { exact: true });
-          if (await scopeField.count()) await scopeField.selectOption(scope);
+          if (await selectTrigger(page, "Область").count())
+            await selectOption(page, "Область", scope);
           // С правами создания, публикации и квоты открывается быстрая форма:
           // три существующие операции подряд — выключенная позиция, включённые
           // условия и период мест.

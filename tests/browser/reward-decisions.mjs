@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption } from "./select-option.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -288,7 +289,7 @@ try {
   for (const width of [320, 360, 390]) {
     const f = await fixture("expiry", width);
     await select(f);
-    await f.page.getByLabel("Решение", { exact: true }).selectOption("expire");
+    await selectOption(f.page, "Решение", "expire");
     await confirm(f);
     await f.page.getByText(/Срок резерва:/).waitFor();
     await capture(f, `expiry-${width}.png`);
@@ -305,7 +306,7 @@ try {
   for (const mode of ["expiry-premature", "expiry-unknown"]) {
     const f = await fixture(mode, 320);
     await select(f);
-    await f.page.getByLabel("Решение", { exact: true }).selectOption("expire");
+    await selectOption(f.page, "Решение", "expire");
     await confirm(f);
     await f.page
       .getByRole("button", { name: "Завершить резерв", exact: true })
@@ -403,7 +404,7 @@ try {
     assert.equal(await submit.isEnabled(), false);
     await f.page.getByLabel("Причина решения").fill("Проверено");
     assert.equal(await f.page.getByRole("checkbox").isChecked(), false);
-    await f.page.getByLabel("Решение", { exact: true }).selectOption("reject");
+    await selectOption(f.page, "Решение", "reject");
     await f.page.getByRole("checkbox").check();
     await f.page
       .getByRole("button", { name: "Отказать в заявке", exact: true })

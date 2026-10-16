@@ -6,6 +6,7 @@ import {
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { Select } from "@/shared/ui/select";
 
 const dateTime = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "medium",
@@ -350,20 +351,19 @@ export function MemberAdmin({
         >
           <h4 id={`${id}-remove`}>Отозвать допуск</h4>
           <div className="catalog-publication-field">
-            <label htmlFor={`${id}-member`}>Участник</label>
-            <select
-              id={`${id}-member`}
-              required
+            <label id={`${id}-member-label`}>Участник</label>
+            <Select
+              labelledBy={`${id}-member-label`}
               value={membershipId}
-              onChange={(event) => setMembershipId(event.target.value)}
-            >
-              <option value="">Выберите участника</option>
-              {removable.map((m) => (
-                <option key={m.membershipId} value={m.membershipId}>
-                  {m.displayName}
-                </option>
-              ))}
-            </select>
+              onValueChange={setMembershipId}
+              options={[
+                { value: "", label: "Выберите участника" },
+                ...removable.map((m) => ({
+                  value: m.membershipId,
+                  label: m.displayName,
+                })),
+              ]}
+            />
           </div>
           <div className="catalog-publication-field">
             <label htmlFor={`${id}-rr`}>Основание отзыва</label>

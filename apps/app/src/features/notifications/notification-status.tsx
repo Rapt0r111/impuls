@@ -7,6 +7,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
+import { Select } from "@/shared/ui/select";
 import "./notification-status.css";
 import {
   StatusError,
@@ -132,17 +133,15 @@ export function NotificationStatus() {
           {data.scopes.length > 1 ? (
             <label className="tasks-filter notification-scope">
               <span id="notification-scope-label">Область</span>
-              <select
-                aria-labelledby="notification-scope-label"
+              <Select
+                labelledBy="notification-scope-label"
                 value={scope || data.scope.id}
-                onChange={(event) => setScope(event.target.value)}
-              >
-                {data.scopes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setScope}
+                options={data.scopes.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+              />
             </label>
           ) : null}
           <p className="notification-asof">Обновлено {date(data.updatedAt)}.</p>

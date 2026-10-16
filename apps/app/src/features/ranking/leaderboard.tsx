@@ -5,6 +5,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { initials } from "@/shared/ui/initials";
+import { Select } from "@/shared/ui/select";
 import "./leaderboard.css";
 
 class RankingError extends Error {
@@ -171,25 +172,20 @@ export function Leaderboard() {
           {first.scopes.length !== 1 ? (
             <label className="tasks-filter ranking-scope">
               <span id="ranking-scope-label">Область</span>
-              <select
-                aria-labelledby="ranking-scope-label"
+              <Select
+                labelledBy="ranking-scope-label"
                 value={scope || first.scope?.id || ""}
-                onChange={(event) => {
-                  setScope(event.target.value);
+                onValueChange={(next) => {
+                  setScope(next);
                   setSeason(season || first.season);
                 }}
                 disabled={first.scopes.length === 0}
-              >
-                {first.scopes.length === 0 ? (
-                  <option value="">Нет доступных областей</option>
-                ) : (
-                  first.scopes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))
-                )}
-              </select>
+                options={
+                  first.scopes.length === 0
+                    ? [{ value: "", label: "Нет доступных областей" }]
+                    : first.scopes.map((s) => ({ value: s.id, label: s.name }))
+                }
+              />
             </label>
           ) : // Одна область — её название ничего не добавляет.
           null}

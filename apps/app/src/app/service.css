@@ -102,11 +102,7 @@
 
 /* --- Поля ------------------------------------------------------------- */
 :is(.tasks-section, .task-mgmt)
-  :is(
-    select,
-    input:not([type="checkbox"], [type="radio"], [type="range"]),
-    textarea
-  ) {
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea) {
   width: 100%;
   min-width: 0;
   min-height: 48px;
@@ -128,30 +124,16 @@
   line-height: 1.5;
   resize: vertical;
 }
-:is(.tasks-section, .task-mgmt) select {
-  appearance: none;
-  padding-right: 44px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2370e1c2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 18px;
-  text-overflow: ellipsis;
-}
-:is(.tasks-section, .task-mgmt) select option {
-  background: #10252d;
-  color: var(--color-ink);
-}
-:is(.tasks-section, .task-mgmt)
-  :is(select, input, textarea):hover:not(:disabled) {
+:is(.tasks-section, .task-mgmt) :is(input, textarea):hover:not(:disabled) {
   border-color: rgb(112 225 194 / 0.45);
 }
-:is(.tasks-section, .task-mgmt) :is(select, input, textarea):focus-visible {
+:is(.tasks-section, .task-mgmt) :is(input, textarea):focus-visible {
   border-color: var(--color-mint);
   outline: 0;
   background-color: rgb(112 225 194 / 0.08);
   box-shadow: 0 0 0 3px rgb(112 225 194 / 0.28);
 }
-:is(.tasks-section, .task-mgmt) :is(select, input, textarea):disabled {
+:is(.tasks-section, .task-mgmt) :is(input, textarea):disabled {
   opacity: 0.55;
 }
 :is(.tasks-section, .task-mgmt) :is(input, textarea)[aria-invalid="true"] {

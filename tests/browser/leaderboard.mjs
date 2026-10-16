@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption, selectTrigger } from "./select-option.mjs";
 
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const dir = path.join(
@@ -190,16 +191,20 @@ try {
       .getByRole("rowheader", { name: "Учебный участник 24", exact: true })
       .waitFor();
     assert.equal(await f.page.locator(".ranking-table tbody tr").count(), 24);
-    await f.page.getByLabel("Месяц").fill("2026-08");
+    await f.page
+      .getByRole("textbox", { name: "Месяц", exact: true })
+      .fill("2026-08");
     await f.page
       .getByText("В этом месяце ещё нет положительного XP.", { exact: false })
       .waitFor();
-    await f.page.getByLabel("Месяц").fill("2026-10");
+    await f.page
+      .getByRole("textbox", { name: "Месяц", exact: true })
+      .fill("2026-10");
     await f.page
       .getByRole("rowheader", { name: "Учебный участник 1", exact: true })
       .waitFor();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
-    await f.page.getByLabel("Область", { exact: true }).waitFor();
+    await selectOption(f.page, "Область", other);
+    await selectTrigger(f.page, "Область").waitFor();
     await close(f);
   }
   for (const mode of [

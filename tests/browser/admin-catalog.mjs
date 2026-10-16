@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption } from "./select-option.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -498,7 +499,7 @@ try {
     f.setQuotaDelay(700);
     await openQuotas(f);
     await quotaPanel(f).getByRole("status").waitFor();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page.getByText("Поощрений пока нет.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await quotaPanel(f).count(), 0);
@@ -712,7 +713,7 @@ try {
     f.setHistoryDelay(700);
     await openHistory(f);
     await historyPanel(f).getByRole("status").waitFor();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page.getByText("Поощрений пока нет.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".admin-catalog-history").count(), 0);
@@ -835,7 +836,7 @@ try {
     await settle(f);
     f.setDelay(700);
     await refresh(f).click();
-    await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+    await selectOption(f.page, "Область", other);
     await f.page.getByText("Поощрений пока нет.").waitFor();
     await f.page.waitForTimeout(850);
     assert.equal(await f.page.locator(".admin-catalog-items > li").count(), 0);

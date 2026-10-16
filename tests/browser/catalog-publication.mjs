@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { mockHomeFallback } from "./home-fallback.mjs";
+import { selectOption } from "./select-option.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100",
   dir = path.join(
     process.env.TEST_SCREENSHOT_DIR ?? "test-results",
@@ -302,7 +303,7 @@ try {
       let dialogs = 0;
       f.page.on("dialog", (d) => (accept ? d.accept() : d.dismiss()));
       f.page.on("dialog", () => dialogs++);
-      await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+      await selectOption(f.page, "Область", other);
       assert.equal(await f.page.locator(".catalog-publication").count(), 1);
       assert.equal(dialogs, 1);
       await f.page.evaluate(() => window.__back?.());
@@ -367,7 +368,7 @@ try {
         .getByRole("button", { name: "Подтвердить публикацию", exact: true })
         .click();
       f.page.once("dialog", (d) => d.accept());
-      await f.page.getByLabel("Область", { exact: true }).selectOption(other);
+      await selectOption(f.page, "Область", other);
       await f.page.getByText("Поощрений пока нет.").waitFor();
       await f.page.waitForTimeout(500);
       assert.equal(await f.page.locator(".catalog-publication").count(), 0);
