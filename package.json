@@ -39,8 +39,6 @@
     "test:telegram": "node scripts/verify-telegram-bridge.mjs",
     "test:reflow": "bun run build:app && node scripts/verify-workspace-reflow.mjs",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun run test:unit && bun run build",
-    "demo:build": "bun work/build.cjs",
-    "demo:test": "bun run demo:build && bun work/verify.cjs && bun work/test_features.cjs && bun work/test_new_features.cjs && bun work/test_all_buttons.cjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:bootstrap-owner": "node scripts/bootstrap-owner.mjs",
     "db:local": "node scripts/local-db.mjs",
