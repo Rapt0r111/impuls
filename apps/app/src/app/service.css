@@ -240,7 +240,7 @@
   margin-inline: 16px;
 }
 :is(.tasks-section, .task-mgmt) details[open] > :not(summary) {
-  animation: rise 0.45s var(--ease-out) both;
+  animation: rise 0.45s var(--ease-out) backwards;
 }
 :is(.tasks-section, .task-mgmt) details > :last-child {
   margin-bottom: 16px;
