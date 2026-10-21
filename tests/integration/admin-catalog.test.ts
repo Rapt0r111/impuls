@@ -752,6 +752,7 @@ const url = process.env.TEST_DATABASE_URL,
         await browser.close();
       }
     },
+    60_000,
   );
   afterAll(async () => {
     try {

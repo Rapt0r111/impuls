@@ -108,6 +108,8 @@ async function pageFixture(width, mode = "success") {
   const consoleErrors = [];
   const responses = [];
   const dialogs = [];
+  // Realtime указан фиктивным хостом: сокет не открываем, иначе Chromium пишет ошибку в консоль.
+  await page.routeWebSocket(/realtime\.example\.test/, () => {});
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() !== "error") return;
@@ -507,6 +509,7 @@ async function dbFlow() {
         },
       ]);
       const page = await context.newPage();
+      await page.routeWebSocket(/realtime\.example\.test/, () => {});
       const errors = [];
       const mutationRequests = [];
       const mutationResponses = [];
