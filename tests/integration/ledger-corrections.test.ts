@@ -651,115 +651,124 @@ const url = process.env.TEST_DATABASE_URL;
       page.response.items[0]!.reviewId,
     );
   });
-  it("serves real HTTP guards/replay and browser → API → PostgreSQL correction", async () => {
-    const origin = process.env.TEST_APP_ORIGIN;
-    if (!origin) throw new Error("Run bun run test:task-slice");
-    const f = await fixture();
-    const a = actors[0]!;
-    const csrf = createCsrfToken(a.token, process.env.CSRF_SECRET!);
-    const headers = {
-      Cookie: `impuls_session=${a.token}`,
-      Origin: origin,
-      "Content-Type": "application/json",
-      "X-CSRF-Token": csrf,
-      "Idempotency-Key": f.input.idempotencyKey,
-    };
-    const body = {
-      reviewId: f.input.reviewId,
-      expectedVersion: 1,
-      reason: f.input.reason,
-    };
-    const post = (h: Record<string, string>, b: unknown = body) =>
-      fetch(`${origin}/api/v1/admin/ledger-corrections`, {
-        method: "POST",
-        headers: h,
-        body: JSON.stringify(b),
-      });
-    expect(
-      (await post({ ...headers, Origin: "https://untrusted.invalid" })).status,
-    ).toBe(403);
-    expect((await post({ ...headers, "X-CSRF-Token": "invalid" })).status).toBe(
-      403,
-    );
-    expect(
-      (await post({ ...headers, "Idempotency-Key": "invalid" })).status,
-    ).toBe(400);
-    expect((await post(headers, { ...body, xp: 1 })).status).toBe(400);
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
-    const errors: string[] = [];
-    page.on("pageerror", (e) => errors.push(e.message));
-    try {
-      await page
-        .context()
-        .addCookies([{ name: "impuls_session", value: a.token, url: origin }]);
-      await page.route("https://telegram.org/js/telegram-web-app.js", (route) =>
-        route.fulfill({
-          contentType: "application/javascript",
-          body: "window.Telegram={WebApp:{ready(){},expand(){},setHeaderColor(){},setBackgroundColor(){},enableClosingConfirmation(){},disableClosingConfirmation(){}}}",
-        }),
+  it.skipIf(!process.env.TEST_APP_ORIGIN)(
+    "serves real HTTP guards/replay and browser → API → PostgreSQL correction",
+    async () => {
+      const origin = process.env.TEST_APP_ORIGIN;
+      if (!origin) throw new Error("Run bun run test:task-slice");
+      const f = await fixture();
+      const a = actors[0]!;
+      const csrf = createCsrfToken(a.token, process.env.CSRF_SECRET!);
+      const headers = {
+        Cookie: `impuls_session=${a.token}`,
+        Origin: origin,
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrf,
+        "Idempotency-Key": f.input.idempotencyKey,
+      };
+      const body = {
+        reviewId: f.input.reviewId,
+        expectedVersion: 1,
+        reason: f.input.reason,
+      };
+      const post = (h: Record<string, string>, b: unknown = body) =>
+        fetch(`${origin}/api/v1/admin/ledger-corrections`, {
+          method: "POST",
+          headers: h,
+          body: JSON.stringify(b),
+        });
+      expect(
+        (await post({ ...headers, Origin: "https://untrusted.invalid" }))
+          .status,
+      ).toBe(403);
+      expect(
+        (await post({ ...headers, "X-CSRF-Token": "invalid" })).status,
+      ).toBe(403);
+      expect(
+        (await post({ ...headers, "Idempotency-Key": "invalid" })).status,
+      ).toBe(400);
+      expect((await post(headers, { ...body, xp: 1 })).status).toBe(400);
+      const browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage();
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(e.message));
+      try {
+        await page
+          .context()
+          .addCookies([
+            { name: "impuls_session", value: a.token, url: origin },
+          ]);
+        await page.route(
+          "https://telegram.org/js/telegram-web-app.js",
+          (route) =>
+            route.fulfill({
+              contentType: "application/javascript",
+              body: "window.Telegram={WebApp:{ready(){},expand(){},setHeaderColor(){},setBackgroundColor(){},enableClosingConfirmation(){},disableClosingConfirmation(){}}}",
+            }),
+        );
+        await page.goto(origin);
+        await page.getByRole("button", { name: "Ещё", exact: true }).click();
+        await page
+          .getByRole("button", { name: "Баланс и журнал", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Исправление начислений", exact: true })
+          .click();
+        const row = page.locator(".ledger-entry").filter({
+          has: page.getByText(`Synthetic compensated task ${f.taskId}`, {
+            exact: true,
+          }),
+        });
+        await row
+          .getByRole("button", { name: "Вернуть начисление", exact: true })
+          .click();
+        await page
+          .getByLabel("Основание возврата", { exact: true })
+          .fill("Synthetic browser correction");
+        await page
+          .getByLabel("Подтверждаю получателя, обе суммы и новый баланс")
+          .check();
+        await page
+          .getByRole("button", {
+            name: "Записать возврат начисления",
+            exact: true,
+          })
+          .click();
+        await page.getByText(/Возврат записан: -17 XP/).waitFor();
+        await reconcile(f.owner.id, 0, 0);
+        expect(await counts(f.input.reviewId)).toEqual({
+          corrections: 1,
+          entries: 4,
+          audit: 1,
+          outbox: 1,
+        });
+        expect(errors).toEqual([]);
+      } finally {
+        await browser.close();
+      }
+      const g = await fixture();
+      const h = { ...headers, "Idempotency-Key": g.input.idempotencyKey };
+      const gb = {
+        reviewId: g.input.reviewId,
+        expectedVersion: 1,
+        reason: g.input.reason,
+      };
+      const first = await post(h, gb);
+      expect(first.status).toBe(200);
+      expect(first.headers.get("cache-control")).toContain("no-store");
+      const result = await first.json();
+      expect(await (await post(h, gb)).json()).toEqual(result);
+      expect((await post(h, { ...gb, reason: "Different" })).status).toBe(409);
+      await admin.query(
+        "INSERT INTO impuls.task_mutation_limits(actor_id,expires_at,attempts) VALUES($1,clock_timestamp()+interval '60 seconds',30) ON CONFLICT(actor_id) DO UPDATE SET expires_at=clock_timestamp()+interval '60 seconds',attempts=30",
+        [a.id],
       );
-      await page.goto(origin);
-      await page.getByRole("button", { name: "Ещё", exact: true }).click();
-      await page
-        .getByRole("button", { name: "Баланс и журнал", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "Исправление начислений", exact: true })
-        .click();
-      const row = page.locator(".ledger-entry").filter({
-        has: page.getByText(`Synthetic compensated task ${f.taskId}`, {
-          exact: true,
-        }),
-      });
-      await row
-        .getByRole("button", { name: "Вернуть начисление", exact: true })
-        .click();
-      await page
-        .getByLabel("Основание возврата", { exact: true })
-        .fill("Synthetic browser correction");
-      await page
-        .getByLabel("Подтверждаю получателя, обе суммы и новый баланс")
-        .check();
-      await page
-        .getByRole("button", {
-          name: "Записать возврат начисления",
-          exact: true,
-        })
-        .click();
-      await page.getByText(/Возврат записан: -17 XP/).waitFor();
-      await reconcile(f.owner.id, 0, 0);
-      expect(await counts(f.input.reviewId)).toEqual({
-        corrections: 1,
-        entries: 4,
-        audit: 1,
-        outbox: 1,
-      });
-      expect(errors).toEqual([]);
-    } finally {
-      await browser.close();
-    }
-    const g = await fixture();
-    const h = { ...headers, "Idempotency-Key": g.input.idempotencyKey };
-    const gb = {
-      reviewId: g.input.reviewId,
-      expectedVersion: 1,
-      reason: g.input.reason,
-    };
-    const first = await post(h, gb);
-    expect(first.status).toBe(200);
-    expect(first.headers.get("cache-control")).toContain("no-store");
-    const result = await first.json();
-    expect(await (await post(h, gb)).json()).toEqual(result);
-    expect((await post(h, { ...gb, reason: "Different" })).status).toBe(409);
-    await admin.query(
-      "INSERT INTO impuls.task_mutation_limits(actor_id,expires_at,attempts) VALUES($1,clock_timestamp()+interval '60 seconds',30) ON CONFLICT(actor_id) DO UPDATE SET expires_at=clock_timestamp()+interval '60 seconds',attempts=30",
-      [a.id],
-    );
-    const limited = await post(h, gb);
-    expect(limited.status).toBe(429);
-    expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0);
-  }, 30000);
+      const limited = await post(h, gb);
+      expect(limited.status).toBe(429);
+      expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0);
+    },
+    30000,
+  );
   afterAll(async () => {
     try {
       for (const table of ["notification_outbox", "audit_events"])

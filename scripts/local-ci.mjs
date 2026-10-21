@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process";
 
 // Локальный прогон шагов из .github/workflows/check.yml, когда GitHub Actions недоступен.
-// Порядок и команды совпадают с workflow; шаги, которым нужны браузер или PostgreSQL 17,
-// помечаются в итоге явно, а не считаются пройденными.
+// Перед каждым прогоном база пересоздаётся (scripts/reset-local-test-db.mjs), иначе тесты видят
+// данные прошлого прогона. Шаг «Интеграция» есть только здесь: тесты, которым нужен запущенный
+// сервер, в нём пропускаются и идут в шаге «Задачи (сценарий)». Для теста восстановления задайте
+// PG_BIN с pg_dump 17. Шаги, которым нужны браузер или PostgreSQL 17, помечаются в итоге явно.
 // Использование: bun run ci:local [--db-url=postgres://…] [--skip-browser]
 const args = new Set(process.argv.slice(2));
 const dbArg = process.argv.find((arg) => arg.startsWith("--db-url="));
@@ -13,6 +15,11 @@ const skipBrowser = args.has("--skip-browser");
 const steps = [
   { name: "Проверка форматирования", cmd: ["bun", "run", "format:check"] },
   { name: "Секреты в файлах", cmd: ["node", "scripts/scan-secrets.mjs"] },
+  {
+    name: "Сброс тестовой базы",
+    cmd: ["node", "scripts/reset-local-test-db.mjs"],
+    needs: "db",
+  },
   {
     name: "Миграции",
     cmd: ["bun", "run", "db:migrate"],
