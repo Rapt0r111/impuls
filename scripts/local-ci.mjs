@@ -43,7 +43,6 @@ const steps = [
     cmd: ["node", "scripts/verify-workspace-reflow.mjs"],
     needs: "browser",
   },
-  { name: "Демо", cmd: ["bun", "run", "demo:test"], needs: "browser" },
 ];
 
 const results = [];

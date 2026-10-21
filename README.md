@@ -104,12 +104,11 @@ bun run check
 bun run test:integration
 bun run test:task-slice
 bun run test:telegram
-bun run demo:test
 ```
 
 `test:telegram` запускайте после `bun run build` с установленным Playwright Chromium. Команда поднимает локальный production-сервер на 127.0.0.1:3101, проверяет SDK/HTTP-симуляции и останавливает сервер; БД не требуется. Это проверка адаптера и UI, не реальных Telegram Android/iOS. Шаг включён в CI, но удалённый прогон нового изменения ещё не подтверждён.
 
-`test:integration` требует `TEST_DATABASE_URL`; без переменной PostgreSQL-сценарии пропускаются. `check` проверяет формат, lint, строгий TypeScript, unit-тесты и сборку. `demo:test` относится только к автономному R0. CI на PostgreSQL 17.6 выполнил миграции и 4 integration-теста для основы F02; результат и ограничения — в `docs/verification/2026-09-29-f02-foundation.md`. Проверку внешних проектов см. в `docs/verification/2026-09-28-vercel-supabase.md`.
+`test:integration` требует `TEST_DATABASE_URL`; без переменной PostgreSQL-сценарии пропускаются. `check` проверяет формат, lint, строгий TypeScript, unit-тесты и сборку. CI на PostgreSQL 17.6 выполнил миграции и 4 integration-теста для основы F02; результат и ограничения — в `docs/verification/2026-09-29-f02-foundation.md`. Проверку внешних проектов см. в `docs/verification/2026-09-28-vercel-supabase.md`.
 
 `test:task-slice` запускайте после миграций и `bun run build` с `TEST_DATABASE_URL` отдельной тестовой БД и установленным Playwright Chromium. Команда поднимает локальный production-сервер на порту 3100, подключает его под ролью `impuls_app`, выполняет PostgreSQL/HTTP-проверки и браузерные сценарии, затем останавливает сервер. Тесты создают и удаляют только собственные синтетические записи. HTTP-сценарии в обычном `test:integration` дополнительно требуют `TEST_APP_ORIGIN` локального сервера и его `CSRF_SECRET`; без них они пропускаются. `test:task-slice` включён в CI с PostgreSQL 17.6; результат нового CI-прогона ещё не подтверждён.
 

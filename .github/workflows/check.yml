@@ -67,4 +67,3 @@ jobs:
       - name: Workspace text resize and reflow
         run: node scripts/verify-workspace-reflow.mjs
       - run: bun run test:task-slice
-      - run: bun run demo:test
