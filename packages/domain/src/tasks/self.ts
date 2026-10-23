@@ -26,6 +26,7 @@ export type SelfTask = {
   fundPoints: number;
   fundXp: number;
   verifiedPoints: number | null;
+  verifiedXp: number | null;
   updatedAt: string;
   scope: { id: string; name: string };
   author: { id: string; displayName: string };
@@ -70,7 +71,7 @@ export type VerifySelfTaskInput = Base & {
   taskId: string;
   expectedVersion: number;
 } & (
-    | { decision: "approve"; fundPoints: number }
+    | { decision: "approve"; fundPoints: number; fundXp: number }
     | { decision: "decline"; reason: string }
   );
 export type DecideSelfTaskInput = Base & {
@@ -93,7 +94,7 @@ const hasRight = (
      AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp()))`;
 
 const selectSelfTask = `SELECT t.id, t.title, t.criteria, t.status, t.version, t.requested_points, t.requested_xp,
-    t.fund_points, t.fund_xp, t.verified_points, t.updated_at, s.id AS scope_id, s.name AS scope_name,
+    t.fund_points, t.fund_xp, t.verified_points, t.verified_xp, t.updated_at, s.id AS scope_id, s.name AS scope_name,
     u.id AS author_id, u.display_name AS author_name,
     COALESCE((SELECT json_agg(json_build_object('id', v.id, 'displayName', v.display_name)
                 ORDER BY v.display_name, v.id)
@@ -114,6 +115,7 @@ type SelfTaskRow = {
   fund_points: number;
   fund_xp: number;
   verified_points: number | null;
+  verified_xp: number | null;
   updated_at: Date;
   scope_id: string;
   scope_name: string;
@@ -134,6 +136,7 @@ function toSelfTask(row: SelfTaskRow): SelfTask {
     fundPoints: row.fund_points,
     fundXp: row.fund_xp,
     verifiedPoints: row.verified_points,
+    verifiedXp: row.verified_xp,
     updatedAt: row.updated_at.toISOString(),
     scope: { id: row.scope_id, name: row.scope_name },
     author: { id: row.author_id, displayName: row.author_name },
@@ -441,6 +444,7 @@ export function verifySelfTask(pool: Pool, input: VerifySelfTaskInput) {
       decision: input.decision,
       ...("reason" in input ? { reason: input.reason } : {}),
       ...("fundPoints" in input ? { fundPoints: input.fundPoints } : {}),
+      ...("fundXp" in input ? { fundXp: input.fundXp } : {}),
     },
     async (client) => {
       const current = await lockForDecision(
@@ -461,9 +465,9 @@ export function verifySelfTask(pool: Pool, input: VerifySelfTaskInput) {
       if (input.decision === "approve") {
         // The verifier scores the report; the commander approves that score, not a new one.
         await client.query(
-          `UPDATE impuls.tasks SET status = 'awaiting_commander', verified_points = $2, version = version + 1,
-                  updated_at = clock_timestamp() WHERE id = $1`,
-          [input.taskId, input.fundPoints],
+          `UPDATE impuls.tasks SET status = 'awaiting_commander', verified_points = $2, verified_xp = $3,
+                  version = version + 1, updated_at = clock_timestamp() WHERE id = $1`,
+          [input.taskId, input.fundPoints, input.fundXp],
         );
         await appendTaskEvent(client, {
           taskId: input.taskId,
