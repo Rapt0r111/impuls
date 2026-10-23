@@ -70,7 +70,7 @@ const url = process.env.TEST_DATABASE_URL,
         [user, hashes[i]],
       );
   });
-  async function fixture(user = owner, xp = 125, points = 100) {
+  async function fixture(user = owner, xp = 100, points = 100) {
     const task = randomUUID();
     tasks.push(task);
     await admin.query(
@@ -129,10 +129,10 @@ const url = process.env.TEST_DATABASE_URL,
     const p = await read();
     if (p.kind !== "ok") throw new Error(p.kind);
     expect(participantProfileResponseSchema.parse(p.response)).toMatchObject({
-      balance: { lifetimeXp: 125, availablePoints: 100 },
+      balance: { lifetimeXp: 100, availablePoints: 100 },
       progression: {
         state: "configured",
-        level: { level: 2, remainingXp: 125 },
+        level: { level: 2, remainingXp: 150 },
       },
       firstResult: {
         reviewId: firstReview,
@@ -161,7 +161,7 @@ const url = process.env.TEST_DATABASE_URL,
   });
   it("serializes different tasks for one recipient and keeps one source", async () => {
     const a = await fixture(concurrent, 100, 10),
-      b = await fixture(concurrent, 150, 20);
+      b = await fixture(concurrent, 100, 20);
     const results = await Promise.all([
       reviewTaskSubmission(runtime, a.request),
       reviewTaskSubmission(runtime, b.request),
@@ -170,15 +170,14 @@ const url = process.env.TEST_DATABASE_URL,
     const p = await read(2);
     if (p.kind !== "ok") throw new Error(p.kind);
     expect(p.response.balance).toMatchObject({
-      lifetimeXp: 250,
+      lifetimeXp: 200,
       availablePoints: 30,
       version: 2,
     });
-    // Past the last configured threshold (250) the next level costs the last span (150).
     expect(p.response.progression.level).toMatchObject({
-      level: 3,
-      nextLevelXp: 400,
-      remainingXp: 150,
+      level: 2,
+      nextLevelXp: 250,
+      remainingXp: 50,
     });
     expect([a.task, b.task]).toContain(p.response.firstResult!.task.id);
     expect(

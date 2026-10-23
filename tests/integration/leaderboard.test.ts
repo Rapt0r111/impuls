@@ -127,14 +127,14 @@ const url = process.env.TEST_DATABASE_URL,
       "UPDATE impuls.sessions SET revoked_at=NULL WHERE user_id=$1",
       [reviewer],
     );
-    for (const [i, xp] of [100, 60, 60, 20, 0, 1000].entries())
+    for (const [i, xp] of [100, 60, 60, 20, 0, 90].entries())
       await award(users[i]!, xp);
     await admin.query("UPDATE impuls.users SET active=false WHERE id=$1", [
       users[5],
     ]);
-    await award(users[0]!, 700, otherScope);
-    await award(users[0]!, 900, scope, "2026-10");
-    await award(users[0]!, 800, scope, "2026-09", "UTC");
+    await award(users[0]!, 70, otherScope);
+    await award(users[0]!, 80, scope, "2026-10");
+    await award(users[0]!, 50, scope, "2026-09", "UTC");
   });
   it("calculates 1,2,2,4 and UUID order while excluding points/other scope/month/zone/inactive users", async () => {
     const r = await read();
@@ -150,7 +150,7 @@ const url = process.env.TEST_DATABASE_URL,
     expect(data.self).toEqual({ xp: 100, rank: 1 });
     const oct = await read({ season: "2026-10" });
     expect(oct.kind === "ok" && oct.response.items.map((v) => v.xp)).toEqual([
-      900,
+      80,
     ]);
   });
   it("keeps zero XP private and empty months explicit", async () => {
@@ -367,7 +367,7 @@ const url = process.env.TEST_DATABASE_URL,
     expect(sept.response.self).toEqual({ xp: 0, rank: null });
     const oct = await read({ season: "2026-10" });
     if (oct.kind !== "ok") throw new Error(oct.kind);
-    expect(oct.response.self).toEqual({ xp: 900, rank: 1 });
+    expect(oct.response.self).toEqual({ xp: 80, rank: 1 });
   });
   afterAll(async () => {
     try {

@@ -102,6 +102,7 @@ describe("task management contracts", () => {
     expect(taskCreateRequestSchema.safeParse(createBody).success).toBe(true);
     for (const patch of [
       { fundXp: 2_147_483_648 },
+      { fundXp: 101 },
       { fundPoints: 1.25 },
       { fundXp: -1 },
       { scopeId: "not-a-uuid" },

@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { taskPointsSchema } from "./points";
+import { taskPointsSchema, taskXpSchema } from "./points";
 
+// Responses keep the wider range from before ADR-0041/0042, so older reports still show.
 const amount = z.number().int().min(0).max(100000);
 const reason = z.string().trim().min(1).max(2000);
 const expectedVersion = z.number().int().min(1).max(2147483647);
@@ -21,7 +22,7 @@ export const selfTaskProposeRequestSchema = z.strictObject({
   title: z.string().trim().min(1).max(120),
   text: z.string().trim().min(1).max(2000),
   requestedPoints: taskPointsSchema,
-  requestedXp: amount.nullable(),
+  requestedXp: taskXpSchema.nullable(),
   // One responsible person: they score the report and the commander approves that score.
   verifierIds: z.array(z.uuid()).length(1),
 });
@@ -32,7 +33,7 @@ export const selfTaskVerifyRequestSchema = z.discriminatedUnion("decision", [
     expectedVersion,
     fundPoints: taskPointsSchema,
     // The verifier proposes XP beside points; the commander sees it and approves or changes it.
-    fundXp: amount,
+    fundXp: taskXpSchema,
   }),
   z.strictObject({ decision: z.literal("decline"), expectedVersion, reason }),
 ]);
@@ -41,7 +42,7 @@ export const selfTaskDecideRequestSchema = z.discriminatedUnion("decision", [
   z.strictObject({
     decision: z.literal("forward"),
     expectedVersion,
-    fundXp: amount,
+    fundXp: taskXpSchema,
   }),
   z.strictObject({ decision: z.literal("decline"), expectedVersion, reason }),
 ]);

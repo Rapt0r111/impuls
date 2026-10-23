@@ -300,7 +300,12 @@ export type {
 } from "./rules";
 
 export { realtimeResponseSchema } from "./realtime";
-export { TASK_POINTS_MAX, taskPointsSchema } from "./points";
+export {
+  TASK_POINTS_MAX,
+  TASK_XP_MAX,
+  taskPointsSchema,
+  taskXpSchema,
+} from "./points";
 export {
   selfTaskDecideRequestSchema,
   selfTaskListResponseSchema,

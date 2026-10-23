@@ -495,6 +495,24 @@ integration(
       ).rejects.toThrow(/check/);
     });
 
+    it("keeps XP within 0-100 in the database as well, the edges included", async () => {
+      const id = await created();
+      expect(
+        await verify("verifier", id, { fundPoints: 60, fundXp: 100 }),
+      ).toMatchObject({ kind: "ok" });
+      for (const [column, value] of [
+        ["verified_xp", 101],
+        ["verified_xp", -1],
+        ["requested_xp", 101],
+      ] as const)
+        await expect(
+          admin.query(`UPDATE impuls.tasks SET ${column} = $2 WHERE id = $1`, [
+            id,
+            value,
+          ]),
+        ).rejects.toThrow(`violates check constraint "tasks_${column}_check"`);
+    });
+
     it("refuses to forward a report that has no verifier score yet", async () => {
       const id = await created();
       await verify("verifier", id);

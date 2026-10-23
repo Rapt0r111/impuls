@@ -71,11 +71,11 @@ describe("acceptance adjustment and bonus options", () => {
   it("adds one bonus to the corrected base as independent xp and points", () => {
     expect(
       resolveAcceptanceAward(acceptanceOptions(rules, fund), fund, {
-        baseXp: 120,
+        baseXp: 80,
         basePoints: 25,
         bonusCode: "quality",
       }),
-    ).toMatchObject({ ok: true, xp: 140, points: 35 });
+    ).toMatchObject({ ok: true, xp: 100, points: 35 });
   });
   it("rejects an unknown bonus, an unlisted adjustment and an over-limit base", () => {
     const options = acceptanceOptions(rules, fund);
@@ -94,23 +94,46 @@ describe("acceptance adjustment and bonus options", () => {
       reason: "adjustment_exceeds_limit",
     });
   });
-  it("lets an unchanged fund through even above the adjustment ceiling", () => {
+  it("refuses an unchanged legacy fund above 100 XP, even within the adjustment ceiling", () => {
     expect(
       resolveAcceptanceAward(
         acceptanceOptions(rules, fund),
         { xp: 500, points: 30 },
         { baseXp: 500 },
       ),
-    ).toMatchObject({ ok: true, xp: 500 });
+    ).toEqual({ ok: false, reason: "xp_above_limit" });
   });
-  it("refuses a total that would overflow the ledger column", () => {
+  it("refuses a total far above the cap before it can overflow the ledger column", () => {
     expect(
       resolveAcceptanceAward(
         acceptanceOptions(rules, fund),
         { xp: 2_147_483_640, points: 0 },
         { bonusCode: "quality" },
       ),
-    ).toEqual({ ok: false, reason: "award_too_large" });
+    ).toEqual({ ok: false, reason: "xp_above_limit" });
+  });
+  it("keeps base plus bonus within 100 XP for one task, the edge included", () => {
+    const options = acceptanceOptions(rules, fund);
+    expect(
+      resolveAcceptanceAward(
+        options,
+        { xp: 80, points: 10 },
+        { bonusCode: "quality" },
+      ),
+    ).toMatchObject({ ok: true, xp: 100, points: 20 });
+    expect(
+      resolveAcceptanceAward(
+        options,
+        { xp: 81, points: 10 },
+        { bonusCode: "quality" },
+      ),
+    ).toEqual({ ok: false, reason: "xp_above_limit" });
+    expect(
+      resolveAcceptanceAward(options, { xp: 101, points: 10 }, {}),
+    ).toEqual({ ok: false, reason: "xp_above_limit" });
+    expect(
+      resolveAcceptanceAward(options, { xp: 100, points: 10 }, {}),
+    ).toMatchObject({ ok: true, xp: 100 });
   });
   it("keeps base plus bonus within 100 points for one task", () => {
     expect(
@@ -123,7 +146,7 @@ describe("acceptance adjustment and bonus options", () => {
     expect(
       resolveAcceptanceAward(
         acceptanceOptions(rules, fund),
-        { xp: 100, points: 90 },
+        { xp: 80, points: 90 },
         { bonusCode: "quality" },
       ),
     ).toMatchObject({ ok: true, points: 100 });
@@ -181,8 +204,14 @@ describe("acceptance options as shares of the task fund (ADR-0031)", () => {
       }),
     ).toMatchObject({ ok: true, xp: 75, points: 22 });
     expect(
+      resolveAcceptanceAward(options, fund, {
+        baseXp: 90,
+        bonusCode: "plus_10",
+      }),
+    ).toMatchObject({ ok: true, baseXp: 90, xp: 100, points: 33 });
+    expect(
       resolveAcceptanceAward(options, fund, { bonusCode: "plus_10" }),
-    ).toMatchObject({ ok: true, baseXp: 100, xp: 110, points: 33 });
+    ).toEqual({ ok: false, reason: "xp_above_limit" });
     expect(resolveAcceptanceAward(options, fund, { baseXp: 49 })).toEqual({
       ok: false,
       reason: "adjustment_below_limit",

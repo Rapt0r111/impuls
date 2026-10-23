@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { taskPointsSchema } from "./points";
+import { taskPointsSchema, taskXpSchema } from "./points";
 
 const taskPrioritySchema = z.enum(["critical", "high", "normal"]);
 const taskManagementStatusSchema = z.enum([
@@ -50,7 +50,7 @@ export const taskCreateRequestSchema = z.strictObject({
   categoryCode: z.string().trim().min(1).max(40),
   priority: taskPrioritySchema,
   dueAt: z.iso.datetime(),
-  fundXp: fundSchema,
+  fundXp: taskXpSchema,
   fundPoints: taskPointsSchema,
   openForClaim: z.boolean().default(false),
 });

@@ -2,9 +2,11 @@
 
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import { PointsScaleHint } from "@/shared/ui/points-scale-hint";
+import { XpLimitHint } from "@/shared/ui/xp-limit-hint";
 
 import {
   apiErrorSchema,
+  TASK_XP_MAX,
   reviewListResponseSchema,
   taskReturnResponseSchema,
   taskAcceptanceResponseSchema,
@@ -78,16 +80,18 @@ function ReturnForm({
       ? null
       : parsedBaseXp === null || parsedBasePoints === null
         ? "Укажите целые неотрицательные значения."
-        : adjusted &&
-            (!adjustment ||
-              parsedBaseXp > adjustment.maxXp ||
-              parsedBasePoints > adjustment.maxPoints ||
-              parsedBaseXp < adjustment.minXp ||
-              parsedBasePoints < adjustment.minPoints)
-          ? adjustment
-            ? `XP от ${adjustment.minXp} до ${adjustment.maxXp}, баллы от ${adjustment.minPoints} до ${adjustment.maxPoints} по настройкам начислений.`
-            : "Настройки начислений не разрешают корректировку."
-          : null;
+        : (parsedBaseXp ?? 0) + (bonus?.xp ?? 0) > TASK_XP_MAX
+          ? `XP за задачу с надбавкой не больше ${TASK_XP_MAX}.`
+          : adjusted &&
+              (!adjustment ||
+                parsedBaseXp > adjustment.maxXp ||
+                parsedBasePoints > adjustment.maxPoints ||
+                parsedBaseXp < adjustment.minXp ||
+                parsedBasePoints < adjustment.minPoints)
+            ? adjustment
+              ? `XP от ${adjustment.minXp} до ${adjustment.maxXp}, баллы от ${adjustment.minPoints} до ${adjustment.maxPoints} по настройкам начислений.`
+              : "Настройки начислений не разрешают корректировку."
+            : null;
   const totalXp = (parsedBaseXp ?? 0) + (bonus?.xp ?? 0);
   const totalPoints = (parsedBasePoints ?? 0) + (bonus?.points ?? 0);
   const [pending, setPending] = useState(false);
@@ -362,6 +366,7 @@ function ReturnForm({
                       }}
                     />
                     <PointsScaleHint />
+                    <XpLimitHint />
                   </>
                 )}
                 {bonuses.length > 0 && (

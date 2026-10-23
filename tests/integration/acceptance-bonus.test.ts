@@ -279,20 +279,20 @@ const options = {
       const f = await fixture(withOptions, 100, 30);
       const input = {
         ...f.input,
-        baseXp: 120,
+        baseXp: 80,
         basePoints: 25,
         bonusCode: "quality",
       };
       const result = await reviewTaskSubmission(runtime, input);
       expect(result.kind).toBe("ok");
       if (result.kind !== "ok") return;
-      expectedXp += 140;
+      expectedXp += 100;
       expectedPoints += 35;
       expect(result.response.award).toMatchObject({
-        xp: 140,
+        xp: 100,
         points: 35,
         breakdown: {
-          baseXp: 120,
+          baseXp: 80,
           basePoints: 25,
           bonus: { code: "quality", title: "Качество", xp: 20, points: 10 },
         },
@@ -305,7 +305,7 @@ const options = {
       ).rows;
       expect(entries).toEqual([
         { currency: "points", amount: 35, kind: "task_acceptance" },
-        { currency: "xp", amount: 140, kind: "task_acceptance" },
+        { currency: "xp", amount: 100, kind: "task_acceptance" },
       ]);
       const review = (
         await admin.query(
@@ -316,7 +316,7 @@ const options = {
       expect(review).toEqual({
         fund_xp: 100,
         fund_points: 30,
-        base_xp: 120,
+        base_xp: 80,
         base_points: 25,
         bonus_code: "quality",
         bonus_title: "Качество",
@@ -330,9 +330,9 @@ const options = {
         )
       ).rows[0].diff;
       expect(audit).toMatchObject({
-        xp: 140,
+        xp: 100,
         points: 35,
-        baseXp: 120,
+        baseXp: 80,
         basePoints: 25,
         bonusCode: "quality",
         bonusXp: 20,
@@ -342,6 +342,8 @@ const options = {
       expect(
         await reviewTaskSubmission(runtime, {
           ...input,
+          // 60 + 40 stays within 100 XP, so the reply is the conflict, not the cap.
+          baseXp: 60,
           bonusCode: "innovation",
         }),
       ).toEqual({ kind: "idempotency_conflict" });
@@ -479,16 +481,27 @@ const options = {
       await expect(insert(51)).rejects.toMatchObject({ code: "23514" });
     });
 
+    it("keeps a task fund within 0-100 XP in the database as well", async () => {
+      await expect(
+        admin.query(
+          "INSERT INTO impuls.tasks (id,scope_id,rule_set_id,created_by,title,criteria,category_code,priority,status,due_at,fund_xp,fund_points) VALUES ($1,$2,$3,$4,'Synthetic oversized fund','Independent criteria','test','normal','in_review',now(),101,30)",
+          [randomUUID(), scope, withOptions, reviewer],
+        ),
+      ).rejects.toThrow(
+        'violates check constraint "tasks_fund_xp_limit_check"',
+      );
+    });
+
     it("reverses the whole credited total, bonus included, through the existing correction", async () => {
       const f = await fixture(withOptions, 100, 30);
       const accepted = await reviewTaskSubmission(runtime, {
         ...f.input,
-        baseXp: 90,
+        baseXp: 80,
         bonusCode: "quality",
       });
       expect(accepted.kind).toBe("ok");
       if (accepted.kind !== "ok" || !accepted.response.award) return;
-      expect(accepted.response.award).toMatchObject({ xp: 110, points: 40 });
+      expect(accepted.response.award).toMatchObject({ xp: 100, points: 40 });
       const before = await balance();
       const corrected = await reverseAcceptance(runtime, {
         actorId: reviewer,
@@ -501,7 +514,7 @@ const options = {
       });
       expect(corrected.kind).toBe("ok");
       expect(await balance()).toEqual({
-        xp: before.xp - 110,
+        xp: before.xp - 100,
         points: before.points - 40,
       });
       expect(
