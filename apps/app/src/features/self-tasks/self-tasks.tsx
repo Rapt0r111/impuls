@@ -43,6 +43,11 @@ function useSelfList(view: View) {
   });
 }
 
+// Tasks waiting for this person's verdict; the Проверка tab shows when there are any.
+export function useWaitingForVerifier() {
+  return useSelfList("verify");
+}
+
 function useSelfOptions() {
   return useQuery({
     queryKey: [...SELF_KEY, "options"],
@@ -318,15 +323,26 @@ function StaleAlert() {
   );
 }
 
-function MyReports() {
+const onReview = (status: SelfTask["status"]) =>
+  status === "awaiting_verification" || status === "awaiting_commander";
+
+function MyReports({
+  title = "Мои отчёты",
+  pendingOnly = false,
+}: {
+  title?: string;
+  pendingOnly?: boolean;
+}) {
   const mine = useSelfList("mine");
   if (mine.isPending) return null;
-  if (mine.isError && !mine.data) return <ListError title="Мои отчёты" />;
-  if (!mine.data?.length && !mine.isError) return null;
-  const rows = mine.data ?? [];
+  if (mine.isError && !mine.data) return <ListError title={title} />;
+  const rows = (mine.data ?? []).filter(
+    (task) => !pendingOnly || onReview(task.status),
+  );
+  if (!rows.length && !mine.isError) return null;
   return (
-    <section className="self-section" aria-label="Мои отчёты">
-      <h3>Мои отчёты</h3>
+    <section className="self-section" aria-label={title}>
+      <h3>{title}</h3>
       {mine.isError ? <StaleAlert /> : null}
       <ul className="self-list">
         {rows.map((task) => (
@@ -678,15 +694,13 @@ export function SelfTasksPanel() {
   );
 }
 
-// «На проверке у меня»: отчёты, которые ждут оценки этого человека. Отдельно от «Свои задачи».
-export function VerifierQueuePanel() {
+// Вкладка «Проверка»: задачи, которые проверяет этот человек, и его собственные отчёты,
+// которые сейчас на проверке у проверяющего или командира.
+export function ReviewTabSelfTasks() {
   return (
     <div className="self-panel">
-      <p className="self-hint">
-        Оцените отчёты баллами от 0 до 100 и передайте командиру. Командир
-        утверждает итог и назначает XP.
-      </p>
       <VerifyQueue />
+      <MyReports title="Мои задачи на проверке" pendingOnly />
     </div>
   );
 }
