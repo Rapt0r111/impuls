@@ -112,6 +112,22 @@ describe("acceptance adjustment and bonus options", () => {
       ),
     ).toEqual({ ok: false, reason: "award_too_large" });
   });
+  it("keeps base plus bonus within 100 points for one task", () => {
+    expect(
+      resolveAcceptanceAward(
+        acceptanceOptions(rules, fund),
+        { xp: 100, points: 95 },
+        { bonusCode: "quality" },
+      ),
+    ).toEqual({ ok: false, reason: "points_above_limit" });
+    expect(
+      resolveAcceptanceAward(
+        acceptanceOptions(rules, fund),
+        { xp: 100, points: 90 },
+        { bonusCode: "quality" },
+      ),
+    ).toMatchObject({ ok: true, points: 100 });
+  });
 });
 
 describe("acceptance options as shares of the task fund (ADR-0031)", () => {

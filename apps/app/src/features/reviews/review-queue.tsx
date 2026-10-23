@@ -1,6 +1,7 @@
 "use client";
 
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { PointsScaleHint } from "@/shared/ui/points-scale-hint";
 
 import {
   apiErrorSchema,
@@ -360,6 +361,7 @@ function ReturnForm({
                         setConfirmed(false);
                       }}
                     />
+                    <PointsScaleHint />
                   </>
                 )}
                 {bonuses.length > 0 && (

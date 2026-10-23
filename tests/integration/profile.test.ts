@@ -70,7 +70,7 @@ const url = process.env.TEST_DATABASE_URL,
         [user, hashes[i]],
       );
   });
-  async function fixture(user = owner, xp = 125, points = 400) {
+  async function fixture(user = owner, xp = 125, points = 100) {
     const task = randomUUID();
     tasks.push(task);
     await admin.query(
@@ -129,7 +129,7 @@ const url = process.env.TEST_DATABASE_URL,
     const p = await read();
     if (p.kind !== "ok") throw new Error(p.kind);
     expect(participantProfileResponseSchema.parse(p.response)).toMatchObject({
-      balance: { lifetimeXp: 125, availablePoints: 400 },
+      balance: { lifetimeXp: 125, availablePoints: 100 },
       progression: {
         state: "configured",
         level: { level: 2, remainingXp: 125 },

@@ -266,6 +266,7 @@ integration(
         expectedVersion?: number;
         decision?: "approve" | "decline";
         reason?: string;
+        fundPoints?: number;
       } = {},
     ) =>
       verifySelfTask(runtime, {
@@ -277,14 +278,16 @@ integration(
               decision: "decline" as const,
               reason: over.reason ?? "Synthetic reason",
             }
-          : { decision: "approve" as const }),
+          : {
+              decision: "approve" as const,
+              fundPoints: over.fundPoints ?? 25,
+            }),
       });
     const decide = (
       who: Who,
       taskId: string,
       over: {
         expectedVersion?: number;
-        fundPoints?: number;
         fundXp?: number;
         decision?: "forward" | "decline";
       } = {},
@@ -297,7 +300,6 @@ integration(
           ? { decision: "decline" as const, reason: "Synthetic decline" }
           : {
               decision: "forward" as const,
-              fundPoints: over.fundPoints ?? 25,
               fundXp: over.fundXp ?? 8,
             }),
       });
@@ -372,6 +374,11 @@ integration(
       expect(await propose("member", { verifierIds: [] })).toEqual({
         kind: "verifiers_invalid",
       });
+      expect(
+        await propose("member", {
+          verifierIds: [users.verifier, users.verifier2],
+        }),
+      ).toEqual({ kind: "verifiers_invalid" });
     });
 
     it("hides the scope from a non-member and refuses revoked accounts", async () => {
@@ -446,30 +453,50 @@ integration(
       });
     });
 
-    it("refuses a second verifier decision after the first one", async () => {
-      const id = await created({
-        verifierIds: [users.verifier, users.verifier2],
+    it("stores the verifier's score beside the fund, which stays unchanged until forwarding", async () => {
+      const id = await created();
+      const scored = await verify("verifier", id, { fundPoints: 73 });
+      expect(scored).toMatchObject({
+        kind: "ok",
+        response: {
+          task: {
+            status: "awaiting_commander",
+            verifiedPoints: 73,
+            fundPoints: 0,
+          },
+        },
       });
-      await verify("verifier", id);
-      expect(await verify("verifier2", id, { expectedVersion: 2 })).toEqual({
-        kind: "conflict",
-        currentVersion: 2,
+      expect(await state(id)).toMatchObject({
+        status: "awaiting_commander",
+        fund_points: 0,
       });
     });
 
-    it("lets exactly one of two concurrent verifier decisions win", async () => {
-      const id = await created({
-        verifierIds: [users.verifier, users.verifier2],
-      });
-      const [a, b] = await Promise.all([
-        verify("verifier", id),
-        verify("verifier2", id),
-      ]);
-      expect([a.kind, b.kind].sort()).toEqual(["conflict", "ok"]);
-      expect(await state(id)).toMatchObject({
-        status: "awaiting_commander",
-        version: 2,
-      });
+    it("keeps points within 0-100 in the database as well", async () => {
+      const id = await created();
+      await verify("verifier", id, { fundPoints: 60 });
+      await expect(
+        admin.query(
+          "UPDATE impuls.tasks SET verified_points = 101 WHERE id = $1",
+          [id],
+        ),
+      ).rejects.toThrow(/check/);
+      await expect(
+        admin.query(
+          "UPDATE impuls.tasks SET requested_points = 101 WHERE id = $1",
+          [id],
+        ),
+      ).rejects.toThrow(/check/);
+    });
+
+    it("refuses to forward a report that has no verifier score yet", async () => {
+      const id = await created();
+      await verify("verifier", id);
+      await admin.query(
+        "UPDATE impuls.tasks SET verified_points = NULL WHERE id = $1",
+        [id],
+      );
+      expect(await decide("commander", id)).toEqual({ kind: "points_missing" });
     });
 
     it("closes a report the verifier declines, without an assignment", async () => {
@@ -497,7 +524,7 @@ integration(
         kind: "conflict",
         currentVersion: 1,
       });
-      await verify("verifier", id);
+      await verify("verifier", id, { fundPoints: 25 });
       expect(await decide("verifier", id)).toEqual({ kind: "not_found" });
       expect(await decide("member", id)).toEqual({ kind: "not_found" });
       const forwarded = await decide("commander", id);
@@ -626,7 +653,6 @@ integration(
       await verify("verifier", id);
       const forwarded = await decide("commander", id, {
         expectedVersion: 2,
-        fundPoints: 40,
         fundXp: 12,
       });
       expect(forwarded.kind).toBe("ok");
@@ -652,7 +678,7 @@ integration(
       });
       expect(await state(id)).toMatchObject({
         status: "accepted",
-        fund_points: 40,
+        fund_points: 25,
       });
     });
   },

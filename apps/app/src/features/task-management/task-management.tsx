@@ -1,6 +1,7 @@
 "use client";
 
 import { IntInput } from "@/shared/ui/int-input";
+import { PointsScaleHint } from "@/shared/ui/points-scale-hint";
 import { Select } from "@/shared/ui/select";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 
@@ -8,6 +9,7 @@ import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 
 import {
   apiErrorSchema,
+  TASK_POINTS_MAX,
   taskCreateRequestSchema,
   taskEditRequestSchema,
   taskCancelRequestSchema,
@@ -672,10 +674,12 @@ export function TaskManagement() {
                       labelledBy="task-mgmt-points-label"
                       value={draft.fundPoints}
                       disabled={pending || uncertain}
+                      max={TASK_POINTS_MAX}
                       onValue={(n) => setField("fundPoints", n)}
                     />
                   </label>
                 </div>
+                <PointsScaleHint />
               </div>
               {currentScope ? (
                 <label className="task-mgmt__wide">
@@ -1186,11 +1190,13 @@ function TaskChangeForm({
               <IntInput
                 labelledBy={`${labelId}-points`}
                 value={f.fundPoints}
+                max={TASK_POINTS_MAX}
                 onValue={(n) => field("fundPoints", n)}
               />
             </label>
           </div>
         )}
+        {change.action === "edit" ? <PointsScaleHint /> : null}
         <div className="task-mgmt__fields">
           <label className="task-mgmt__wide">
             <span id={`${labelId}-reason`}>

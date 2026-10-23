@@ -3,9 +3,10 @@ import type { Pool, PoolClient } from "pg";
 import { appendTaskEvent } from "./events";
 import { memberOf } from "./claim";
 
-// A self-submitted task is a finished result the member reports and asks points for. Chosen
-// verifiers approve it (awaiting_commander); the commander sets the fund and forwards it into
-// the normal review queue (in_review, assigned to the member). Acceptance then runs as usual.
+// A self-submitted task is a finished result the member reports and asks points for. The one
+// responsible verifier scores it (0–100) and sends it on (awaiting_commander); the commander
+// approves that score with XP and forwards it into the normal review queue (in_review, assigned
+// to the member), or declines it. Acceptance then runs as usual. ADR-0041.
 export type SelfTaskStatus =
   | "awaiting_verification"
   | "awaiting_commander"
@@ -24,6 +25,7 @@ export type SelfTask = {
   requestedXp: number | null;
   fundPoints: number;
   fundXp: number;
+  verifiedPoints: number | null;
   updatedAt: string;
   scope: { id: string; name: string };
   author: { id: string; displayName: string };
@@ -45,6 +47,7 @@ export type SelfTaskResult =
   | { kind: "idempotency_conflict" }
   | { kind: "conflict"; currentVersion: number }
   | { kind: "verifiers_invalid" }
+  | { kind: "points_missing" }
   | { kind: "rules_invalid" }
   | { kind: "self_review" }
   | { kind: "recipient_revoked" };
@@ -66,12 +69,15 @@ export type ProposeSelfTaskInput = Base & {
 export type VerifySelfTaskInput = Base & {
   taskId: string;
   expectedVersion: number;
-} & ({ decision: "approve" } | { decision: "decline"; reason: string });
+} & (
+    | { decision: "approve"; fundPoints: number }
+    | { decision: "decline"; reason: string }
+  );
 export type DecideSelfTaskInput = Base & {
   taskId: string;
   expectedVersion: number;
 } & (
-    | { decision: "forward"; fundPoints: number; fundXp: number }
+    | { decision: "forward"; fundXp: number }
     | { decision: "decline"; reason: string }
   );
 
@@ -87,7 +93,7 @@ const hasRight = (
      AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp()))`;
 
 const selectSelfTask = `SELECT t.id, t.title, t.criteria, t.status, t.version, t.requested_points, t.requested_xp,
-    t.fund_points, t.fund_xp, t.updated_at, s.id AS scope_id, s.name AS scope_name,
+    t.fund_points, t.fund_xp, t.verified_points, t.updated_at, s.id AS scope_id, s.name AS scope_name,
     u.id AS author_id, u.display_name AS author_name,
     COALESCE((SELECT json_agg(json_build_object('id', v.id, 'displayName', v.display_name)
                 ORDER BY v.display_name, v.id)
@@ -107,6 +113,7 @@ type SelfTaskRow = {
   requested_xp: number | null;
   fund_points: number;
   fund_xp: number;
+  verified_points: number | null;
   updated_at: Date;
   scope_id: string;
   scope_name: string;
@@ -126,6 +133,7 @@ function toSelfTask(row: SelfTaskRow): SelfTask {
     requestedXp: row.requested_xp,
     fundPoints: row.fund_points,
     fundXp: row.fund_xp,
+    verifiedPoints: row.verified_points,
     updatedAt: row.updated_at.toISOString(),
     scope: { id: row.scope_id, name: row.scope_name },
     author: { id: row.author_id, displayName: row.author_name },
@@ -333,7 +341,7 @@ export function proposeSelfTask(pool: Pool, input: ProposeSelfTaskInput) {
         [input.scopeId, input.actorId],
       );
       if (!member.rowCount) return { kind: "not_found" };
-      if (verifierIds.length === 0 || verifierIds.includes(input.actorId))
+      if (verifierIds.length !== 1 || verifierIds.includes(input.actorId))
         return { kind: "verifiers_invalid" };
       // Every chosen verifier must hold the verify right in this scope and be an active member.
       const allowed = await client.query<{ user_id: string }>(
@@ -414,8 +422,9 @@ async function lockForDecision(
     status: SelfTaskStatus;
     version: number;
     created_by: string;
+    verified_points: number | null;
   }>(
-    `SELECT status, version, created_by FROM impuls.tasks WHERE id = $1 FOR UPDATE`,
+    `SELECT status, version, created_by, verified_points FROM impuls.tasks WHERE id = $1 FOR UPDATE`,
     [taskId],
   );
   return locked.rows[0] ?? null;
@@ -431,6 +440,7 @@ export function verifySelfTask(pool: Pool, input: VerifySelfTaskInput) {
       expectedVersion: input.expectedVersion,
       decision: input.decision,
       ...("reason" in input ? { reason: input.reason } : {}),
+      ...("fundPoints" in input ? { fundPoints: input.fundPoints } : {}),
     },
     async (client) => {
       const current = await lockForDecision(
@@ -449,10 +459,11 @@ export function verifySelfTask(pool: Pool, input: VerifySelfTaskInput) {
         return { kind: "conflict", currentVersion: current.version };
 
       if (input.decision === "approve") {
+        // The verifier scores the report; the commander approves that score, not a new one.
         await client.query(
-          `UPDATE impuls.tasks SET status = 'awaiting_commander', version = version + 1,
+          `UPDATE impuls.tasks SET status = 'awaiting_commander', verified_points = $2, version = version + 1,
                   updated_at = clock_timestamp() WHERE id = $1`,
-          [input.taskId],
+          [input.taskId, input.fundPoints],
         );
         await appendTaskEvent(client, {
           taskId: input.taskId,
@@ -489,9 +500,7 @@ export function decideSelfTask(pool: Pool, input: DecideSelfTaskInput) {
       expectedVersion: input.expectedVersion,
       decision: input.decision,
       ...("reason" in input ? { reason: input.reason } : {}),
-      ...("fundPoints" in input
-        ? { fundPoints: input.fundPoints, fundXp: input.fundXp }
-        : {}),
+      ...("fundXp" in input ? { fundXp: input.fundXp } : {}),
     },
     async (client) => {
       const current = await lockForDecision(
@@ -510,6 +519,7 @@ export function decideSelfTask(pool: Pool, input: DecideSelfTaskInput) {
         return { kind: "conflict", currentVersion: current.version };
 
       if (input.decision === "forward") {
+        if (current.verified_points === null) return { kind: "points_missing" };
         // The member is the assignee, so their account must still be active to receive the accrual.
         const recipient = await client.query<{ active: boolean }>(
           "SELECT active FROM impuls.users WHERE id = $1 FOR SHARE",
@@ -523,9 +533,9 @@ export function decideSelfTask(pool: Pool, input: DecideSelfTaskInput) {
           [input.taskId, current.created_by],
         );
         await client.query(
-          `UPDATE impuls.tasks SET status = 'in_review', fund_points = $2, fund_xp = $3,
+          `UPDATE impuls.tasks SET status = 'in_review', fund_points = verified_points, fund_xp = $2,
                   version = version + 1, updated_at = clock_timestamp() WHERE id = $1`,
-          [input.taskId, input.fundPoints, input.fundXp],
+          [input.taskId, input.fundXp],
         );
         await appendTaskEvent(client, {
           taskId: input.taskId,

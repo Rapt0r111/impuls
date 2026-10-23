@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { assignedTaskSummarySchema, taskIdSchema } from "./tasks";
 import { acceptanceAwardSchema } from "./ledger";
+import { taskPointsSchema } from "./points";
 
 export const reviewListQuerySchema = z.strictObject({
   cursor: taskIdSchema.optional(),
@@ -82,7 +83,7 @@ export const taskAcceptanceRequestSchema = z.strictObject({
   reason: z.string().trim().min(1).max(2000),
   // Omitted fields mean "pay the task fund unchanged, without a bonus".
   baseXp: z.number().int().min(0).max(1_000_000).optional(),
-  basePoints: z.number().int().min(0).max(1_000_000).optional(),
+  basePoints: taskPointsSchema.optional(),
   bonusCode: z
     .string()
     .regex(/^[a-z][a-z0-9_]{1,39}$/)

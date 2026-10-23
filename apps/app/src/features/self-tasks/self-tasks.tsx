@@ -4,12 +4,14 @@ import {
   selfTaskListResponseSchema,
   selfTaskOptionsResponseSchema,
   selfTaskResponseSchema,
+  TASK_POINTS_MAX,
   type SelfTask,
 } from "@impuls/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
+import { PointsScaleHint } from "@/shared/ui/points-scale-hint";
 import "./self-tasks.css";
 
 const SELF_KEY = ["self-tasks"];
@@ -136,7 +138,7 @@ function ReportForm() {
   const [text, setText] = useState("");
   const [points, setPoints] = useState("");
   const [xp, setXp] = useState("");
-  const [verifiers, setVerifiers] = useState<string[]>([]);
+  const [verifier, setVerifier] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // Same key for a retry of the same report after a lost response; a new key otherwise.
@@ -157,8 +159,12 @@ function ReportForm() {
     if (pending || !options.data?.scopeId) return;
     const requestedPoints = Number(points);
     const requestedXp = xp.trim() === "" ? null : Number(xp);
-    if (!Number.isInteger(requestedPoints) || requestedPoints < 0) {
-      setMessage("Укажите баллы целым числом от 0.");
+    if (
+      !Number.isInteger(requestedPoints) ||
+      requestedPoints < 0 ||
+      requestedPoints > TASK_POINTS_MAX
+    ) {
+      setMessage(`Укажите баллы целым числом от 0 до ${TASK_POINTS_MAX}.`);
       return;
     }
     if (
@@ -180,7 +186,7 @@ function ReportForm() {
         text,
         requestedPoints,
         requestedXp,
-        verifierIds: verifiers,
+        verifierIds: [verifier],
       },
       csrfToken,
       idem,
@@ -202,7 +208,7 @@ function ReportForm() {
     setText("");
     setPoints("");
     setXp("");
-    setVerifiers([]);
+    setVerifier("");
     setMessage("Отчёт отправлен проверяющему.");
     await client.invalidateQueries({ queryKey: SELF_KEY });
   }
@@ -235,7 +241,7 @@ function ReportForm() {
             type="number"
             inputMode="numeric"
             min={0}
-            max={100000}
+            max={TASK_POINTS_MAX}
             value={points}
             onChange={(event) => setPoints(event.target.value)}
             required
@@ -253,21 +259,17 @@ function ReportForm() {
           />
         </label>
       </div>
+      <PointsScaleHint />
       <fieldset className="self-field">
-        <legend>Проверяющие (один или несколько)</legend>
+        <legend>Ответственный проверяющий</legend>
         {candidates.length ? (
           candidates.map((person) => (
             <label key={person.id} className="self-check">
               <input
-                type="checkbox"
-                checked={verifiers.includes(person.id)}
-                onChange={(event) =>
-                  setVerifiers((current) =>
-                    event.target.checked
-                      ? [...current, person.id]
-                      : current.filter((id) => id !== person.id),
-                  )
-                }
+                type="radio"
+                name="self-verifier"
+                checked={verifier === person.id}
+                onChange={() => setVerifier(person.id)}
               />
               {person.displayName}
             </label>
@@ -287,7 +289,7 @@ function ReportForm() {
       <button
         type="submit"
         className="tasks-action"
-        disabled={pending || verifiers.length === 0}
+        disabled={pending || verifier === ""}
       >
         {pending ? "Отправляем…" : "Отправить проверяющему"}
       </button>
@@ -325,6 +327,7 @@ function VerifyQueue() {
   const waiting = useSelfList("verify");
   const [open, setOpen] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [scores, setScores] = useState<Record<string, string>>({});
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const key = useRef(new Map<string, string>());
@@ -333,6 +336,18 @@ function VerifyQueue() {
 
   async function act(task: SelfTask, decision: "approve" | "decline") {
     if (pendingId) return;
+    const raw = scores[task.id] ?? "";
+    const score = Number(raw);
+    if (
+      decision === "approve" &&
+      (raw.trim() === "" ||
+        !Number.isInteger(score) ||
+        score < 0 ||
+        score > TASK_POINTS_MAX)
+    ) {
+      setMessage(`Укажите баллы целым числом от 0 до ${TASK_POINTS_MAX}.`);
+      return;
+    }
     const intent = `${task.id}:${task.version}:${decision}`;
     const idem = key.current.get(intent) ?? crypto.randomUUID();
     key.current.set(intent, idem);
@@ -340,7 +355,7 @@ function VerifyQueue() {
     setMessage(null);
     const body =
       decision === "approve"
-        ? { decision, expectedVersion: task.version }
+        ? { decision, expectedVersion: task.version, fundPoints: score }
         : { decision, expectedVersion: task.version, reason };
     const outcome = await post(
       `/${task.id}/verify`,
@@ -384,6 +399,23 @@ function VerifyQueue() {
             </div>
             <p className="self-text">{task.text}</p>
             <Requested task={task} />
+            <label className="self-field">
+              <span>Баллы за задачу</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={TASK_POINTS_MAX}
+                value={scores[task.id] ?? ""}
+                onChange={(event) =>
+                  setScores((all) => ({
+                    ...all,
+                    [task.id]: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <PointsScaleHint />
             <div className="self-actions">
               <button
                 type="button"
@@ -429,14 +461,13 @@ function VerifyQueue() {
   );
 }
 
-// Commander queue: sets the fund for points and XP, then forwards to acceptance, or declines.
+// Commander queue: the verifier's score is shown, not edited. The commander sets XP, then
+// forwards the report to acceptance, or declines it.
 function DecisionQueue() {
   const { csrfToken, loseAccess } = useAuthorizedSession();
   const client = useQueryClient();
   const waiting = useSelfList("commander");
-  const [amounts, setAmounts] = useState<
-    Record<string, { points: string; xp: string }>
-  >({});
+  const [xps, setXps] = useState<Record<string, string>>({});
   const [reason, setReason] = useState<Record<string, string>>({});
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -446,28 +477,17 @@ function DecisionQueue() {
 
   async function act(task: SelfTask, decision: "forward" | "decline") {
     if (pendingId) return;
-    const current = amounts[task.id] ?? {
-      points: String(task.requestedPoints),
-      xp: String(task.requestedXp ?? 0),
-    };
+    const fundXp = Number(xps[task.id] ?? task.requestedXp ?? 0);
     const intent = `${task.id}:${task.version}:${decision}`;
     const idem = key.current.get(intent) ?? crypto.randomUUID();
     key.current.set(intent, idem);
-    const fundPoints = Number(current.points);
-    const fundXp = Number(current.xp);
-    if (
-      decision === "forward" &&
-      (!Number.isInteger(fundPoints) ||
-        !Number.isInteger(fundXp) ||
-        fundPoints < 0 ||
-        fundXp < 0)
-    ) {
-      setMessage("Баллы и XP — целые числа от 0.");
+    if (decision === "forward" && (!Number.isInteger(fundXp) || fundXp < 0)) {
+      setMessage("XP — целое число от 0.");
       return;
     }
     const body =
       decision === "forward"
-        ? { decision, expectedVersion: task.version, fundPoints, fundXp }
+        ? { decision, expectedVersion: task.version, fundXp }
         : {
             decision,
             expectedVersion: task.version,
@@ -504,91 +524,69 @@ function DecisionQueue() {
         </p>
       ) : null}
       <ul className="self-list">
-        {waiting.data.map((task) => {
-          const current = amounts[task.id] ?? {
-            points: String(task.requestedPoints),
-            xp: String(task.requestedXp ?? 0),
-          };
-          return (
-            <li key={task.id} className="self-card">
-              <div className="self-card-head">
-                <strong>{task.title}</strong>
-                <span className="self-status">{task.author.displayName}</span>
-              </div>
-              <p className="self-text">{task.text}</p>
-              <Requested task={task} />
-              <div className="self-row">
-                <label className="self-field">
-                  <span>Начислить баллов</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={100000}
-                    value={current.points}
-                    onChange={(event) =>
-                      setAmounts((all) => ({
-                        ...all,
-                        [task.id]: { ...current, points: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="self-field">
-                  <span>Начислить XP</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={100000}
-                    value={current.xp}
-                    onChange={(event) =>
-                      setAmounts((all) => ({
-                        ...all,
-                        [task.id]: { ...current, xp: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              <div className="self-actions">
-                <button
-                  type="button"
-                  className="tasks-action"
-                  disabled={pendingId !== null}
-                  onClick={() => void act(task, "forward")}
-                >
-                  Передать на приёмку
-                </button>
-              </div>
-              <div className="self-decline">
-                <label className="self-field">
-                  <span>Причина отказа</span>
-                  <textarea
-                    value={reason[task.id] ?? ""}
-                    maxLength={2000}
-                    onChange={(event) =>
-                      setReason((all) => ({
-                        ...all,
-                        [task.id]: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="tasks-action"
-                  disabled={
-                    pendingId !== null || !(reason[task.id] ?? "").trim()
+        {waiting.data.map((task) => (
+          <li key={task.id} className="self-card">
+            <div className="self-card-head">
+              <strong>{task.title}</strong>
+              <span className="self-status">{task.author.displayName}</span>
+            </div>
+            <p className="self-text">{task.text}</p>
+            <Requested task={task} />
+            <p className="self-task-meta">
+              <span className="task-chip task-chip--points">
+                проверяющий оценил: {task.verifiedPoints ?? "не указано"} баллов
+              </span>
+            </p>
+            <div className="self-row">
+              <label className="self-field">
+                <span>Начислить XP</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100000}
+                  value={xps[task.id] ?? String(task.requestedXp ?? 0)}
+                  onChange={(event) =>
+                    setXps((all) => ({ ...all, [task.id]: event.target.value }))
                   }
-                  onClick={() => void act(task, "decline")}
-                >
-                  Отклонить
-                </button>
-              </div>
-            </li>
-          );
-        })}
+                />
+              </label>
+            </div>
+            <div className="self-actions">
+              <button
+                type="button"
+                className="tasks-action"
+                disabled={pendingId !== null}
+                onClick={() => void act(task, "forward")}
+              >
+                Утвердить и передать на приёмку
+              </button>
+            </div>
+            <div className="self-decline">
+              <label className="self-field">
+                <span>Причина отказа</span>
+                <textarea
+                  value={reason[task.id] ?? ""}
+                  maxLength={2000}
+                  onChange={(event) =>
+                    setReason((all) => ({
+                      ...all,
+                      [task.id]: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <button
+                type="button"
+                className="tasks-action"
+                disabled={pendingId !== null || !(reason[task.id] ?? "").trim()}
+                onClick={() => void act(task, "decline")}
+              >
+                Отклонить
+              </button>
+            </div>
+          </li>
+        ))}
       </ul>
     </section>
   );
@@ -600,8 +598,9 @@ export function SelfTasksPanel() {
   return (
     <div className="self-panel">
       <p className="self-hint">
-        Расскажите о задаче, которую уже выполнили. Проверяющий подтвердит её и
-        передаст командиру, а баллы и XP назначит командир.
+        Расскажите о задаче, которую уже выполнили. Ответственный проверяющий
+        оценит её баллами от 0 до 100 и передаст командиру. Командир утверждает
+        итог, назначает XP или отклоняет отчёт.
       </p>
       <ReportForm />
       <MyReports />
