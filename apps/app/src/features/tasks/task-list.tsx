@@ -25,8 +25,8 @@ import { TaskTimeline } from "./task-timeline";
 import { Home } from "@/features/home/home";
 import { ReviewQueue } from "@/features/reviews/review-queue";
 import {
+  ReviewTabSelfTasks,
   SelfTasksPanel,
-  VerifierQueuePanel,
 } from "@/features/self-tasks/self-tasks";
 import { AccountLedger } from "@/features/ledger/account-ledger";
 import { TaskManagement } from "@/features/task-management/task-management";
@@ -219,8 +219,7 @@ function TaskListContent() {
   const { confirmLeave, loseAccess } = useAuthorizedSession();
   // Пока участник не выбрал раздел сам, открывается первый непустой.
   const [chosen, setChosen] = useState<Segment | null>(null);
-  // Which own-section is open: «Свои задачи» or «На проверке у меня».
-  const [panel, setPanel] = useState<"self" | "verify" | null>(null);
+  const [selfOpen, setSelfOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useTelegramBack(
     selectedId !== null,
@@ -270,8 +269,7 @@ function TaskListContent() {
     (tasks.error.status === 401 || tasks.error.status === 403);
   const selected = allItems.find((task) => task.id === selectedId);
 
-  if (panel !== null) {
-    const title = panel === "self" ? "Свои задачи" : "На проверке у меня";
+  if (selfOpen) {
     return (
       <section className="tasks-section" aria-labelledby="tasks-title">
         <div className="tasks-heading">
@@ -280,15 +278,15 @@ function TaskListContent() {
         <button
           type="button"
           className="screen-back"
-          aria-label={`${title}: вернуться к задачам`}
-          onClick={() => setPanel(null)}
+          aria-label="Свои задачи: вернуться к задачам"
+          onClick={() => setSelfOpen(false)}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="m14.5 6-6 6 6 6" />
           </svg>
           Задачи
         </button>
-        {panel === "self" ? <SelfTasksPanel /> : <VerifierQueuePanel />}
+        <SelfTasksPanel />
       </section>
     );
   }
@@ -402,21 +400,11 @@ function TaskListContent() {
       <button
         type="button"
         className="open-tasks-banner"
-        onClick={() => setPanel("self")}
+        onClick={() => setSelfOpen(true)}
       >
         <span>
           <strong>Свои задачи</strong>
           <small>Отчёт о том, что уже сделали</small>
-        </span>
-      </button>
-      <button
-        type="button"
-        className="open-tasks-banner"
-        onClick={() => setPanel("verify")}
-      >
-        <span>
-          <strong>На проверке у меня</strong>
-          <small>Отчёты, которые ждут вашей оценки</small>
         </span>
       </button>
       {segment === "open" ? (
@@ -473,6 +461,7 @@ function TaskListContent() {
         </>
       )}
 
+      {segment === "review" ? <ReviewTabSelfTasks /> : null}
       {segment === "open" ? (
         <OpenTaskList
           items={openItems}
