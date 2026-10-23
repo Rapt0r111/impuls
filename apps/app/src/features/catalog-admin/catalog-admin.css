@@ -106,6 +106,10 @@
 .access-binding > form {
   flex: 1 0 100%;
 }
+.access-binding--revoked > span {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
 /* Карточка поощрения у командира: значок, цена, места; остальное — в «Подробнее». */
 .admin-catalog-items > li {
   display: grid;
