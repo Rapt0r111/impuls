@@ -176,8 +176,11 @@ try {
     await page.goto(parentOrigin);
     const frame = page.frameLocator("iframe");
     await frame.locator("main.access-screen").waitFor();
+    // Chromium 141 requires both heuristics flags; false keeps the default behaviour.
     await cdp.send("Network.setCookieControls", {
       enableThirdPartyCookieRestriction: true,
+      disableThirdPartyCookieMetadata: false,
+      disableThirdPartyCookieHeuristics: false,
     });
     await context.clearCookies();
     logins = 0;
