@@ -112,7 +112,16 @@ describe("acceptance adjustment and bonus options", () => {
       ),
     ).toEqual({ ok: false, reason: "xp_above_limit" });
   });
-  it("keeps base plus bonus within 100 XP for one task, the edge included", () => {
+  it("caps base XP at 100 for one task, the edge included", () => {
+    const options = acceptanceOptions(rules, fund);
+    expect(
+      resolveAcceptanceAward(options, { xp: 101, points: 10 }, {}),
+    ).toEqual({ ok: false, reason: "xp_above_limit" });
+    expect(
+      resolveAcceptanceAward(options, { xp: 100, points: 10 }, {}),
+    ).toMatchObject({ ok: true, xp: 100 });
+  });
+  it("leaves the XP bonus uncapped: base 100 plus bonus gives more than 100", () => {
     const options = acceptanceOptions(rules, fund);
     expect(
       resolveAcceptanceAward(
@@ -124,16 +133,10 @@ describe("acceptance adjustment and bonus options", () => {
     expect(
       resolveAcceptanceAward(
         options,
-        { xp: 81, points: 10 },
+        { xp: 100, points: 10 },
         { bonusCode: "quality" },
       ),
-    ).toEqual({ ok: false, reason: "xp_above_limit" });
-    expect(
-      resolveAcceptanceAward(options, { xp: 101, points: 10 }, {}),
-    ).toEqual({ ok: false, reason: "xp_above_limit" });
-    expect(
-      resolveAcceptanceAward(options, { xp: 100, points: 10 }, {}),
-    ).toMatchObject({ ok: true, xp: 100 });
+    ).toMatchObject({ ok: true, baseXp: 100, xp: 120, points: 20 });
   });
   it("keeps base plus bonus within 100 points for one task", () => {
     expect(
@@ -211,7 +214,7 @@ describe("acceptance options as shares of the task fund (ADR-0031)", () => {
     ).toMatchObject({ ok: true, baseXp: 90, xp: 100, points: 33 });
     expect(
       resolveAcceptanceAward(options, fund, { bonusCode: "plus_10" }),
-    ).toEqual({ ok: false, reason: "xp_above_limit" });
+    ).toMatchObject({ ok: true, baseXp: 100, xp: 110, points: 33 });
     expect(resolveAcceptanceAward(options, fund, { baseXp: 49 })).toEqual({
       ok: false,
       reason: "adjustment_below_limit",
