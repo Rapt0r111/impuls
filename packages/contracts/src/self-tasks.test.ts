@@ -21,6 +21,15 @@ describe("self-submitted task requests", () => {
   it("needs exactly one responsible verifier and a points request from 0 to 100", () => {
     expect(selfTaskProposeRequestSchema.safeParse(proposal).success).toBe(true);
     expect(
+      selfTaskProposeRequestSchema.safeParse({ ...proposal, requestedXp: 100 })
+        .success,
+    ).toBe(true);
+    for (const requestedXp of [101, -1])
+      expect(
+        selfTaskProposeRequestSchema.safeParse({ ...proposal, requestedXp })
+          .success,
+      ).toBe(false);
+    expect(
       selfTaskProposeRequestSchema.safeParse({ ...proposal, verifierIds: [] })
         .success,
     ).toBe(false);
@@ -77,6 +86,15 @@ describe("self-submitted task requests", () => {
         fundXp: 10,
       }).success,
     ).toBe(false);
+    for (const fundXp of [101, -1])
+      expect(
+        selfTaskVerifyRequestSchema.safeParse({
+          ...base,
+          decision: "approve",
+          fundPoints: 80,
+          fundXp,
+        }).success,
+      ).toBe(false);
     expect(
       selfTaskVerifyRequestSchema.safeParse({ ...base, decision: "decline" })
         .success,
@@ -110,5 +128,11 @@ describe("self-submitted task requests", () => {
       }).success,
     ).toBe(false);
     expect(selfTaskDecideRequestSchema.safeParse(base).success).toBe(false);
+    expect(
+      selfTaskDecideRequestSchema.safeParse({ ...base, fundXp: 100 }).success,
+    ).toBe(true);
+    expect(
+      selfTaskDecideRequestSchema.safeParse({ ...base, fundXp: 101 }).success,
+    ).toBe(false);
   });
 });

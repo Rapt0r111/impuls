@@ -42,15 +42,16 @@ describe("acceptance adjustment and bonus contract", () => {
     expect(
       taskAcceptanceRequestSchema.parse({
         ...base,
-        baseXp: 120,
+        baseXp: 100,
         basePoints: 0,
         bonusCode: "quality",
       }),
-    ).toMatchObject({ baseXp: 120, basePoints: 0, bonusCode: "quality" });
+    ).toMatchObject({ baseXp: 100, basePoints: 0, bonusCode: "quality" });
   });
   it("rejects negative, fractional, oversized and malformed values", () => {
     for (const extra of [
       { baseXp: -1 },
+      { baseXp: 101 },
       { baseXp: 1.5 },
       { basePoints: 1_000_001 },
       { bonusCode: "Quality" },

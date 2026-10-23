@@ -2,6 +2,7 @@
 
 import { IntInput } from "@/shared/ui/int-input";
 import { PointsScaleHint } from "@/shared/ui/points-scale-hint";
+import { XpLimitHint } from "@/shared/ui/xp-limit-hint";
 import { Select } from "@/shared/ui/select";
 import { useTelegramBack } from "@/shared/telegram/back-navigation";
 
@@ -10,6 +11,7 @@ import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import {
   apiErrorSchema,
   TASK_POINTS_MAX,
+  TASK_XP_MAX,
   taskCreateRequestSchema,
   taskEditRequestSchema,
   taskCancelRequestSchema,
@@ -665,6 +667,7 @@ export function TaskManagement() {
                       labelledBy="task-mgmt-xp-label"
                       value={draft.fundXp}
                       disabled={pending || uncertain}
+                      max={TASK_XP_MAX}
                       onValue={(n) => setField("fundXp", n)}
                     />
                   </label>
@@ -680,6 +683,7 @@ export function TaskManagement() {
                   </label>
                 </div>
                 <PointsScaleHint />
+                <XpLimitHint />
               </div>
               {currentScope ? (
                 <label className="task-mgmt__wide">
@@ -1182,6 +1186,7 @@ function TaskChangeForm({
               <IntInput
                 labelledBy={`${labelId}-xp`}
                 value={f.fundXp}
+                max={TASK_XP_MAX}
                 onValue={(n) => field("fundXp", n)}
               />
             </label>
@@ -1196,7 +1201,12 @@ function TaskChangeForm({
             </label>
           </div>
         )}
-        {change.action === "edit" ? <PointsScaleHint /> : null}
+        {change.action === "edit" ? (
+          <>
+            <PointsScaleHint />
+            <XpLimitHint />
+          </>
+        ) : null}
         <div className="task-mgmt__fields">
           <label className="task-mgmt__wide">
             <span id={`${labelId}-reason`}>

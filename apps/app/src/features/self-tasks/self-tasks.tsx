@@ -5,6 +5,7 @@ import {
   selfTaskOptionsResponseSchema,
   selfTaskResponseSchema,
   TASK_POINTS_MAX,
+  TASK_XP_MAX,
   type SelfTask,
 } from "@impuls/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useAuthorizedSession } from "@/features/auth/session-context";
 import { mutationLimitMessage } from "@/shared/http/mutation-limit-message";
 import { PointsScaleHint } from "@/shared/ui/points-scale-hint";
+import { XpLimitHint } from "@/shared/ui/xp-limit-hint";
 import "./self-tasks.css";
 
 const SELF_KEY = ["self-tasks"];
@@ -169,9 +171,13 @@ function ReportForm() {
     }
     if (
       requestedXp !== null &&
-      (!Number.isInteger(requestedXp) || requestedXp < 0)
+      (!Number.isInteger(requestedXp) ||
+        requestedXp < 0 ||
+        requestedXp > TASK_XP_MAX)
     ) {
-      setMessage("XP — целое число от 0, или оставьте поле пустым.");
+      setMessage(
+        `XP — целое число от 0 до ${TASK_XP_MAX}, или оставьте поле пустым.`,
+      );
       return;
     }
     setPending(true);
@@ -253,13 +259,14 @@ function ReportForm() {
             type="number"
             inputMode="numeric"
             min={0}
-            max={100000}
+            max={TASK_XP_MAX}
             value={xp}
             onChange={(event) => setXp(event.target.value)}
           />
         </label>
       </div>
       <PointsScaleHint />
+      <XpLimitHint />
       <fieldset className="self-field">
         <legend>Ответственный проверяющий</legend>
         {candidates.length ? (
@@ -384,9 +391,12 @@ function VerifyQueue() {
     const fundXp = Number(rawXp);
     if (
       decision === "approve" &&
-      (rawXp.trim() === "" || !Number.isInteger(fundXp) || fundXp < 0)
+      (rawXp.trim() === "" ||
+        !Number.isInteger(fundXp) ||
+        fundXp < 0 ||
+        fundXp > TASK_XP_MAX)
     ) {
-      setMessage("XP — целое число от 0.");
+      setMessage(`XP — целое число от 0 до ${TASK_XP_MAX}.`);
       return;
     }
     const intent = `${task.id}:${task.version}:${decision}`;
@@ -469,7 +479,7 @@ function VerifyQueue() {
                 type="number"
                 inputMode="numeric"
                 min={0}
-                max={100000}
+                max={TASK_XP_MAX}
                 value={xps[task.id] ?? String(task.requestedXp ?? 0)}
                 onChange={(event) =>
                   setXps((all) => ({ ...all, [task.id]: event.target.value }))
@@ -546,8 +556,11 @@ function DecisionQueue() {
     const intent = `${task.id}:${task.version}:${decision}`;
     const idem = key.current.get(intent) ?? crypto.randomUUID();
     key.current.set(intent, idem);
-    if (decision === "forward" && (!Number.isInteger(fundXp) || fundXp < 0)) {
-      setMessage("XP — целое число от 0.");
+    if (
+      decision === "forward" &&
+      (!Number.isInteger(fundXp) || fundXp < 0 || fundXp > TASK_XP_MAX)
+    ) {
+      setMessage(`XP — целое число от 0 до ${TASK_XP_MAX}.`);
       return;
     }
     const body =
@@ -610,7 +623,7 @@ function DecisionQueue() {
                   type="number"
                   inputMode="numeric"
                   min={0}
-                  max={100000}
+                  max={TASK_XP_MAX}
                   value={
                     xps[task.id] ??
                     String(task.verifiedXp ?? task.requestedXp ?? 0)
@@ -621,6 +634,7 @@ function DecisionQueue() {
                 />
               </label>
             </div>
+            <XpLimitHint />
             <div className="self-actions">
               <button
                 type="button"

@@ -39,8 +39,10 @@ export type AcceptanceOptions = {
 type Fund = { xp: number; points: number };
 const OPTION_LIMIT = 1_000_000;
 const MAX_LEDGER_AMOUNT = 2_147_483_647;
-// Same cap as TASK_POINTS_MAX in packages/contracts (ADR-0041): base plus bonus, in points.
+// Same caps as TASK_POINTS_MAX and TASK_XP_MAX in packages/contracts (ADR-0041, ADR-0042):
+// base plus bonus, for each currency.
 export const TASK_POINTS_MAX = 100;
+export const TASK_XP_MAX = 100;
 const isAmount = (value: unknown): value is number =>
   typeof value === "number" &&
   Number.isInteger(value) &&
@@ -163,6 +165,7 @@ export type AwardRejection =
   | "adjustment_below_limit"
   | "bonus_unknown"
   | "points_above_limit"
+  | "xp_above_limit"
   | "award_too_large";
 
 export function resolveAcceptanceAward(
@@ -195,6 +198,7 @@ export function resolveAcceptanceAward(
   const points = basePoints + (bonus?.points ?? 0);
   if (points > TASK_POINTS_MAX)
     return { ok: false, reason: "points_above_limit" };
+  if (xp > TASK_XP_MAX) return { ok: false, reason: "xp_above_limit" };
   if (xp > MAX_LEDGER_AMOUNT || points > MAX_LEDGER_AMOUNT)
     return { ok: false, reason: "award_too_large" };
   return { ok: true, baseXp, basePoints, bonus, xp, points };
