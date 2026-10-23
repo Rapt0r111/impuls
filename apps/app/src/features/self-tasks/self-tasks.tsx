@@ -297,8 +297,21 @@ function ReportForm() {
   );
 }
 
+// A failed list must say so; hiding it looks the same as having no tasks.
+function ListError({ title }: { title: string }) {
+  return (
+    <section className="self-section" aria-label={title}>
+      <h3>{title}</h3>
+      <p role="alert" className="self-message">
+        Не удалось загрузить список. Обновите страницу.
+      </p>
+    </section>
+  );
+}
+
 function MyReports() {
   const mine = useSelfList("mine");
+  if (mine.isError) return <ListError title="Мои отчёты" />;
   if (mine.isPending) return null;
   if (!mine.data?.length) return null;
   return (
@@ -332,6 +345,7 @@ function VerifyQueue() {
   const [message, setMessage] = useState<string | null>(null);
   const key = useRef(new Map<string, string>());
 
+  if (waiting.isError) return <ListError title="Ждут вашей проверки" />;
   if (!waiting.data?.length) return null;
 
   async function act(task: SelfTask, decision: "approve" | "decline") {
@@ -473,6 +487,7 @@ function DecisionQueue() {
   const [message, setMessage] = useState<string | null>(null);
   const key = useRef(new Map<string, string>());
 
+  if (waiting.isError) return <ListError title="Ждут решения командира" />;
   if (!waiting.data?.length) return null;
 
   async function act(task: SelfTask, decision: "forward" | "decline") {
