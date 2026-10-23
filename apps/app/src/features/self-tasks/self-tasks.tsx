@@ -380,11 +380,6 @@ function VerifyQueue() {
       setMessage(`Укажите баллы целым числом от 0 до ${TASK_POINTS_MAX}.`);
       return;
     }
-    const intent = `${task.id}:${task.version}:${decision}`;
-    const idem = key.current.get(intent) ?? crypto.randomUUID();
-    key.current.set(intent, idem);
-    setPendingId(task.id);
-    setMessage(null);
     const rawXp = xps[task.id] ?? String(task.requestedXp ?? 0);
     const fundXp = Number(rawXp);
     if (
@@ -394,6 +389,11 @@ function VerifyQueue() {
       setMessage("XP — целое число от 0.");
       return;
     }
+    const intent = `${task.id}:${task.version}:${decision}`;
+    const idem = key.current.get(intent) ?? crypto.randomUUID();
+    key.current.set(intent, idem);
+    setPendingId(task.id);
+    setMessage(null);
     const body =
       decision === "approve"
         ? {
