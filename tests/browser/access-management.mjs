@@ -344,6 +344,12 @@ for (const width of [320, 360, 390]) {
       .isDisabled(),
     true,
   );
+  // После отказа форма закрывается кнопкой и не держит подтверждение.
+  await f.page.getByRole("button", { name: "Закрыть форму" }).click();
+  assert.equal(
+    await f.page.getByRole("button", { name: "Подтвердить изменение" }).count(),
+    0,
+  );
   await close(f);
 }
 {

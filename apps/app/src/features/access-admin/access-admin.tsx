@@ -59,17 +59,22 @@ type Change =
       };
     };
 
-const rightsCount = (n: number) => {
-  const mod10 = n % 10,
-    mod100 = n % 100;
-  return `${n} ${
-    mod10 === 1 && mod100 !== 11
-      ? "право"
-      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
-        ? "права"
-        : "прав"
-  }`;
-};
+// Группы прав для выбора в форме выдачи: задачи, поощрения, каталог, остальное.
+const rightGroup = (action: string) =>
+  action.startsWith("task.")
+    ? "Задачи"
+    : action.startsWith("reward.")
+      ? "Поощрения"
+      : action.startsWith("admin.catalog")
+        ? "Каталог"
+        : "Прочее";
+const rightGroupOrder = ["Задачи", "Поощрения", "Каталог", "Прочее"];
+// Права идут подряд по группам, иначе заголовки групп в списке повторились бы.
+const groupedRights = [...grantableActions].sort(
+  (a, b) =>
+    rightGroupOrder.indexOf(rightGroup(a)) -
+    rightGroupOrder.indexOf(rightGroup(b)),
+);
 
 export function AccessAdmin() {
   const {
@@ -152,6 +157,8 @@ export function AccessAdmin() {
   function stage(change: Change) {
     intent.current = null;
     setPreview(change);
+    setBlocked(false);
+    setSubmitted(false);
     setStatus("");
   }
   async function send() {
@@ -288,6 +295,11 @@ export function AccessAdmin() {
             ? "Повторить тот же запрос"
             : "Подтвердить изменение"}
       </button>
+      {blocked ? (
+        <button type="button" className="tasks-action" onClick={reset}>
+          Закрыть форму
+        </button>
+      ) : null}
     </div>
   ) : null;
   const subject = members.find((m) => m.userId === subjectId);
@@ -426,17 +438,8 @@ export function AccessAdmin() {
                     {m.displayName}
                     {m.isSelf ? " (вы)" : ""}
                   </strong>
-                  {!bindings ? (
+                  {bindings ?? (
                     <p className="notification-note">Выданных прав нет.</p>
-                  ) : m.bindings.length > 3 ? (
-                    // Длинный список прав свёрнут, чтобы карточки участников
-                    // оставались короткими.
-                    <details className="access-bindings">
-                      <summary>{rightsCount(m.bindings.length)}</summary>
-                      {bindings}
-                    </details>
-                  ) : (
-                    bindings
                   )}
                 </li>
               );
@@ -524,10 +527,10 @@ export function AccessAdmin() {
                           value: COMMANDER,
                           label: "Командир: задачи, проверка, заявки",
                         },
-                        ...grantableActions.map((a) => ({
+                        ...groupedRights.map((a) => ({
                           value: a,
                           label: actionLabels[a],
-                          group: "Отдельное право",
+                          group: rightGroup(a),
                         })),
                       ]}
                     />
