@@ -336,10 +336,14 @@ function VerifyQueue() {
 
   async function act(task: SelfTask, decision: "approve" | "decline") {
     if (pendingId) return;
-    const score = Number(scores[task.id] ?? "");
+    const raw = scores[task.id] ?? "";
+    const score = Number(raw);
     if (
       decision === "approve" &&
-      (!Number.isInteger(score) || score < 0 || score > TASK_POINTS_MAX)
+      (raw.trim() === "" ||
+        !Number.isInteger(score) ||
+        score < 0 ||
+        score > TASK_POINTS_MAX)
     ) {
       setMessage(`Укажите баллы целым числом от 0 до ${TASK_POINTS_MAX}.`);
       return;
