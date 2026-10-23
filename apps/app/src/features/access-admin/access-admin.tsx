@@ -34,6 +34,8 @@ const commanderActions = [
 ] as const;
 const COMMANDER = "preset:commander";
 
+type Binding = AccessListResponse["members"][number]["bindings"][number];
+
 type Change =
   | {
       path: "grants";
@@ -98,6 +100,10 @@ export function AccessAdmin() {
   const [submitted, setSubmitted] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [memberDirty, setMemberDirty] = useState(false);
+  // Отозванные права остаются на своих местах до смены области, только меняют вид.
+  const [revokedRights, setRevokedRights] = useState<
+    Record<string, { userId: string; binding: Binding }>
+  >({});
   const intent = useRef<{
     keys: string[];
     done: number;
@@ -244,6 +250,19 @@ export function AccessAdmin() {
         current.done += 1;
       }
       reportDirty(false);
+      if (change.path === "revocations") {
+        const owner = members.find((m) =>
+          m.bindings.some((b) => b.id === change.body.bindingId),
+        );
+        const binding = owner?.bindings.find(
+          (b) => b.id === change.body.bindingId,
+        );
+        if (owner && binding)
+          setRevokedRights((prev) => ({
+            ...prev,
+            [binding.id]: { userId: owner.userId, binding },
+          }));
+      }
       reset();
       void query.refetch();
       setStatus(
@@ -303,6 +322,24 @@ export function AccessAdmin() {
     </div>
   ) : null;
   const subject = members.find((m) => m.userId === subjectId);
+  // Порядок тот же, что у сервера (по действию); отозванное остаётся на месте.
+  const shownBindings = (m: (typeof members)[number]) =>
+    [
+      ...m.bindings.map((binding) => ({ binding, revoked: false })),
+      ...Object.values(revokedRights)
+        .filter(
+          (r) =>
+            r.userId === m.userId &&
+            !m.bindings.some((b) => b.id === r.binding.id),
+        )
+        .map((r) => ({ binding: r.binding, revoked: true })),
+    ].sort((x, y) =>
+      x.binding.action < y.binding.action
+        ? -1
+        : x.binding.action > y.binding.action
+          ? 1
+          : 0,
+    );
   return (
     <section
       className="tasks-section notification-section admin-catalog-section"
@@ -339,6 +376,7 @@ export function AccessAdmin() {
               if (confirmLeave()) {
                 reset();
                 setSubjectId("");
+                setRevokedRights({});
                 setScope(next);
               }
             }}
@@ -360,17 +398,26 @@ export function AccessAdmin() {
         <>
           <ul className="admin-catalog-items" aria-label="Участники">
             {members.map((m) => {
-              const bindings = m.bindings.length ? (
+              const rows = shownBindings(m);
+              const bindings = rows.length ? (
                 <ul>
-                  {m.bindings.map((b) => (
-                    <li key={b.id} className="access-binding">
+                  {rows.map(({ binding: b, revoked }) => (
+                    <li
+                      key={b.id}
+                      className={
+                        revoked
+                          ? "access-binding access-binding--revoked"
+                          : "access-binding"
+                      }
+                    >
                       <span>
                         {actionLabels[b.action]}
                         {b.validUntil
                           ? ` · до ${dateTime.format(new Date(b.validUntil))}`
                           : " · без срока"}
+                        {revoked ? " · отозвано" : null}
                       </span>
-                      {data.canManage && !m.isSelf ? (
+                      {data.canManage && !m.isSelf && !revoked ? (
                         <button
                           type="button"
                           className="tasks-action"
@@ -387,7 +434,7 @@ export function AccessAdmin() {
                           {revokeId === b.id ? "Не отзывать" : "Отозвать"}
                         </button>
                       ) : null}
-                      {revokeId === b.id && !preview ? (
+                      {revokeId === b.id && !preview && !revoked ? (
                         <form
                           className="catalog-publication tasks-filter"
                           onSubmit={(event) => {

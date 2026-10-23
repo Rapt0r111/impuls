@@ -128,6 +128,25 @@ for (const width of [320, 360, 390]) {
     await page.getByRole("button", { name: "Проверить выдачу" }).click();
     await page.getByText("У участника уже есть все права командира.").waitFor();
     assert.equal(await count(changes), 10, "nothing granted twice");
+    // Регрессия: отзыв одного права не трогает права ниже, отозванное остаётся на месте.
+    const commanderActive =
+      "SELECT count(*) n FROM impuls.role_bindings WHERE user_id=$1 AND scope_id=$2 AND revoked_at IS NULL AND action IN ('task.view','task.create','task.assign','task.edit','task.cancel','task.review','reward.decide','reward.fulfill')";
+    await page
+      .getByRole("button", {
+        name: "Отозвать: Редактирование задач, Реальный участник",
+      })
+      .click();
+    await page
+      .getByLabel("Основание отзыва")
+      .fill("Регрессия: право ниже не отзывается");
+    await page.getByRole("button", { name: "Проверить отзыв" }).click();
+    await page.getByRole("button", { name: "Подтвердить изменение" }).click();
+    await page.getByText("Право отозвано.").waitFor();
+    assert.equal(await count(commanderActive), 7, "only the chosen right");
+    await page
+      .locator(".access-binding--revoked")
+      .filter({ hasText: "Редактирование задач" })
+      .waitFor();
     await page.getByLabel("Основание выдачи").fill("");
     // Admission and removal of a person through the real server and database.
     const telegramId = randomInt(7e12, 8e12);
