@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { taskPointsSchema } from "./points";
 
 const amount = z.number().int().min(0).max(100000);
 const reason = z.string().trim().min(1).max(2000);
@@ -19,13 +20,18 @@ export const selfTaskProposeRequestSchema = z.strictObject({
   scopeId: z.uuid(),
   title: z.string().trim().min(1).max(120),
   text: z.string().trim().min(1).max(2000),
-  requestedPoints: amount,
+  requestedPoints: taskPointsSchema,
   requestedXp: amount.nullable(),
-  verifierIds: z.array(z.uuid()).min(1).max(5),
+  // One responsible person: they score the report and the commander approves that score.
+  verifierIds: z.array(z.uuid()).length(1),
 });
 
 export const selfTaskVerifyRequestSchema = z.discriminatedUnion("decision", [
-  z.strictObject({ decision: z.literal("approve"), expectedVersion }),
+  z.strictObject({
+    decision: z.literal("approve"),
+    expectedVersion,
+    fundPoints: taskPointsSchema,
+  }),
   z.strictObject({ decision: z.literal("decline"), expectedVersion, reason }),
 ]);
 
@@ -33,7 +39,6 @@ export const selfTaskDecideRequestSchema = z.discriminatedUnion("decision", [
   z.strictObject({
     decision: z.literal("forward"),
     expectedVersion,
-    fundPoints: amount,
     fundXp: amount,
   }),
   z.strictObject({ decision: z.literal("decline"), expectedVersion, reason }),
@@ -58,6 +63,7 @@ export const selfTaskSchema = z.strictObject({
   requestedXp: amount.nullable(),
   fundPoints: amount,
   fundXp: amount,
+  verifiedPoints: amount.nullable(),
   updatedAt: z.iso.datetime(),
   scope: z.strictObject({ id: z.uuid(), name: z.string() }),
   author: person,

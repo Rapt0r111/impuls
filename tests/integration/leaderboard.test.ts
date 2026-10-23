@@ -44,7 +44,7 @@ const url = process.env.TEST_DATABASE_URL,
     const task = randomUUID();
     tasks.push(task);
     await admin.query(
-      "INSERT INTO impuls.tasks(id,scope_id,rule_set_id,created_by,title,criteria,category_code,priority,status,due_at,fund_xp,fund_points) VALUES($1,$2,$3,$4,'Synthetic ranking evidence','Independent evidence','test','normal','in_review',now(),$5,500)",
+      "INSERT INTO impuls.tasks(id,scope_id,rule_set_id,created_by,title,criteria,category_code,priority,status,due_at,fund_xp,fund_points) VALUES($1,$2,$3,$4,'Synthetic ranking evidence','Independent evidence','test','normal','in_review',now(),$5,50)",
       [task, awardScope, rule, reviewer, xp],
     );
     await admin.query(

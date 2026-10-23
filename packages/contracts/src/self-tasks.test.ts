@@ -18,7 +18,7 @@ describe("self-submitted task requests", () => {
     verifierIds: [verifierId],
   };
 
-  it("needs one to five verifiers, a non-negative points request, and optional XP", () => {
+  it("needs exactly one responsible verifier and a points request from 0 to 100", () => {
     expect(selfTaskProposeRequestSchema.safeParse(proposal).success).toBe(true);
     expect(
       selfTaskProposeRequestSchema.safeParse({ ...proposal, verifierIds: [] })
@@ -27,7 +27,7 @@ describe("self-submitted task requests", () => {
     expect(
       selfTaskProposeRequestSchema.safeParse({
         ...proposal,
-        verifierIds: Array(6).fill(verifierId),
+        verifierIds: [verifierId, verifierId],
       }).success,
     ).toBe(false);
     expect(
@@ -37,17 +37,37 @@ describe("self-submitted task requests", () => {
       }).success,
     ).toBe(false);
     expect(
+      selfTaskProposeRequestSchema.safeParse({
+        ...proposal,
+        requestedPoints: 101,
+      }).success,
+    ).toBe(false);
+    expect(
       selfTaskProposeRequestSchema.safeParse({ ...proposal, extra: true })
         .success,
     ).toBe(false);
   });
 
-  it("requires a reason to decline in both verification and decision", () => {
+  it("requires the verifier's score from 0 to 100 to approve, and a reason to decline", () => {
     const base = { expectedVersion: 1 };
+    expect(
+      selfTaskVerifyRequestSchema.safeParse({
+        ...base,
+        decision: "approve",
+        fundPoints: 80,
+      }).success,
+    ).toBe(true);
     expect(
       selfTaskVerifyRequestSchema.safeParse({ ...base, decision: "approve" })
         .success,
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      selfTaskVerifyRequestSchema.safeParse({
+        ...base,
+        decision: "approve",
+        fundPoints: 101,
+      }).success,
+    ).toBe(false);
     expect(
       selfTaskVerifyRequestSchema.safeParse({ ...base, decision: "decline" })
         .success,
@@ -68,18 +88,18 @@ describe("self-submitted task requests", () => {
     ).toBe(true);
   });
 
-  it("requires the commander's points and XP to forward a report", () => {
+  it("lets the commander forward with XP only, the points being the verifier's score", () => {
     const base = { expectedVersion: 2, decision: "forward" };
+    expect(
+      selfTaskDecideRequestSchema.safeParse({ ...base, fundXp: 0 }).success,
+    ).toBe(true);
     expect(
       selfTaskDecideRequestSchema.safeParse({
         ...base,
-        fundPoints: 25,
         fundXp: 0,
+        fundPoints: 25,
       }).success,
-    ).toBe(true);
-    expect(
-      selfTaskDecideRequestSchema.safeParse({ ...base, fundPoints: 25 })
-        .success,
     ).toBe(false);
+    expect(selfTaskDecideRequestSchema.safeParse(base).success).toBe(false);
   });
 });

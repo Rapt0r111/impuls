@@ -170,6 +170,13 @@ function mapSelfTaskResult(result: SelfTaskResult, id: string): NextResponse {
         "Выберите проверяющих из своей области, не себя",
         id,
       );
+    case "points_missing":
+      return errorResponse(
+        409,
+        "POINTS_MISSING",
+        "Проверяющий ещё не указал баллы для этого отчёта",
+        id,
+      );
     case "self_review":
       return errorResponse(
         403,

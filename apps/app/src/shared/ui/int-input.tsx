@@ -12,11 +12,13 @@ export function IntInput({
   onValue,
   labelledBy,
   disabled,
+  max = MAX,
 }: {
   value: number;
   onValue(next: number): void;
   labelledBy: string;
   disabled?: boolean;
+  max?: number;
 }) {
   const [text, setText] = useState(value === 0 ? "" : String(value));
   // An outside change (loading another draft) wins over what was typed.
@@ -39,7 +41,7 @@ export function IntInput({
           .replace(/\D/g, "")
           .replace(/^0+(?=\d)/, "")
           .slice(0, 10);
-        const next = Math.min(Number(digits || 0), MAX);
+        const next = Math.min(Number(digits || 0), max);
         setText(digits === "" ? "" : String(next));
         setSeen(next);
         onValue(next);
