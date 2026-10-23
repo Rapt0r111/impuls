@@ -253,7 +253,8 @@ function TaskListContent() {
         )?.[0] ?? (openItems.length && !allItems.length ? "open" : "active"));
   const items = allItems.filter((task) => segmentOf(task.status) === segment);
   const complete = !tasks.hasNextPage && !tasks.isPending;
-  const waitingForVerdict = useWaitingForVerifier().data?.length ?? 0;
+  const verdictQueue = useWaitingForVerifier();
+  const waitingForVerdict = verdictQueue.data?.length ?? 0;
   useEffect(() => {
     for (const error of [tasks.error, detail.error]) {
       if (
@@ -440,7 +441,10 @@ function TaskListContent() {
           ) : null}
           {/* Без единой задачи переключать нечего: остаётся подсказка ниже. Проверка видна,
               даже если своих задач нет, когда есть отчёты, которые ждут оценки. */}
-          {allItems.length > 0 || !complete || waitingForVerdict > 0 ? (
+          {allItems.length > 0 ||
+          !complete ||
+          waitingForVerdict > 0 ||
+          verdictQueue.isError ? (
             <div className="tasks-seg" role="group" aria-label="Раздел списка">
               {segments.map(([value, label]) => {
                 const count = allItems.filter(
