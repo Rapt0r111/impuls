@@ -29,8 +29,7 @@ const initial = {
 };
 
 const browser = await chromium.launch({ headless: true });
-const captureDir =
-  process.env.TEST_SCREENSHOT_DIR ?? "docs/verification/assets";
+const captureDir = process.env.TEST_SCREENSHOT_DIR ?? ".local/screenshots";
 await mkdir(captureDir, { recursive: true });
 let scenarios = 0;
 

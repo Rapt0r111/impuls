@@ -30,8 +30,7 @@ const timestamp = "2026-09-30T09:00:00.000Z";
 const uuid = (number) =>
   `44444444-4444-4444-8444-${String(number).padStart(12, "0")}`;
 const browser = await chromium.launch({ headless: true });
-const captureDir =
-  process.env.TEST_SCREENSHOT_DIR ?? "docs/verification/assets";
+const captureDir = process.env.TEST_SCREENSHOT_DIR ?? ".local/screenshots";
 await mkdir(captureDir, { recursive: true });
 let scenarios = 0;
 
