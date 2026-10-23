@@ -31,6 +31,8 @@ export const selfTaskVerifyRequestSchema = z.discriminatedUnion("decision", [
     decision: z.literal("approve"),
     expectedVersion,
     fundPoints: taskPointsSchema,
+    // The verifier proposes XP beside points; the commander sees it and approves or changes it.
+    fundXp: amount,
   }),
   z.strictObject({ decision: z.literal("decline"), expectedVersion, reason }),
 ]);
@@ -64,6 +66,7 @@ export const selfTaskSchema = z.strictObject({
   fundPoints: amount,
   fundXp: amount,
   verifiedPoints: amount.nullable(),
+  verifiedXp: amount.nullable(),
   updatedAt: z.iso.datetime(),
   scope: z.strictObject({ id: z.uuid(), name: z.string() }),
   author: person,

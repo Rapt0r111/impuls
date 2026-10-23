@@ -48,13 +48,14 @@ describe("self-submitted task requests", () => {
     ).toBe(false);
   });
 
-  it("requires the verifier's score from 0 to 100 to approve, and a reason to decline", () => {
+  it("requires the verifier's score from 0 to 100 and XP to approve, and a reason to decline", () => {
     const base = { expectedVersion: 1 };
     expect(
       selfTaskVerifyRequestSchema.safeParse({
         ...base,
         decision: "approve",
         fundPoints: 80,
+        fundXp: 10,
       }).success,
     ).toBe(true);
     expect(
@@ -65,7 +66,15 @@ describe("self-submitted task requests", () => {
       selfTaskVerifyRequestSchema.safeParse({
         ...base,
         decision: "approve",
+        fundPoints: 80,
+      }).success,
+    ).toBe(false);
+    expect(
+      selfTaskVerifyRequestSchema.safeParse({
+        ...base,
+        decision: "approve",
         fundPoints: 101,
+        fundXp: 10,
       }).success,
     ).toBe(false);
     expect(

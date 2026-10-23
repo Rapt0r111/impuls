@@ -267,6 +267,7 @@ integration(
         decision?: "approve" | "decline";
         reason?: string;
         fundPoints?: number;
+        fundXp?: number;
       } = {},
     ) =>
       verifySelfTask(runtime, {
@@ -281,6 +282,7 @@ integration(
           : {
               decision: "approve" as const,
               fundPoints: over.fundPoints ?? 25,
+              fundXp: over.fundXp ?? 10,
             }),
       });
     const decide = (
@@ -455,13 +457,17 @@ integration(
 
     it("stores the verifier's score beside the fund, which stays unchanged until forwarding", async () => {
       const id = await created();
-      const scored = await verify("verifier", id, { fundPoints: 73 });
+      const scored = await verify("verifier", id, {
+        fundPoints: 73,
+        fundXp: 12,
+      });
       expect(scored).toMatchObject({
         kind: "ok",
         response: {
           task: {
             status: "awaiting_commander",
             verifiedPoints: 73,
+            verifiedXp: 12,
             fundPoints: 0,
           },
         },

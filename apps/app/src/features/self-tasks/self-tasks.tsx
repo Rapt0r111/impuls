@@ -309,16 +309,27 @@ function ListError({ title }: { title: string }) {
   );
 }
 
+// A failed refresh keeps the rows already on screen; the alert says they may be stale.
+function StaleAlert() {
+  return (
+    <p role="alert" className="self-message">
+      Не удалось обновить список. Показан последний загруженный.
+    </p>
+  );
+}
+
 function MyReports() {
   const mine = useSelfList("mine");
-  if (mine.isError) return <ListError title="Мои отчёты" />;
   if (mine.isPending) return null;
-  if (!mine.data?.length) return null;
+  if (mine.isError && !mine.data) return <ListError title="Мои отчёты" />;
+  if (!mine.data?.length && !mine.isError) return null;
+  const rows = mine.data ?? [];
   return (
     <section className="self-section" aria-label="Мои отчёты">
       <h3>Мои отчёты</h3>
+      {mine.isError ? <StaleAlert /> : null}
       <ul className="self-list">
-        {mine.data.map((task) => (
+        {rows.map((task) => (
           <li key={task.id} className="self-card">
             <div className="self-card-head">
               <strong>{task.title}</strong>
@@ -341,12 +352,19 @@ function VerifyQueue() {
   const [open, setOpen] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [scores, setScores] = useState<Record<string, string>>({});
+  const [xps, setXps] = useState<Record<string, string>>({});
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const key = useRef(new Map<string, string>());
 
-  if (waiting.isError) return <ListError title="Ждут вашей проверки" />;
-  if (!waiting.data?.length) return null;
+  if (waiting.isPending) return <p className="tasks-state">Загружаем…</p>;
+  if (waiting.isError && !waiting.data)
+    return <ListError title="Ждут вашей проверки" />;
+  if (!waiting.data?.length && !waiting.isError)
+    return (
+      <p className="tasks-empty">Пока нет задач, которые ждут вашей оценки.</p>
+    );
+  const rows = waiting.data ?? [];
 
   async function act(task: SelfTask, decision: "approve" | "decline") {
     if (pendingId) return;
@@ -367,9 +385,23 @@ function VerifyQueue() {
     key.current.set(intent, idem);
     setPendingId(task.id);
     setMessage(null);
+    const rawXp = xps[task.id] ?? String(task.requestedXp ?? 0);
+    const fundXp = Number(rawXp);
+    if (
+      decision === "approve" &&
+      (rawXp.trim() === "" || !Number.isInteger(fundXp) || fundXp < 0)
+    ) {
+      setMessage("XP — целое число от 0.");
+      return;
+    }
     const body =
       decision === "approve"
-        ? { decision, expectedVersion: task.version, fundPoints: score }
+        ? {
+            decision,
+            expectedVersion: task.version,
+            fundPoints: score,
+            fundXp,
+          }
         : { decision, expectedVersion: task.version, reason };
     const outcome = await post(
       `/${task.id}/verify`,
@@ -399,13 +431,14 @@ function VerifyQueue() {
   return (
     <section className="self-section" aria-label="Ждут вашей проверки">
       <h3>Ждут вашей проверки</h3>
+      {waiting.isError ? <StaleAlert /> : null}
       {message ? (
         <p role="alert" className="self-message">
           {message}
         </p>
       ) : null}
       <ul className="self-list">
-        {waiting.data.map((task) => (
+        {rows.map((task) => (
           <li key={task.id} className="self-card">
             <div className="self-card-head">
               <strong>{task.title}</strong>
@@ -430,6 +463,19 @@ function VerifyQueue() {
               />
             </label>
             <PointsScaleHint />
+            <label className="self-field">
+              <span>XP (командир утвердит)</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={100000}
+                value={xps[task.id] ?? String(task.requestedXp ?? 0)}
+                onChange={(event) =>
+                  setXps((all) => ({ ...all, [task.id]: event.target.value }))
+                }
+              />
+            </label>
             <div className="self-actions">
               <button
                 type="button"
@@ -487,12 +533,16 @@ function DecisionQueue() {
   const [message, setMessage] = useState<string | null>(null);
   const key = useRef(new Map<string, string>());
 
-  if (waiting.isError) return <ListError title="Ждут решения командира" />;
-  if (!waiting.data?.length) return null;
+  if (waiting.isError && !waiting.data)
+    return <ListError title="Ждут решения командира" />;
+  if (!waiting.data?.length && !waiting.isError) return null;
+  const rows = waiting.data ?? [];
 
   async function act(task: SelfTask, decision: "forward" | "decline") {
     if (pendingId) return;
-    const fundXp = Number(xps[task.id] ?? task.requestedXp ?? 0);
+    const fundXp = Number(
+      xps[task.id] ?? task.verifiedXp ?? task.requestedXp ?? 0,
+    );
     const intent = `${task.id}:${task.version}:${decision}`;
     const idem = key.current.get(intent) ?? crypto.randomUUID();
     key.current.set(intent, idem);
@@ -533,13 +583,14 @@ function DecisionQueue() {
   return (
     <section className="self-section" aria-label="Ждут решения командира">
       <h3>Ждут решения командира</h3>
+      {waiting.isError ? <StaleAlert /> : null}
       {message ? (
         <p role="alert" className="self-message">
           {message}
         </p>
       ) : null}
       <ul className="self-list">
-        {waiting.data.map((task) => (
+        {rows.map((task) => (
           <li key={task.id} className="self-card">
             <div className="self-card-head">
               <strong>{task.title}</strong>
@@ -560,7 +611,10 @@ function DecisionQueue() {
                   inputMode="numeric"
                   min={0}
                   max={100000}
-                  value={xps[task.id] ?? String(task.requestedXp ?? 0)}
+                  value={
+                    xps[task.id] ??
+                    String(task.verifiedXp ?? task.requestedXp ?? 0)
+                  }
                   onChange={(event) =>
                     setXps((all) => ({ ...all, [task.id]: event.target.value }))
                   }
@@ -607,8 +661,8 @@ function DecisionQueue() {
   );
 }
 
-// «Свои задачи»: отчёт о сделанной задаче, очередь проверки и очередь командира.
-// Пустые очереди скрыты: видны только те, что относятся к этому человеку.
+// «Свои задачи»: отчёт о сделанной задаче и очередь командира. Очередь проверяющего
+// вынесена в отдельный раздел (VerifierQueuePanel). Пустая очередь командира скрыта.
 export function SelfTasksPanel() {
   return (
     <div className="self-panel">
@@ -619,8 +673,20 @@ export function SelfTasksPanel() {
       </p>
       <ReportForm />
       <MyReports />
-      <VerifyQueue />
       <DecisionQueue />
+    </div>
+  );
+}
+
+// «На проверке у меня»: отчёты, которые ждут оценки этого человека. Отдельно от «Свои задачи».
+export function VerifierQueuePanel() {
+  return (
+    <div className="self-panel">
+      <p className="self-hint">
+        Оцените отчёты баллами от 0 до 100 и передайте командиру. Командир
+        утверждает итог и назначает XP.
+      </p>
+      <VerifyQueue />
     </div>
   );
 }
