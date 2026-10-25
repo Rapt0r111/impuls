@@ -1,10 +1,10 @@
 import "./points-scale-hint.css";
 
-// The XP cap for one task, shown next to every field where XP is set (ADR-0042).
+// The base XP cap for one task, shown next to every field where XP is set (ADR-0042).
 export function XpLimitHint() {
   return (
     <p className="points-scale-hint">
-      XP за задачу — не больше 100, с учётом надбавки.
+      Базовый XP за задачу — не больше 100. Надбавка сверху не ограничена.
     </p>
   );
 }

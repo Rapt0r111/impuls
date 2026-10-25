@@ -4,6 +4,6 @@ import { z } from "zod";
 export const TASK_POINTS_MAX = 100;
 export const taskPointsSchema = z.number().int().min(0).max(TASK_POINTS_MAX);
 
-// XP for one task, bonuses included (ADR-0042): the same 0–100 scale as points.
+// Base XP for one task, from the fund or a verifier's choice (ADR-0042). Bonus XP is not capped.
 export const TASK_XP_MAX = 100;
 export const taskXpSchema = z.number().int().min(0).max(TASK_XP_MAX);

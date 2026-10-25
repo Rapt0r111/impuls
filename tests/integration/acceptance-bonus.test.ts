@@ -529,5 +529,22 @@ const options = {
         { currency: "xp", total: 0 },
       ]);
     });
+
+    it("accepts a base of 100 XP with a bonus on top, since only the base is capped", async () => {
+      const f = await fixture(withOptions, 100, 30);
+      const before = await balance();
+      const accepted = await reviewTaskSubmission(runtime, {
+        ...f.input,
+        baseXp: 100,
+        bonusCode: "quality",
+      });
+      expect(accepted.kind).toBe("ok");
+      if (accepted.kind !== "ok" || !accepted.response.award) return;
+      expect(accepted.response.award).toMatchObject({ xp: 120, points: 40 });
+      expect(await balance()).toEqual({
+        xp: before.xp + 120,
+        points: before.points + 40,
+      });
+    });
   },
 );

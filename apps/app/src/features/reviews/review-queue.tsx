@@ -80,8 +80,8 @@ function ReturnForm({
       ? null
       : parsedBaseXp === null || parsedBasePoints === null
         ? "Укажите целые неотрицательные значения."
-        : (parsedBaseXp ?? 0) + (bonus?.xp ?? 0) > TASK_XP_MAX
-          ? `XP за задачу с надбавкой не больше ${TASK_XP_MAX}.`
+        : (parsedBaseXp ?? 0) > TASK_XP_MAX
+          ? `Базовый XP за задачу не больше ${TASK_XP_MAX}.`
           : adjusted &&
               (!adjustment ||
                 parsedBaseXp > adjustment.maxXp ||
