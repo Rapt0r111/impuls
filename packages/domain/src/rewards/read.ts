@@ -32,7 +32,7 @@ export async function readRewardCatalog(
     const scopes = (
       await client.query<{ id: string; name: string }>(
         `SELECT s.id,s.name FROM impuls.task_scope_members m JOIN impuls.access_scopes s ON s.id=m.scope_id
-       WHERE m.user_id=$1 AND m.synthetic AND m.revoked_at IS NULL AND m.valid_from<=clock_timestamp()
+       WHERE m.user_id=$1 AND m.revoked_at IS NULL AND m.valid_from<=clock_timestamp()
        AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp()) ORDER BY s.name,s.id`,
         [actorId],
       )
@@ -64,7 +64,7 @@ export async function readRewardCatalog(
           `SELECT r.id,r.enabled,q.id AS quota_id FROM impuls.reward_versions r
          LEFT JOIN impuls.quota_periods q ON q.reward_id=r.reward_id AND q.scope_id=r.scope_id
            AND q.starts_at<=transaction_timestamp() AND q.ends_at>transaction_timestamp()
-         WHERE r.reward_id=$1 AND r.scope_id=$2 AND r.mode='synthetic' AND r.kind='cosmetic'
+         WHERE r.reward_id=$1 AND r.scope_id=$2 AND r.kind='cosmetic'
            AND r.effective_from<=transaction_timestamp() AND NOT EXISTS(SELECT 1 FROM impuls.catalog_cancellations c WHERE c.version_id=r.id)
          ORDER BY r.effective_from DESC,r.version DESC,r.id DESC LIMIT 1`,
           [cursor.rewardId, scope.id],
@@ -117,7 +117,7 @@ export async function readRewardCatalog(
           EXISTS(SELECT 1 FROM impuls.redemptions d WHERE d.user_id=$2 AND d.reward_id=r.reward_id AND d.scope_id=r.scope_id AND d.status IN ('pending','approved')) AS has_pending,
           EXISTS(SELECT 1 FROM impuls.entitlements e WHERE e.user_id=$2 AND e.reward_id=r.reward_id AND e.scope_id=r.scope_id) AS owned
         FROM latest r JOIN impuls.quota_periods q ON q.reward_id=r.reward_id AND q.scope_id=r.scope_id
-        WHERE r.enabled AND r.mode='synthetic' AND r.kind='cosmetic' AND q.starts_at<=transaction_timestamp() AND q.ends_at>transaction_timestamp()
+        WHERE r.enabled AND r.kind='cosmetic' AND q.starts_at<=transaction_timestamp() AND q.ends_at>transaction_timestamp()
           AND ($3::uuid IS NULL OR r.reward_id>$3::uuid) ORDER BY r.reward_id LIMIT $4`,
             [scope.id, actorId, cursor?.rewardId ?? null, limit + 1],
           )
@@ -204,7 +204,7 @@ export async function readMyRedemptions(
         cursor.purpose !== "mine" ||
         !(
           await client.query(
-            "SELECT 1 FROM impuls.redemptions WHERE id=$1 AND user_id=$2 AND mode='synthetic'",
+            "SELECT 1 FROM impuls.redemptions WHERE id=$1 AND user_id=$2",
             [cursor.id, actorId],
           )
         ).rowCount)
@@ -219,8 +219,8 @@ export async function readMyRedemptions(
           (SELECT display_name FROM impuls.users WHERE id=d.fulfillment_actor_id) AS fulfillment_actor_name,
           (SELECT id FROM impuls.entitlements WHERE redemption_id=d.id) AS entitlement_id
           FROM impuls.redemptions d JOIN impuls.access_scopes s ON s.id=d.scope_id
-       WHERE d.user_id=$1 AND d.mode='synthetic' AND ($2::uuid IS NULL OR (d.created_at,d.id)<(
-         SELECT a.created_at,a.id FROM impuls.redemptions a WHERE a.id=$2 AND a.user_id=$1 AND a.mode='synthetic'))
+       WHERE d.user_id=$1 AND ($2::uuid IS NULL OR (d.created_at,d.id)<(
+         SELECT a.created_at,a.id FROM impuls.redemptions a WHERE a.id=$2 AND a.user_id=$1))
        ORDER BY d.created_at DESC,d.id DESC LIMIT $3`,
         [actorId, cursor?.id ?? null, limit + 1],
       )

@@ -38,12 +38,8 @@ integration("F02/F03 scoped synthetic task management", () => {
   );
   const scopes = [randomUUID(), randomUUID()];
   const [scope, neighbour] = scopes as [string, string];
-  const rules = [randomUUID(), randomUUID(), randomUUID()];
-  const [syntheticRules, nonSyntheticRules, futureRules] = rules as [
-    string,
-    string,
-    string,
-  ];
+  const rules = [randomUUID(), randomUUID()];
+  const [syntheticRules, futureRules] = rules as [string, string];
   const taskIds: string[] = [];
   let versionNumber = randomInt(1_000_000, 1_500_000_000);
 
@@ -94,18 +90,9 @@ integration("F02/F03 scoped synthetic task management", () => {
       );
     await admin.query(
       `INSERT INTO impuls.rule_sets (id,version_number,definition,effective_from,created_by)
-       VALUES ($1,$4,'{"mode":"synthetic"}'::jsonb,clock_timestamp()-interval '1 minute',$5),
-              ($2,$6,'{"mode":"production"}'::jsonb,clock_timestamp()-interval '1 minute',$5),
-              ($3,$7,'{"mode":"synthetic"}'::jsonb,clock_timestamp()+interval '1 day',$5)`,
-      [
-        syntheticRules,
-        nonSyntheticRules,
-        futureRules,
-        versionNumber++,
-        manager,
-        versionNumber++,
-        versionNumber++,
-      ],
+       VALUES ($1,$3,'{}'::jsonb,clock_timestamp()-interval '1 minute',$4),
+              ($2,$5,'{}'::jsonb,clock_timestamp()+interval '1 day',$4)`,
+      [syntheticRules, futureRules, versionNumber++, manager, versionNumber++],
     );
     await admin.query(
       `INSERT INTO impuls.role_bindings (user_id,action,scope_id,granted_by,reason)
@@ -475,8 +462,8 @@ integration("F02/F03 scoped synthetic task management", () => {
     });
   });
 
-  it("rejects non-synthetic and not-yet-effective rules without saving task state", async () => {
-    for (const ruleSetId of [nonSyntheticRules, futureRules]) {
+  it("rejects not-yet-effective rules without saving task state", async () => {
+    for (const ruleSetId of [futureRules]) {
       const input = createInput({ ruleSetId });
       expect(await createTask(runtime, input)).toEqual({
         kind: "rules_invalid",
@@ -760,7 +747,7 @@ integration("F02/F03 scoped synthetic task management", () => {
     ).rejects.toThrow();
   });
 
-  it("returns only exact-scope options and permitted synthetic rules", async () => {
+  it("returns only exact-scope options and effective rules", async () => {
     const options = await readTaskManagementOptions(runtime, manager, {
       enabled: true,
     });
@@ -778,11 +765,8 @@ integration("F02/F03 scoped synthetic task management", () => {
     expect(options.scopes.map((item) => item.id)).not.toContain(neighbour);
     expect(options.ruleSets).toEqual(
       expect.arrayContaining([
-        { id: syntheticRules, version: versionNumber - 3 },
+        { id: syntheticRules, version: versionNumber - 2 },
       ]),
-    );
-    expect(options.ruleSets.map((item) => item.id)).not.toContain(
-      nonSyntheticRules,
     );
     expect(options.ruleSets.map((item) => item.id)).not.toContain(futureRules);
     expect(

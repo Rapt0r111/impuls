@@ -55,7 +55,7 @@ const origin = process.env.TEST_APP_ORIGIN;
       effective = "-1 minute",
     ) =>
       admin.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,$3,$4,'Synthetic catalog position','Synthetic cursor fixture',5,'cosmetic','synthetic',$5,clock_timestamp()+$6::interval)",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,$3,$4,'Synthetic catalog position','Synthetic cursor fixture',5,'cosmetic',$5,clock_timestamp()+$6::interval)",
         [r.version, r.reward, scope, n, enabled, effective],
       );
     beforeAll(async () => {

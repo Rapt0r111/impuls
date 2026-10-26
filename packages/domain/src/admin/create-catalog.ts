@@ -129,8 +129,8 @@ export async function createCatalogIdentity(
     // PostgreSQL creates the timestamp, preserving precision beyond the JS Date.
     const inserted = (
       await client.query<Terms>(
-        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds)
-      VALUES($1,$2,$3,1,$4,$5,$6,'cosmetic','synthetic',false,clock_timestamp(),$7)
+        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds)
+      VALUES($1,$2,$3,1,$4,$5,$6,'cosmetic',false,clock_timestamp(),$7)
       RETURNING id,version,title,conditions,price,enabled,
         to_char(effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "effectiveFrom",reservation_seconds AS "reservationSeconds"`,
         [

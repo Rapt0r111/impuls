@@ -37,7 +37,7 @@ type OpenRow = {
 const OPEN_LIMIT = 50;
 export const memberOf = (scopeColumn: string, userParam: string) => `EXISTS (
   SELECT 1 FROM impuls.task_scope_members m
-   WHERE m.scope_id = ${scopeColumn} AND m.user_id = ${userParam} AND m.synthetic
+   WHERE m.scope_id = ${scopeColumn} AND m.user_id = ${userParam}
      AND m.revoked_at IS NULL AND m.valid_from <= clock_timestamp()
      AND (m.valid_until IS NULL OR m.valid_until > clock_timestamp()))`;
 
@@ -230,7 +230,7 @@ export async function claimTask(
     // lock serialises two taps by the same member so both cannot pass the count.
     const rule = await client.query<{ definition: unknown }>(
       `SELECT definition FROM impuls.rule_sets
-        WHERE definition->>'mode'='synthetic' AND effective_from<=clock_timestamp()
+        WHERE effective_from<=clock_timestamp()
         ORDER BY version_number DESC LIMIT 1`,
     );
     const definition = rule.rows[0]?.definition;
@@ -273,8 +273,8 @@ export async function claimTask(
     });
     // Tell the creator, unless they took their own task. The unique index allows one per task.
     await client.query(
-      `INSERT INTO impuls.notification_outbox (recipient_id, task_id, kind, mode, created_at, updated_at)
-       SELECT t.created_by, t.id, 'task.claimed', 'synthetic', clock_timestamp(), clock_timestamp()
+      `INSERT INTO impuls.notification_outbox (recipient_id, task_id, kind, created_at, updated_at)
+       SELECT t.created_by, t.id, 'task.claimed', clock_timestamp(), clock_timestamp()
          FROM impuls.tasks t WHERE t.id = $1 AND t.created_by <> $2
        ON CONFLICT DO NOTHING`,
       [input.taskId, input.actorId],

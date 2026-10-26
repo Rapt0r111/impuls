@@ -234,8 +234,8 @@ export async function mutateRedemption(
         return await reject({ kind: "insufficient_points" });
       current = (
         await client.query<RedemptionRow>(
-          `INSERT INTO impuls.redemptions(user_id,reward_version_id,reward_id,scope_id,quota_period_id,reward_version,title,conditions,price,period_start,period_end,mode,created_at,updated_at,expires_at)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'synthetic',$12,$12,CASE WHEN $13::integer IS NULL THEN NULL ELSE $12::timestamptz+$13*interval '1 second' END) RETURNING *`,
+          `INSERT INTO impuls.redemptions(user_id,reward_version_id,reward_id,scope_id,quota_period_id,reward_version,title,conditions,price,period_start,period_end,created_at,updated_at,expires_at)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12,CASE WHEN $13::integer IS NULL THEN NULL ELSE $12::timestamptz+$13*interval '1 second' END) RETURNING *`,
           [
             input.actorId,
             reward!.id,
@@ -319,8 +319,8 @@ export async function mutateRedemption(
       [quota.id, input.action === "reserve" ? 1 : -1, at],
     );
     await client.query(
-      `INSERT INTO impuls.ledger_entries(user_id,redemption_id,currency,kind,amount,reserved_delta,original_entry_id,mode,season_key,time_zone,created_at,updated_at)
-       VALUES($1,$2,'points',$3,$4,$5,$6,'synthetic',$7,'Europe/Moscow',$8,$8)`,
+      `INSERT INTO impuls.ledger_entries(user_id,redemption_id,currency,kind,amount,reserved_delta,original_entry_id,season_key,time_zone,created_at,updated_at)
+       VALUES($1,$2,'points',$3,$4,$5,$6,$7,'Europe/Moscow',$8,$8)`,
       [
         input.actorId,
         current!.id,
@@ -356,7 +356,7 @@ export async function mutateRedemption(
       ],
     );
     await client.query(
-      "INSERT INTO impuls.notification_outbox(recipient_id,redemption_id,kind,mode,created_at,updated_at) VALUES($1,$2,$3,'synthetic',$4,$4)",
+      "INSERT INTO impuls.notification_outbox(recipient_id,redemption_id,kind,created_at,updated_at) VALUES($1,$2,$3,$4,$4)",
       [
         input.actorId,
         current!.id,

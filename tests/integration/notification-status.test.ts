@@ -767,7 +767,7 @@ const url = process.env.TEST_DATABASE_URL,
       [owner],
     );
     await admin.query(
-      "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,$3,1,'PRIVATE COSMETIC','PRIVATE TERMS',3,'cosmetic','synthetic',true,now()-interval '1 minute')",
+      "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,$3,1,'PRIVATE COSMETIC','PRIVATE TERMS',3,'cosmetic',true,now()-interval '1 minute')",
       [rewardVersion, rewardId, scope],
     );
     await admin.query(

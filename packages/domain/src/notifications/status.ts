@@ -82,10 +82,10 @@ export async function readNotificationStatus(
       LEFT JOIN impuls.reviews r ON r.id=coalesce(o.review_id,c.review_id)
       LEFT JOIN impuls.submissions sub ON sub.id=r.submission_id
       LEFT JOIN impuls.tasks t ON t.id=coalesce(o.task_id,sub.task_id)
-      LEFT JOIN impuls.redemptions redemption ON redemption.id=o.redemption_id AND redemption.mode='synthetic'
+      LEFT JOIN impuls.redemptions redemption ON redemption.id=o.redemption_id
       JOIN selected ON selected.id=coalesce(t.scope_id,redemption.scope_id)
       LEFT JOIN impuls.notification_simulations d ON d.outbox_id=o.id
-      WHERE o.mode='synthetic' AND o.status='pending'
+      WHERE o.status='pending'
     )
     SELECT access.*,
       coalesce((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name) ORDER BY name,id) FROM permitted),'[]'::jsonb) AS scopes,

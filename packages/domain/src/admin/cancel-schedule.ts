@@ -99,7 +99,7 @@ export async function cancelScheduledCatalogTerms(
       r.reservation_seconds AS "reservationSeconds",r.effective_from>clock_timestamp() future,
       EXISTS(SELECT 1 FROM impuls.catalog_cancellations c WHERE c.version_id=r.id) cancelled
       FROM impuls.reward_versions r JOIN impuls.catalog_publications p ON p.published_version_id=r.id
-      WHERE r.id=$1 AND r.reward_id=$2 AND r.scope_id=$3 AND r.mode='synthetic' AND r.kind='cosmetic'`,
+      WHERE r.id=$1 AND r.reward_id=$2 AND r.scope_id=$3 AND r.kind='cosmetic'`,
         [input.versionId, input.rewardId, input.scope],
       )
     ).rows[0];

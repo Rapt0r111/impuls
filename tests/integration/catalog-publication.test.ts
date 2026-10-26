@@ -84,7 +84,7 @@ const url = process.env.TEST_DATABASE_URL,
         quota = randomUUID();
       rewards.push(rewardId);
       await admin.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,'Original synthetic title','Original synthetic conditions',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 minute',3600)",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,'Original synthetic title','Original synthetic conditions',30,'cosmetic',true,clock_timestamp()-interval '1 minute',3600)",
         [id, rewardId, scope],
       );
       await admin.query(
@@ -587,7 +587,7 @@ const url = process.env.TEST_DATABASE_URL,
           body = input(f);
         if (mode !== "stale")
           await admin.query(
-            "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,2,'Fixture','Synthetic conditions',17,'cosmetic','synthetic',true,clock_timestamp()+$3::interval)",
+            "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,2,'Fixture','Synthetic conditions',17,'cosmetic',true,clock_timestamp()+$3::interval)",
             [f.rewardId, scope, mode === "future" ? "1 hour" : "-2 minutes"],
           );
         const before = await state(f);

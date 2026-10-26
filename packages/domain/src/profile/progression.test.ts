@@ -67,16 +67,10 @@ describe("synthetic versioned level thresholds", () => {
     ])
       expect(
         syntheticLevelThresholds({
-          mode: "synthetic",
           progression: { levelThresholds: thresholds },
         }),
       ).toBeNull();
-    for (const rule of [
-      null,
-      {},
-      { mode: "real", progression: { levelThresholds: [0, 100] } },
-      { mode: "synthetic", progression: null },
-    ])
+    for (const rule of [null, {}, { progression: null }])
       expect(syntheticLevelThresholds(rule)).toBeNull();
     expect(
       syntheticLevelNames({ progression: { levelNames: ["Новичок", 5] } }),

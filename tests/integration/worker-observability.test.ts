@@ -80,8 +80,8 @@ const require = createRequire(import.meta.url),
         [owner.id, scope],
       );
       await db.query(
-        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds)
-      VALUES($1,$2,$3,1,'Synthetic ops cosmetic','Saved synthetic terms',23,'cosmetic','synthetic',true,clock_timestamp()-interval '1 minute',$4)`,
+        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds)
+      VALUES($1,$2,$3,1,'Synthetic ops cosmetic','Saved synthetic terms',23,'cosmetic',true,clock_timestamp()-interval '1 minute',$4)`,
         [version, reward, scope, seconds],
       );
       await db.query(

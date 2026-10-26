@@ -54,7 +54,7 @@ export async function readLeaderboard(
       await client.query<Scope>(
         `SELECT s.id,s.name FROM impuls.task_scope_members m
       JOIN impuls.access_scopes s ON s.id=m.scope_id
-      WHERE m.user_id=$1 AND m.synthetic=true AND m.revoked_at IS NULL
+      WHERE m.user_id=$1 AND m.revoked_at IS NULL
       AND m.valid_from<=now() AND (m.valid_until IS NULL OR m.valid_until>now()) ORDER BY s.name,s.id`,
         [actorId],
       )
@@ -98,8 +98,8 @@ export async function readLeaderboard(
       SELECT u.id,u.display_name,coalesce(sum(l.amount),0) AS xp
       FROM impuls.task_scope_members m JOIN impuls.users u ON u.id=m.user_id AND u.active=true
       LEFT JOIN (impuls.ledger_entries l JOIN impuls.tasks t ON t.id=l.task_id AND t.scope_id=$1)
-        ON l.user_id=u.id AND l.currency='xp' AND l.mode='synthetic' AND l.season_key=$2 AND l.time_zone=$3
-      WHERE m.scope_id=$1 AND m.synthetic=true AND m.revoked_at IS NULL AND m.valid_from<=now()
+        ON l.user_id=u.id AND l.currency='xp' AND l.season_key=$2 AND l.time_zone=$3
+      WHERE m.scope_id=$1 AND m.revoked_at IS NULL AND m.valid_from<=now()
         AND (m.valid_until IS NULL OR m.valid_until>now())
       GROUP BY u.id,u.display_name
     ) SELECT id,display_name,xp,rank() OVER(ORDER BY xp DESC) AS rank FROM totals WHERE xp>0 ORDER BY xp DESC,id`,

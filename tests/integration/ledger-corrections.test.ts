@@ -478,7 +478,7 @@ const url = process.env.TEST_DATABASE_URL;
     const g = await fixture();
     const c = (
       await admin.query<{ id: string }>(
-        "INSERT INTO impuls.ledger_corrections(review_id,user_id,actor_id,reason,xp_delta,points_delta,mode,created_at,updated_at) VALUES($1,$2,$3,'Synthetic invalid row',-17,-9,'synthetic',now(),now()) RETURNING id",
+        "INSERT INTO impuls.ledger_corrections(review_id,user_id,actor_id,reason,xp_delta,points_delta,created_at,updated_at) VALUES($1,$2,$3,'Synthetic invalid row',-17,-9,now(),now()) RETURNING id",
         [g.input.reviewId, g.owner.id, actors[0]!.id],
       )
     ).rows[0]!.id;

@@ -181,7 +181,7 @@ export async function changeAccess(
         return await reject({ kind: "invalid_term" });
       const member = await client.query(
         `SELECT 1 FROM impuls.task_scope_members m JOIN impuls.users u ON u.id=m.user_id
-         WHERE m.scope_id=$1 AND m.user_id=$2 AND m.synthetic AND u.active AND m.revoked_at IS NULL
+         WHERE m.scope_id=$1 AND m.user_id=$2 AND u.active AND m.revoked_at IS NULL
            AND m.valid_from<=clock_timestamp() AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp()) FOR SHARE OF m, u`,
         [input.scope, input.subjectId],
       );
@@ -361,7 +361,7 @@ export async function readAccess(
              AND b.valid_from<=clock_timestamp() AND (b.valid_until IS NULL OR b.valid_until>clock_timestamp())
              AND b.action NOT IN ('admin.access','admin.access.manage','admin.members.manage')),'[]'::jsonb) bindings
        FROM impuls.task_scope_members m JOIN impuls.users u ON u.id=m.user_id
-       WHERE m.scope_id=$1 AND m.synthetic AND u.active AND m.revoked_at IS NULL
+       WHERE m.scope_id=$1 AND u.active AND m.revoked_at IS NULL
          AND m.valid_from<=clock_timestamp() AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp())
        ORDER BY u.display_name,u.id LIMIT 200`,
       [input.scope],

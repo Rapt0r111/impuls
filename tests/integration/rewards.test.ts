@@ -99,7 +99,7 @@ const url = process.env.TEST_DATABASE_URL,
         s = opts.scope ?? scope;
       if (!rewardIds.includes(rewardId)) rewardIds.push(rewardId);
       await admin.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,$3,$4,$7,'Косметика; синтетические условия', $5,'cosmetic','synthetic',$6,clock_timestamp()-interval '1 second')",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,$3,$4,$7,'Косметика; синтетические условия', $5,'cosmetic',$6,clock_timestamp()-interval '1 second')",
         [
           id,
           rewardId,

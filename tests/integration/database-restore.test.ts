@@ -414,8 +414,8 @@ async function snapshot(pool: Pool | PoolClient) {
       accepted = await reviewTaskSubmission(sourceApp, reviewInput);
       expect(accepted.kind).toBe("ok");
       await source.query(
-        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from)
-      VALUES($1,$2,$3,1,'Synthetic restore cosmetic','Synthetic terms',30,'cosmetic','synthetic',true,now()-interval '1 second')`,
+        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from)
+      VALUES($1,$2,$3,1,'Synthetic restore cosmetic','Synthetic terms',30,'cosmetic',true,now()-interval '1 second')`,
         [version, reward, scope],
       );
       await source.query(
@@ -426,7 +426,7 @@ async function snapshot(pool: Pool | PoolClient) {
       reserved = await mutateRedemption(sourceApp, reserveInput);
       expect(reserved.kind).toBe("ok");
       await source.query(
-        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,1,'Synthetic original title','Synthetic original terms',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 second')",
+        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,1,'Synthetic original title','Synthetic original terms',30,'cosmetic',true,clock_timestamp()-interval '1 second')",
         [publicationInput.rewardId, scope],
       );
       identityCreated = await createCatalogIdentity(sourceApp, creationInput);
@@ -831,7 +831,7 @@ async function snapshot(pool: Pool | PoolClient) {
         [other],
       );
       await target.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,'Restored expiry cosmetic','Synthetic saved deadline',23,'cosmetic','synthetic',true,clock_timestamp()-interval '1 minute',1)",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,'Restored expiry cosmetic','Synthetic saved deadline',23,'cosmetic',true,clock_timestamp()-interval '1 minute',1)",
         [newVersion, newReward, scope],
       );
       await target.query(

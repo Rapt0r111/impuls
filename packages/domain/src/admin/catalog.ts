@@ -106,7 +106,7 @@ export async function readAdminCatalog(
       SELECT * FROM permitted WHERE $4::uuid IS NULL OR id=$4 ORDER BY name,id LIMIT 1
     ), identities AS MATERIALIZED (
       SELECT DISTINCT reward_id FROM impuls.reward_versions r JOIN selected s ON s.id=r.scope_id
-      WHERE r.mode='synthetic' AND r.kind='cosmetic'
+      WHERE r.kind='cosmetic'
     ), page AS MATERIALIZED (
       SELECT reward_id FROM identities WHERE $5::uuid IS NULL OR reward_id>$5 ORDER BY reward_id LIMIT $6
     ), rows AS (

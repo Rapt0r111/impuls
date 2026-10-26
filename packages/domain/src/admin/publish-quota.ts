@@ -88,7 +88,7 @@ export async function publishQuotaPeriod(
     if (access !== "ok") return await reject({ kind: access });
     if (!input.allowPublication) return await reject({ kind: "disabled" });
     const identity = await client.query(
-      "SELECT 1 FROM impuls.reward_versions WHERE reward_id=$1 AND scope_id=$2 AND mode='synthetic' AND kind='cosmetic' LIMIT 1",
+      "SELECT 1 FROM impuls.reward_versions WHERE reward_id=$1 AND scope_id=$2 AND kind='cosmetic' LIMIT 1",
       [input.rewardId, input.scope],
     );
     if (!identity.rowCount) return await reject({ kind: "not_found" });

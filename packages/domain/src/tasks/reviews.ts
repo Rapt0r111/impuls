@@ -448,8 +448,8 @@ export async function reviewTaskSubmission(
       ],
     );
     await client.query(
-      `INSERT INTO impuls.notification_outbox (recipient_id, review_id, kind, mode, created_at, updated_at)
-      VALUES ($1, $2, $3, 'synthetic', $4, $4)`,
+      `INSERT INTO impuls.notification_outbox (recipient_id, review_id, kind, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $4)`,
       [
         current.user_id,
         row.id,

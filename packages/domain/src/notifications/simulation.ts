@@ -77,7 +77,7 @@ export async function claimNotificationSimulation(
     await client.query("BEGIN");
     await client.query(`INSERT INTO impuls.notification_simulations(outbox_id)
       SELECT o.id FROM impuls.notification_outbox o
-      WHERE o.mode='synthetic' AND o.status='pending'
+      WHERE o.status='pending'
         AND NOT EXISTS(SELECT 1 FROM impuls.notification_simulations d WHERE d.outbox_id=o.id)
       ORDER BY o.created_at,o.id LIMIT 100 ON CONFLICT DO NOTHING`);
     await client.query(`UPDATE impuls.notification_simulations SET status='failed',
@@ -135,7 +135,7 @@ export async function processNotificationSimulation(
         `SELECT d.attempts,o.recipient_id,o.kind
       FROM impuls.notification_simulations d JOIN impuls.notification_outbox o ON o.id=d.outbox_id
       WHERE d.outbox_id=$1 AND d.lease_token=$2 AND d.status='processing'
-        AND d.lease_until>clock_timestamp() AND o.mode='synthetic' AND o.status='pending'
+        AND d.lease_until>clock_timestamp() AND o.status='pending'
       FOR UPDATE OF d`,
         [claim.outboxId, claim.token],
       )

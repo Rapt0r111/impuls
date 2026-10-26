@@ -358,7 +358,7 @@ export function proposeSelfTask(pool: Pool, input: ProposeSelfTaskInput) {
       // The current synthetic rule set, as the free-task claim uses it.
       const rule = await client.query<{ id: string }>(
         `SELECT id FROM impuls.rule_sets
-          WHERE definition->>'mode' = 'synthetic' AND effective_from <= clock_timestamp()
+          WHERE effective_from <= clock_timestamp()
           ORDER BY version_number DESC LIMIT 1`,
       );
       if (!rule.rows[0]) return { kind: "rules_invalid" };

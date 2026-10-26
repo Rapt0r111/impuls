@@ -115,7 +115,7 @@ export async function publishCatalogTerms(
     if (access !== "ok") return await reject({ kind: access });
     if (!input.allowPublication) return await reject({ kind: "disabled" });
     const identity = await client.query(
-      "SELECT 1 FROM impuls.reward_versions WHERE reward_id=$1 AND scope_id=$2 AND mode='synthetic' AND kind='cosmetic' LIMIT 1",
+      "SELECT 1 FROM impuls.reward_versions WHERE reward_id=$1 AND scope_id=$2 AND kind='cosmetic' LIMIT 1",
       [input.rewardId, input.scope],
     );
     if (!identity.rowCount) return await reject({ kind: "not_found" });
@@ -203,8 +203,8 @@ export async function publishCatalogTerms(
     // PostgreSQL creates the timestamp, preserving precision beyond the JS Date.
     const inserted = (
       await client.query<Terms>(
-        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds)
-      SELECT $1,$2,$3,$4,$5,$6,$7,'cosmetic','synthetic',$8,coalesce($10::timestamptz,clock_timestamp()),$9
+        `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds)
+      SELECT $1,$2,$3,$4,$5,$6,$7,'cosmetic',$8,coalesce($10::timestamptz,clock_timestamp()),$9
       WHERE $10::timestamptz IS NULL OR $10::timestamptz>clock_timestamp()
       RETURNING id,version,title,conditions,price,enabled,
         to_char(effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "effectiveFrom",reservation_seconds AS "reservationSeconds"`,

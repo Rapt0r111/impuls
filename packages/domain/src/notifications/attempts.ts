@@ -69,9 +69,8 @@ export async function readNotificationAttempts(
       LEFT JOIN impuls.reviews r ON r.id=coalesce(o.review_id,c.review_id)
       LEFT JOIN impuls.submissions sub ON sub.id=r.submission_id
       LEFT JOIN impuls.tasks t ON t.id=coalesce(o.task_id,sub.task_id)
-      LEFT JOIN impuls.redemptions redemption ON redemption.id=o.redemption_id AND redemption.mode='synthetic'
+      LEFT JOIN impuls.redemptions redemption ON redemption.id=o.redemption_id
       JOIN selected ON selected.id=coalesce(t.scope_id,redemption.scope_id)
-      WHERE o.mode='synthetic'
     ), anchor AS MATERIALIZED (
       SELECT id,recorded_at FROM entries WHERE id=$5::uuid AND $6::boolean
     ), page AS MATERIALIZED (

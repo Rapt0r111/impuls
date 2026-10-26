@@ -225,8 +225,8 @@ export async function reverseAcceptance(
     ).rows[0]!.at;
     const id = (
       await client.query<{ id: string }>(
-        `INSERT INTO impuls.ledger_corrections(review_id,user_id,actor_id,reason,xp_delta,points_delta,mode,created_at,updated_at)
-      VALUES($1,$2,$3,$4,$5,$6,'synthetic',$7,$7) RETURNING id`,
+        `INSERT INTO impuls.ledger_corrections(review_id,user_id,actor_id,reason,xp_delta,points_delta,created_at,updated_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$7) RETURNING id`,
         [
           input.reviewId,
           row.user_id,
@@ -274,7 +274,7 @@ export async function reverseAcceptance(
       ],
     );
     await client.query(
-      `INSERT INTO impuls.notification_outbox(recipient_id,correction_id,kind,mode,created_at,updated_at) VALUES($1,$2,'ledger.corrected','synthetic',$3,$3)`,
+      `INSERT INTO impuls.notification_outbox(recipient_id,correction_id,kind,created_at,updated_at) VALUES($1,$2,'ledger.corrected',$3,$3)`,
       [row.user_id, id, at],
     );
     const response: CorrectionResponse = {

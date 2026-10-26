@@ -154,8 +154,6 @@ export function definitionFromSettings(
     }));
   return {
     ...base,
-    // Still read by the rule queries until the mode label is removed (stage 2, next PR).
-    mode: "synthetic",
     timeZone: settings.timeZone,
     economy: {
       ...(record(base.economy) ?? {}),
@@ -214,7 +212,7 @@ type RuleRow = {
   effective_from: Date;
 };
 const LATEST = `SELECT version_number, definition, effective_from FROM impuls.rule_sets
-  WHERE definition->>'mode'='synthetic' AND effective_from<=clock_timestamp()
+  WHERE effective_from<=clock_timestamp()
   ORDER BY version_number DESC LIMIT 1`;
 
 export async function readRules(
@@ -254,7 +252,6 @@ export async function readRules(
          FROM impuls.rule_sets r
          JOIN impuls.users u ON u.id=r.created_by
          LEFT JOIN impuls.rule_publications p ON p.rule_set_id=r.id
-         WHERE r.definition->>'mode'='synthetic'
          ORDER BY r.version_number DESC LIMIT 20`,
       )
     ).rows;
@@ -321,7 +318,6 @@ export async function publishRules(
       !isZone(settings.timeZone) ||
       (settings.levelThresholds &&
         !syntheticLevelThresholds({
-          mode: "synthetic",
           progression: { levelThresholds: settings.levelThresholds },
         })) ||
       settings.levelNames.length > (settings.levelThresholds?.length ?? 0) ||

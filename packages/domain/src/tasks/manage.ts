@@ -173,7 +173,7 @@ export async function readTaskManagementOptions(
     pool.query<{ scope_id: string; id: string; display_name: string }>(
       `SELECT m.scope_id, u.id, u.display_name FROM impuls.task_scope_members m
        JOIN impuls.users u ON u.id = m.user_id AND u.active
-       WHERE m.scope_id = ANY($1::uuid[]) AND m.synthetic AND m.revoked_at IS NULL
+       WHERE m.scope_id = ANY($1::uuid[]) AND m.revoked_at IS NULL
        AND m.valid_from <= clock_timestamp() AND (m.valid_until IS NULL OR m.valid_until > clock_timestamp())
        AND EXISTS (SELECT 1 FROM impuls.users actor WHERE actor.id = $2 AND actor.active)
        AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE b.user_id = $2 AND b.action = 'task.assign'
@@ -189,7 +189,7 @@ export async function readTaskManagementOptions(
     ),
     pool.query<{ id: string; version_number: number }>(
       `SELECT id, version_number FROM impuls.rule_sets WHERE $1::boolean
-       AND definition->>'mode' = 'synthetic' AND effective_from <= clock_timestamp()
+       AND effective_from <= clock_timestamp()
        AND EXISTS (SELECT 1 FROM impuls.users actor WHERE actor.id = $2 AND actor.active)
        AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE b.user_id = $2 AND b.action = 'task.create'
          AND b.revoked_at IS NULL AND b.valid_from <= clock_timestamp()
@@ -396,8 +396,8 @@ async function manageTask(
         [taskId],
       );
       await client.query(
-        `INSERT INTO impuls.notification_outbox (recipient_id,task_id,kind,mode,created_at,updated_at)
-        VALUES ($1,$2,'task.assigned','synthetic',clock_timestamp(),clock_timestamp())`,
+        `INSERT INTO impuls.notification_outbox (recipient_id,task_id,kind,created_at,updated_at)
+        VALUES ($1,$2,'task.assigned',clock_timestamp(),clock_timestamp())`,
         [input.data.assigneeId, taskId],
       );
     } else {
@@ -534,7 +534,7 @@ async function validRules(client: PoolClient, id: string) {
   return (
     (
       await client.query(
-        `SELECT id FROM impuls.rule_sets WHERE id=$1 AND definition->>'mode'='synthetic' AND effective_from <= clock_timestamp()`,
+        `SELECT id FROM impuls.rule_sets WHERE id=$1 AND effective_from <= clock_timestamp()`,
         [id],
       )
     ).rowCount === 1

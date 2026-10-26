@@ -12,11 +12,7 @@ export const LEVEL_NAME_MAX = 40;
 export function syntheticLevelThresholds(definition: unknown): number[] | null {
   if (typeof definition !== "object" || definition === null) return null;
   const rule = definition as Record<string, unknown>;
-  if (
-    rule.mode !== "synthetic" ||
-    typeof rule.progression !== "object" ||
-    rule.progression === null
-  )
+  if (typeof rule.progression !== "object" || rule.progression === null)
     return null;
   const thresholds = (rule.progression as Record<string, unknown>)
     .levelThresholds;
@@ -69,7 +65,6 @@ export function levelProgress(
     !Number.isSafeInteger(xp) ||
     xp < 0 ||
     !syntheticLevelThresholds({
-      mode: "synthetic",
       progression: { levelThresholds: thresholds },
     })
   )
