@@ -381,7 +381,7 @@ async function manageTask(
       if (target.rows[0]?.active !== true)
         return await reject({ kind: "assignee_invalid" });
       const membership = await client.query(
-        `SELECT id FROM impuls.task_scope_members WHERE scope_id=$1 AND user_id=$2 AND synthetic
+        `SELECT id FROM impuls.task_scope_members WHERE scope_id=$1 AND user_id=$2
         AND revoked_at IS NULL AND valid_from <= clock_timestamp() AND (valid_until IS NULL OR valid_until > clock_timestamp()) FOR SHARE`,
         [scopeId, input.data.assigneeId],
       );

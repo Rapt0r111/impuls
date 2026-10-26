@@ -24,7 +24,6 @@ type Terms = {
   reservationSeconds: number | null;
 };
 type Response = {
-  mode: "synthetic";
   scope: string;
   cancellationId: string;
   cancellation: { rewardId: string; cancelled: Terms };
@@ -174,7 +173,6 @@ export async function cancelScheduledCatalogTerms(
       reservationSeconds: target.reservationSeconds,
     };
     const response: Response = {
-      mode: "synthetic",
       scope: input.scope,
       cancellationId: cancellation.id,
       cancellation: { rewardId: input.rewardId, cancelled: terms },

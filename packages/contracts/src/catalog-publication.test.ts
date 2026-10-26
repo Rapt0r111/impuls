@@ -73,7 +73,6 @@ describe("catalog publication contract", () => {
   });
   it("requires a sequential published snapshot", () => {
     const response = {
-      mode: "synthetic",
       scope: id,
       publicationId: id,
       catalog: {

@@ -113,7 +113,6 @@ async function fixture(mode = "populated", width = 390) {
     if (p === "/api/v1/tasks") return json(r, { items: [], nextCursor: null });
     if (p === "/api/v1/rewards")
       return json(r, {
-        mode: "synthetic",
         scopes: [scope],
         scope,
         balance: {
@@ -149,7 +148,6 @@ async function fixture(mode = "populated", width = 390) {
       });
     if (p === "/api/v1/me/redemptions")
       return json(r, {
-        mode: "synthetic",
         items: mode === "owned" ? [issued] : [],
         nextCursor: null,
         updatedAt: at,
@@ -182,7 +180,6 @@ async function fixture(mode = "populated", width = 390) {
         );
       }
       return json(r, {
-        mode: "synthetic",
         scopes: mode === "no-scope" ? [] : [scope],
         scope: mode === "no-scope" ? null : scope,
         items:
@@ -223,7 +220,7 @@ async function fixture(mode = "populated", width = 390) {
       if (mode === "mutation-revoked")
         return json(r, { code: "ACCESS_REVOKED" }, 403);
       done = true;
-      return json(r, { mode: "synthetic", redemption: issued });
+      return json(r, { redemption: issued });
     }
     return json(r, { code: "NOT_FOUND" }, 404);
   });

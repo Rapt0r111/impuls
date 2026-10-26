@@ -12,7 +12,6 @@ export const catalogCancellationEvidenceSchema = z.strictObject({
   cancelled: adminCatalogVersionSchema,
 });
 export const catalogCancellationResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope: z.uuid(),
   cancellationId: z.uuid(),
   cancellation: catalogCancellationEvidenceSchema,

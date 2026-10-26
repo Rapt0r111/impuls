@@ -25,7 +25,6 @@ type Terms = {
   reservationSeconds: number | null;
 };
 type Response = {
-  mode: "synthetic";
   scope: string;
   creationId: string;
   creation: { rewardId: string; initial: Terms };
@@ -152,7 +151,6 @@ export async function createCatalogIdentity(
       )
     ).rows[0]!;
     const response: Response = {
-      mode: "synthetic",
       scope: input.scope,
       creationId: creation.id,
       creation: { rewardId, initial: inserted },

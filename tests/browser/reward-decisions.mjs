@@ -93,7 +93,6 @@ async function fixture(mode = "populated", width = 390) {
     if (p === "/api/v1/tasks") return json(r, { items: [], nextCursor: null });
     if (p === "/api/v1/rewards")
       return json(r, {
-        mode: "synthetic",
         scopes: [],
         scope: null,
         balance,
@@ -103,7 +102,6 @@ async function fixture(mode = "populated", width = 390) {
       });
     if (p === "/api/v1/me/redemptions")
       return json(r, {
-        mode: "synthetic",
         items: [],
         nextCursor: null,
         updatedAt: at,
@@ -158,7 +156,6 @@ async function fixture(mode = "populated", width = 390) {
         );
       }
       return json(r, {
-        mode: "synthetic",
         scopes: mode === "no-scope" ? [] : [scope],
         scope: mode === "no-scope" ? null : scope,
         items:
@@ -208,7 +205,6 @@ async function fixture(mode = "populated", width = 390) {
       done = true;
       const b = JSON.parse(r.request().postData());
       return json(r, {
-        mode: "synthetic",
         redemption: {
           ...redemption,
           status:

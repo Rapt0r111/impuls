@@ -56,7 +56,6 @@ export async function readAdminCatalog(
   | {
       kind: "ok";
       response: {
-        mode: "synthetic";
         scope: Scope;
         scopes: Scope[];
         items: Item[];
@@ -167,7 +166,6 @@ export async function readAdminCatalog(
   return {
     kind: "ok",
     response: {
-      mode: "synthetic",
       scope: row.scope,
       scopes: row.scopes,
       items,

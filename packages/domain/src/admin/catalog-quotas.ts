@@ -37,7 +37,6 @@ export async function readAdminCatalogQuotas(
   | {
       kind: "ok";
       response: {
-        mode: "synthetic";
         scope: Scope;
         rewardId: string;
         items: Period[];
@@ -123,7 +122,6 @@ export async function readAdminCatalogQuotas(
   return {
     kind: "ok",
     response: {
-      mode: "synthetic",
       scope: row.scope,
       rewardId,
       items,

@@ -95,7 +95,6 @@ export async function PATCH(request: NextRequest) {
     if (result.kind === "ok")
       return jsonResponse(
         profileNameResponseSchema.parse({
-          mode: "synthetic",
           user: { id: session.user.id, displayName: result.displayName },
           changed: result.changed,
         }),

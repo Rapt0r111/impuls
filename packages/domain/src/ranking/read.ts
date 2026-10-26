@@ -77,7 +77,6 @@ export async function readLeaderboard(
       return {
         kind: "ok",
         response: {
-          mode: "synthetic",
           timeZone,
           season,
           scopes,
@@ -140,7 +139,6 @@ export async function readLeaderboard(
     return {
       kind: "ok",
       response: {
-        mode: "synthetic",
         timeZone,
         season,
         scopes,

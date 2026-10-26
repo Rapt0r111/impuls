@@ -12,7 +12,6 @@ import {
 } from "./admin-catalog";
 const id = "a1111111-1111-4111-8111-111111111111";
 const data = {
-  mode: "synthetic",
   scope: { id, name: "Synthetic" },
   scopes: [{ id, name: "Synthetic" }],
   items: [
@@ -117,7 +116,6 @@ describe("F07 quota period contracts", () => {
     state: "past",
   };
   const response = {
-    mode: "synthetic",
     scope: data.scope,
     rewardId: id,
     items: [period],
@@ -197,7 +195,6 @@ describe("F07 catalog version history contracts", () => {
   });
   it("preserves microsecond dates and limits projection to saved conditions", () => {
     const response = {
-      mode: "synthetic",
       scope: data.scope,
       rewardId: id,
       items: [

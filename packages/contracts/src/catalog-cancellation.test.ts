@@ -27,7 +27,6 @@ describe("F07 cancellation contract", () => {
   });
   it("confirms the immutable cancelled snapshot and rejects private fields", () => {
     const data = {
-      mode: "synthetic",
       scope: id,
       cancellationId: id,
       cancellation: {

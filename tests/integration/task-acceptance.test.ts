@@ -234,7 +234,6 @@ const url = process.env.TEST_DATABASE_URL;
       expect(response.award).toMatchObject({
         xp: 17,
         points: 9,
-        mode: "synthetic",
         timeZone: "Europe/Moscow",
       });
       creditedXp += 17;

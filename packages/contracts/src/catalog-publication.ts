@@ -25,7 +25,6 @@ export type CatalogSchedulingRequest = z.infer<
 >;
 export const catalogPublicationResponseSchema = z
   .strictObject({
-    mode: z.literal("synthetic"),
     scope: z.uuid(),
     publicationId: z.uuid(),
     catalog: catalogPublicationEvidenceSchema,

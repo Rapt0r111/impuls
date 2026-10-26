@@ -6,7 +6,6 @@ import {
   profileNameSchema,
 } from "./profile";
 const data = {
-  mode: "synthetic",
   user: {
     id: "a1111111-1111-4111-8111-111111111111",
     displayName: "Synthetic",
@@ -126,14 +125,12 @@ describe("profileNameSchema", () => {
     const id = "a1111111-1111-4111-8111-111111111111";
     expect(
       profileNameResponseSchema.safeParse({
-        mode: "synthetic",
         user: { id, displayName: "Старое длинное имя" },
         changed: false,
       }).success,
     ).toBe(true);
     expect(
       profileNameResponseSchema.safeParse({
-        mode: "synthetic",
         user: { id, displayName: "x" },
       }).success,
     ).toBe(false);

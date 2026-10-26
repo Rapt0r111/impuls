@@ -18,7 +18,6 @@ export type ReviewQueueItem = {
   attemptNumber: number;
   acceptance: {
     enabled: boolean;
-    mode: "synthetic" | null;
     options: AcceptanceOptions;
   };
   author: { id: string; displayName: string };
@@ -106,7 +105,6 @@ export async function listReviewQueue(
           economyZone(row.rule_definition) !== null;
         return {
           enabled,
-          mode: enabled ? ("synthetic" as const) : null,
           options: enabled
             ? acceptanceOptions(row.rule_definition, {
                 xp: row.fund_xp,
@@ -440,7 +438,6 @@ export async function reviewTaskSubmission(
                 bonusXp: credited.breakdown?.bonus?.xp ?? 0,
                 bonusPoints: credited.breakdown?.bonus?.points ?? 0,
                 ruleVersion: credited.ruleVersion,
-                mode: credited.mode,
               }
             : {}),
         }),

@@ -100,7 +100,6 @@ async function fixture(width = 320, mode = "ready") {
     (r) => {
       const s = new URL(r.request().url()).searchParams.get("scope") ?? scope;
       return json(r, {
-        mode: "synthetic",
         canPublish: false,
         canSchedule: false,
         canCancelSchedule: mode !== "read-only",
@@ -176,7 +175,6 @@ async function fixture(width = 320, mode = "ready") {
       return json(
         r,
         {
-          mode: "synthetic",
           scope: body.scope,
           cancellationId: actor,
           cancellation: { rewardId: reward, cancelled },

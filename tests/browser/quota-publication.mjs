@@ -86,7 +86,6 @@ async function fixture(width = 320, readOnly = false) {
     (r) => {
       const s = new URL(r.request().url()).searchParams.get("scope") ?? scope;
       return json(r, {
-        mode: "synthetic",
         canPublish: false,
         canPublishQuota: !readOnly,
         scope: {
@@ -136,7 +135,6 @@ async function fixture(width = 320, readOnly = false) {
     async (r) => {
       if (r.request().method() === "GET")
         return json(r, {
-          mode: "synthetic",
           scope: { id: scope, name: "Учебная область" },
           rewardId: reward,
           updatedAt: "2026-10-05T10:00:00.000Z",
@@ -162,7 +160,6 @@ async function fixture(width = 320, readOnly = false) {
       return json(
         r,
         {
-          mode: "synthetic",
           scope: body.scope,
           publicationId: actor,
           quota: {
@@ -182,7 +179,6 @@ async function fixture(width = 320, readOnly = false) {
     (u) => u.pathname === "/api/v1/admin/audit",
     (r) =>
       json(r, {
-        mode: "synthetic",
         scope: { id: scope, name: "Учебная область" },
         scopes: [{ id: scope, name: "Учебная область" }],
         updatedAt: "2026-10-05T12:00:00.123456Z",

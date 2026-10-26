@@ -205,7 +205,6 @@ export const memberAuditEvidenceSchema = z.strictObject({
   revokedBindings: z.number().int().min(0).max(1000),
 });
 export const auditResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scopes: z.array(scopeSchema),
   scope: scopeSchema,
   updatedAt: z.iso.datetime(),

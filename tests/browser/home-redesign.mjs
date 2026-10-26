@@ -45,7 +45,6 @@ const entry = (id, currency, amount) => ({
   ruleVersion: 1,
   seasonKey: "2026-10",
   timeZone: "Europe/Moscow",
-  mode: "synthetic",
   createdAt: ago(10 * 60e3),
 });
 const redemption = {
@@ -163,7 +162,6 @@ async function open({
       if (p === "/api/v1/me/permissions") return json(r, { permissions: [] });
       if (p === "/api/v1/me/profile")
         return json(r, {
-          mode: "synthetic",
           user: { id: uid, displayName: "Тестовый Участник" },
           balance: balance(xp),
           progression: level
@@ -195,14 +193,12 @@ async function open({
         });
       if (p === "/api/v1/me/redemptions")
         return json(r, {
-          mode: "synthetic",
           items: notes ? [redemption] : [],
           nextCursor: null,
           updatedAt: at,
         });
       if (p === "/api/v1/rewards")
         return json(r, {
-          mode: "synthetic",
           scopes: [scope],
           scope,
           balance: balance(xp),
@@ -228,7 +224,6 @@ async function open({
         });
       if (p === "/api/v1/leaderboard")
         return json(r, {
-          mode: "synthetic",
           timeZone: "Europe/Moscow",
           season: "2026-10",
           scopes: [],

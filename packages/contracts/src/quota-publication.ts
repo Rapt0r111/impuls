@@ -21,7 +21,6 @@ export const quotaPublicationEvidenceSchema = z
   })
   .refine((v) => v.endsAt > v.startsAt);
 export const quotaPublicationResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope: z.uuid(),
   publicationId: z.uuid(),
   quota: quotaPublicationEvidenceSchema,

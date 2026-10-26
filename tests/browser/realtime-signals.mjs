@@ -88,7 +88,6 @@ async function open(realtime) {
       if (p === "/api/v1/me/realtime") return realtime(r, json);
       if (p === "/api/v1/me/profile")
         return json(r, {
-          mode: "synthetic",
           user: { id: uid, displayName: "Участник" },
           balance: {
             lifetimeXp: 0,
@@ -126,14 +125,12 @@ async function open(realtime) {
         });
       if (p === "/api/v1/me/redemptions")
         return json(r, {
-          mode: "synthetic",
           items: [],
           nextCursor: null,
           updatedAt: at,
         });
       if (p === "/api/v1/leaderboard")
         return json(r, {
-          mode: "synthetic",
           timeZone: "Europe/Moscow",
           season: "2026-10",
           scopes: [],

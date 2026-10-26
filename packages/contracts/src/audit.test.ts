@@ -34,7 +34,6 @@ describe("F07 audit wire contract", () => {
       values: [{ field: "xpDelta", value: -17 }],
     };
     const data = {
-      mode: "synthetic",
       scopes: [{ id, name: "Synthetic" }],
       scope: { id, name: "Synthetic" },
       updatedAt: item.occurredAt,
@@ -82,7 +81,6 @@ describe("F07 audit wire contract", () => {
     };
     const wrap = (altered: unknown) =>
       auditResponseSchema.safeParse({
-        mode: "synthetic",
         scopes: [{ id, name: "Synthetic" }],
         scope: { id, name: "Synthetic" },
         updatedAt: item.occurredAt,
@@ -133,7 +131,6 @@ describe("F07 audit wire contract", () => {
     };
     const parse = (altered: unknown) =>
       auditResponseSchema.safeParse({
-        mode: "synthetic",
         scopes: [{ id, name: "Synthetic" }],
         scope: { id, name: "Synthetic" },
         updatedAt: reward.periodStart,

@@ -75,7 +75,6 @@ describe("acceptance adjustment and bonus contract", () => {
   });
   it("defaults the award breakdown for responses saved before it existed", () => {
     const award = acceptanceAwardSchema.parse({
-      mode: "synthetic",
       xp: 5,
       points: 1,
       ruleVersion: 1,

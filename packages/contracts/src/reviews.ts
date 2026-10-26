@@ -33,7 +33,6 @@ export const reviewQueueItemSchema = z.object({
   acceptance: z
     .object({
       enabled: z.boolean(),
-      mode: z.literal("synthetic").nullable(),
       options: acceptanceOptionsSchema.default({
         adjustment: null,
         bonuses: [],
@@ -41,7 +40,6 @@ export const reviewQueueItemSchema = z.object({
     })
     .default({
       enabled: false,
-      mode: null,
       options: { adjustment: null, bonuses: [] },
     }),
   author: z.object({ id: z.uuid(), displayName: z.string().min(1) }),

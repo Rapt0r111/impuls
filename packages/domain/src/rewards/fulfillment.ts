@@ -26,7 +26,6 @@ type Input = {
   requestId: string;
 };
 type Response = {
-  mode: "synthetic";
   redemption: ReturnType<typeof redemption>;
 };
 type Result =
@@ -205,7 +204,6 @@ export async function fulfillRedemption(
       [current.user_id, current.id, at],
     );
     const response: Response = {
-      mode: "synthetic",
       redemption: redemption(updated),
     };
     await client.query(

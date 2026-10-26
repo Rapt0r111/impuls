@@ -105,7 +105,6 @@ async function fixture(mode = "populated", width = 390) {
       const empty = mode === "empty" || params.get("season") === "2026-08";
       const noScope = mode === "no-scope";
       return json(r, {
-        mode: "synthetic",
         timeZone: "Europe/Moscow",
         season: params.get("season") ?? "2026-10",
         scopes: noScope

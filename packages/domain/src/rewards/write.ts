@@ -31,7 +31,6 @@ type Input = Common &
       }
   );
 type Response = {
-  mode: "synthetic";
   redemption: ReturnType<typeof redemption>;
   balance: AccountBalance;
 };
@@ -129,7 +128,7 @@ export async function mutateRedemption(
       ).rows[0];
       if (!reward) return await reject({ kind: "not_found" });
       const membership = await client.query(
-        `SELECT id FROM impuls.task_scope_members WHERE user_id=$1 AND scope_id=$2 AND synthetic
+        `SELECT id FROM impuls.task_scope_members WHERE user_id=$1 AND scope_id=$2
           AND revoked_at IS NULL AND valid_from<=clock_timestamp() AND (valid_until IS NULL OR valid_until>clock_timestamp()) FOR SHARE`,
         [input.actorId, reward.scope_id],
       );
@@ -365,7 +364,6 @@ export async function mutateRedemption(
       ],
     );
     const response: Response = {
-      mode: "synthetic",
       redemption: redemption(current!),
       balance: accountBalance(updated),
     };
