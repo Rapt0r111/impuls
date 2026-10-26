@@ -43,7 +43,7 @@ function parseLevels(rows: string[]): number[] | null | "invalid" {
 }
 const wholeOrEmpty = (text: string) => /^\d*$/.test(text.trim());
 // Варианты нижнего предела; нестандартное действующее значение добавляется отдельно.
-const MIN_CHOICES = [100, 90, 75, 50, 25];
+const MIN_CHOICES = [100, 90, 75, 50];
 const DEFAULT_REASON = "Изменение настроек начислений";
 const EXAMPLE_FUND = 100;
 
@@ -458,8 +458,8 @@ function RulesForm({
               />
             </label>
             <p className="notification-note">
-              Проверяющий выбирает сумму от этого минимума до полной награды
-              задачи.
+              Командир при приёмке выбирает сумму от этого минимума до полной
+              награды задачи.
             </p>
           </fieldset>
           <fieldset>
