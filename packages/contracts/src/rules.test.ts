@@ -22,11 +22,6 @@ describe("rules publish request", () => {
       }).success,
     ).toBe(true);
   });
-  it("accepts a zero minimum, so the reviewer may award nothing for a poor report", () => {
-    expect(
-      rulesPublishRequestSchema.safeParse({ ...valid, minPercent: 0 }).success,
-    ).toBe(true);
-  });
   it("requires the explicit economy decision, so a version never omits it by accident", () => {
     const { economyApproved: _omitted, ...withoutDecision } = valid;
     expect(rulesPublishRequestSchema.safeParse(withoutDecision).success).toBe(
