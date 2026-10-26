@@ -40,6 +40,8 @@ export const managementTaskSchema = z.object({
   assignee: taskAssigneeSchema.nullable(),
   // Свободная задача: любой участник области может взять её сам, пока она черновик.
   openForClaim: z.boolean().default(false),
+  // Править и отменять задачу может её создатель или тот, у кого есть task.review.
+  manageable: z.boolean().default(false),
 });
 
 export const taskCreateRequestSchema = z.strictObject({
