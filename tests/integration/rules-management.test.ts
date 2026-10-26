@@ -29,6 +29,7 @@ const url = process.env.TEST_DATABASE_URL;
     const settings = {
       timeZone: "Europe/Moscow",
       acceptanceEnabled: true,
+      economyApproved: true,
       minPercent: 60,
       bonuses: [{ code: "plus_15", title: "Бонус +15 %", percent: 15 }],
       levelThresholds: [0, 100, 300],
@@ -120,6 +121,7 @@ const url = process.env.TEST_DATABASE_URL;
       });
       expect(stored.progression.levelThresholds).toEqual([0, 100, 300]);
       expect(stored.timeZone).toBe("Europe/Moscow");
+      expect(stored.economy).toEqual({ approved: true });
       const count = Number(
         (await admin.query("SELECT count(*) n FROM impuls.rule_sets")).rows[0]
           .n,

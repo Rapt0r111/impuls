@@ -56,6 +56,7 @@ const options = {
           withOptions,
           {
             mode: "synthetic",
+            economy: { approved: true },
             timeZone: "Europe/Moscow",
             acceptance: { enabled: true, ...options },
           },
@@ -64,6 +65,7 @@ const options = {
           withoutOptions,
           {
             mode: "synthetic",
+            economy: { approved: true },
             timeZone: "Europe/Moscow",
             acceptance: { enabled: true },
           },
@@ -72,6 +74,7 @@ const options = {
           pilotShares,
           {
             mode: "synthetic",
+            economy: { approved: true },
             timeZone: "Europe/Moscow",
             acceptance: {
               enabled: true,

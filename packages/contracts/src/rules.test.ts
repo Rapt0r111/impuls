@@ -4,6 +4,7 @@ import { rulesPublishRequestSchema } from "./rules";
 const valid = {
   timeZone: "Europe/Moscow",
   acceptanceEnabled: true,
+  economyApproved: true,
   minPercent: 50,
   bonuses: [{ code: "plus_10", title: "Бонус +10 %", percent: 10 }],
   levelThresholds: [0, 100, 250],
@@ -20,6 +21,12 @@ describe("rules publish request", () => {
         bonuses: [],
       }).success,
     ).toBe(true);
+  });
+  it("requires the explicit economy decision, so a version never omits it by accident", () => {
+    const { economyApproved: _omitted, ...withoutDecision } = valid;
+    expect(rulesPublishRequestSchema.safeParse(withoutDecision).success).toBe(
+      false,
+    );
   });
   it("accepts a free-task limit, no limit, and an omitted field as no limit", () => {
     const parse = (extra: object) =>

@@ -5,7 +5,7 @@ import type { AssignedTaskSummary, AssignedTaskDetail } from "./read";
 import {
   acceptanceOptions,
   resolveAcceptanceAward,
-  syntheticEconomyZone,
+  economyZone,
   type AcceptanceOptions,
   type AwardRejection,
 } from "../ledger/economy";
@@ -103,7 +103,7 @@ export async function listReviewQueue(
       acceptance: (() => {
         const enabled =
           options.allowSyntheticAccrual === true &&
-          syntheticEconomyZone(row.rule_definition) !== null;
+          economyZone(row.rule_definition) !== null;
         return {
           enabled,
           mode: enabled ? ("synthetic" as const) : null,
@@ -270,7 +270,7 @@ export async function reviewTaskSubmission(
       current.user_id === input.actorId
     )
       return await reject({ kind: "self_review" });
-    const timeZone = syntheticEconomyZone(current.rule_definition);
+    const timeZone = economyZone(current.rule_definition);
     if (input.action === "accept" && input.allowSyntheticAccrual !== true)
       return await reject({ kind: "economy_disabled" });
     if (input.action === "accept" && !timeZone)

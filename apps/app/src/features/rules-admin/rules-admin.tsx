@@ -50,6 +50,7 @@ const EXAMPLE_FUND = 100;
 type Settings = {
   timeZone: string;
   acceptanceEnabled: boolean;
+  economyApproved: boolean;
   minPercent: number | null;
   bonuses: { title: string; percent: number }[];
   levelThresholds: number[] | null;
@@ -63,6 +64,10 @@ const labels: [string, (value: Settings) => string][] = [
   [
     "Начисление при приёмке",
     (v) => (v.acceptanceEnabled ? "включено" : "выключено"),
+  ],
+  [
+    "Экономика утверждена владельцем",
+    (v) => (v.economyApproved ? "да" : "нет, начислений нет"),
   ],
   [
     "Минимальная награда",
@@ -229,6 +234,8 @@ function RulesForm({
   // Часовой пояс месяца решён владельцем (Europe/Moscow, P-04) и в форме не меняется.
   const zone = current?.timeZone ?? "Europe/Moscow";
   const [enabled, setEnabled] = useState(current?.acceptanceEnabled ?? true);
+  // Новая версия без подтверждения не начисляет ничего, даже при включённом флаге (ADR-0029).
+  const [economyOk, setEconomyOk] = useState(current?.economyApproved ?? false);
   // «100» — снижать нельзя (на сервере это null).
   const [minPercent, setMinPercent] = useState(
     String(current?.minPercent ?? 100),
@@ -299,6 +306,7 @@ function RulesForm({
         : rulesPublishRequestSchema.safeParse({
             timeZone: zone.trim(),
             acceptanceEnabled: enabled,
+            economyApproved: economyOk,
             minPercent: min >= 100 ? null : min,
             bonuses: bonuses.map((b, i) => ({
               code: `plus_${percents[i]}`,
@@ -627,6 +635,18 @@ function RulesForm({
             </label>
             <p className="notification-note">
               Если снять галочку, принятые задачи перестанут давать XP и баллы.
+            </p>
+            <label>
+              <input
+                type="checkbox"
+                checked={economyOk}
+                onChange={(e) => edit(setEconomyOk)(e.target.checked)}
+              />
+              <span>Экономика утверждена владельцем</span>
+            </label>
+            <p className="notification-note">
+              Пока галочки нет, принятые задачи не дают XP и баллы, даже если
+              начисление включено.
             </p>
             <label htmlFor={`${id}-reason`}>Комментарий для журнала</label>
             <textarea

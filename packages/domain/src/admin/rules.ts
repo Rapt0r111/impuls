@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
+import { economyApproved } from "../ledger/economy";
 import {
   LEVEL_NAME_MAX,
   syntheticLevelNames,
@@ -9,6 +10,7 @@ import {
 export type RuleSettings = {
   timeZone: string;
   acceptanceEnabled: boolean;
+  economyApproved: boolean;
   minPercent: number | null;
   bonuses: { code: string; title: string; percent: number }[];
   levelThresholds: number[] | null;
@@ -120,6 +122,7 @@ export function settingsFromDefinition(
   return {
     timeZone: isZone(rule.timeZone) ? rule.timeZone : DEFAULT_ZONE,
     acceptanceEnabled: acceptance.enabled === true,
+    economyApproved: economyApproved(rule),
     minPercent,
     bonuses,
     levelThresholds: syntheticLevelThresholds(rule),
@@ -151,8 +154,13 @@ export function definitionFromSettings(
     }));
   return {
     ...base,
+    // Still read by the rule queries until the mode label is removed (stage 2, next PR).
     mode: "synthetic",
     timeZone: settings.timeZone,
+    economy: {
+      ...(record(base.economy) ?? {}),
+      approved: settings.economyApproved,
+    },
     ...(settings.openTaskLimit !== null
       ? { openTaskLimit: settings.openTaskLimit }
       : {}),
@@ -302,6 +310,7 @@ export async function publishRules(
     const settings: RuleSettings = {
       timeZone: input.timeZone,
       acceptanceEnabled: input.acceptanceEnabled,
+      economyApproved: input.economyApproved,
       minPercent: input.minPercent,
       bonuses: input.bonuses,
       levelThresholds: input.levelThresholds,

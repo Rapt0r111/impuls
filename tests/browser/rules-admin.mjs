@@ -12,6 +12,7 @@ const rules = {
     effectiveFrom: "2026-10-10T14:23:00.000Z",
     timeZone: "Europe/Moscow",
     acceptanceEnabled: true,
+    economyApproved: true,
     minPercent: 50,
     bonuses: [
       { code: "plus_10", title: "Бонус +10 %", percent: 10 },

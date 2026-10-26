@@ -72,7 +72,7 @@ const origin = process.env.TEST_APP_ORIGIN;
         );
       await admin.query(
         `INSERT INTO impuls.rule_sets (id,version_number,definition,effective_from,created_by)
-      VALUES ($1,$2,'{"mode":"synthetic","timeZone":"Europe/Moscow","acceptance":{"enabled":true}}',clock_timestamp()-interval '1 minute',$3)`,
+      VALUES ($1,$2,'{"mode":"synthetic","economy":{"approved":true},"timeZone":"Europe/Moscow","acceptance":{"enabled":true}}',clock_timestamp()-interval '1 minute',$3)`,
         [rules, ruleVersion, manager],
       );
       await admin.query(

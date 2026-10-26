@@ -1,8 +1,19 @@
-export function syntheticEconomyZone(definition: unknown): string | null {
+export function economyApproved(rule: Record<string, unknown>): boolean {
+  const economy = rule.economy;
+  return (
+    typeof economy === "object" &&
+    economy !== null &&
+    (economy as Record<string, unknown>).approved === true
+  );
+}
+
+// Accruals need the owner's explicit approval of the economy in the saved version (ADR-0029,
+// P-04). A version without `economy.approved: true`, including the first one, credits nothing.
+export function economyZone(definition: unknown): string | null {
   if (typeof definition !== "object" || definition === null) return null;
   const rule = definition as Record<string, unknown>;
   if (
-    rule.mode !== "synthetic" ||
+    !economyApproved(rule) ||
     typeof rule.timeZone !== "string" ||
     rule.timeZone.length > 80
   )

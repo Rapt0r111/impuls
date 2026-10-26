@@ -379,6 +379,7 @@ async function snapshot(pool: Pool | PoolClient) {
           rules,
           {
             mode: "synthetic",
+            economy: { approved: true },
             timeZone: "Europe/Moscow",
             acceptance: { enabled: true },
           },
