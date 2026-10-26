@@ -98,6 +98,8 @@ export {
   taskReviewRequestSchema,
   taskAcceptanceRequestSchema,
   taskAcceptanceResponseSchema,
+  taskRecommendRequestSchema,
+  taskRecommendationResponseSchema,
 } from "./reviews";
 export { accountLedgerResponseSchema, ledgerListQuerySchema } from "./ledger";
 export type { AccountLedgerResponse } from "./ledger";

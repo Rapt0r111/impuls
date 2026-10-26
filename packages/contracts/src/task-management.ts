@@ -42,6 +42,8 @@ export const managementTaskSchema = z.object({
   openForClaim: z.boolean().default(false),
   // Править и отменять задачу может её создатель или тот, у кого есть task.review.
   manageable: z.boolean().default(false),
+  // Проверяющий обычной задачи: назначает командир, возвращает на доработку.
+  verifier: taskAssigneeSchema.nullable().default(null),
 });
 
 export const taskCreateRequestSchema = z.strictObject({
@@ -60,6 +62,7 @@ export const taskCreateRequestSchema = z.strictObject({
 export const taskAssignRequestSchema = z.strictObject({
   assigneeId: z.uuid(),
   expectedVersion: z.number().int().positive(),
+  verifierId: z.uuid().optional(),
 });
 
 export const taskEditRequestSchema = taskCreateRequestSchema
@@ -98,6 +101,7 @@ export const taskManagementOptionsResponseSchema = z.object({
       canEdit: z.boolean().default(false),
       canCancel: z.boolean().default(false),
       assignees: z.array(taskAssigneeSchema),
+      verifiers: z.array(taskAssigneeSchema).default([]),
     }),
   ),
   ruleSets: z.array(

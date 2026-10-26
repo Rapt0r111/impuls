@@ -169,6 +169,9 @@ export function TaskManagement() {
   const [assignees, setAssignees] = useState<Record<string, string>>({});
   // Кому сразу назначить новую задачу: id участника или пусто (черновик).
   const [newAssignee, setNewAssignee] = useState("");
+  // Проверяющий задачи: id участника области с правом проверки или пусто.
+  const [verifiers, setVerifiers] = useState<Record<string, string>>({});
+  const [newVerifier, setNewVerifier] = useState("");
   const [pending, setPending] = useState(false);
   const [pendingAction, setPendingAction] = useState<
     Attempt["action"] | ChangeAttempt["action"] | null
@@ -208,6 +211,8 @@ export function TaskManagement() {
   const singleScope = createScopes.length === 1;
   const scopeId = draft.scopeId || (singleScope ? createScopes[0]!.id : "");
   const currentScope = availableScopes.find((scope) => scope.id === scopeId);
+  const newVerifierOptions =
+    currentScope?.verifiers.filter((person) => person.id !== newAssignee) ?? [];
   const hasDraft = Boolean(
     draft.scopeId ||
     draft.title ||
@@ -238,7 +243,10 @@ export function TaskManagement() {
   }, [options.error, list.error, loseAccess]);
 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
-    if (key === "scopeId") setNewAssignee("");
+    if (key === "scopeId") {
+      setNewAssignee("");
+      setNewVerifier("");
+    }
     setDraft((current) => ({ ...current, [key]: value }));
     setError(null);
     setSuccess(null);
@@ -256,6 +264,8 @@ export function TaskManagement() {
       (code?.includes("ASSIGNEE") || code?.includes("assignee"))
     )
       return "Исполнитель больше не участвует. Выберите другого участника; критерии и поля сохранены.";
+    if (status === 422 && code?.includes("VERIFIER"))
+      return "Проверяющий больше недоступен. Выберите другого; поля сохранены.";
     if (status === 400 || status === 422)
       return "Проверьте поля задачи или доступность исполнителя. Введённые значения сохранены.";
     return "Сервер не подтвердил результат. Повторите тот же запрос с сохранённым ключом.";
@@ -306,8 +316,16 @@ export function TaskManagement() {
           setError("Выберите исполнителя.");
           return;
         }
+        const verifierId = verifiers[task.id] || undefined;
+        if (verifierId === recipient.id) {
+          setError("Проверяющий не может быть исполнителем.");
+          return;
+        }
+        const verifierName = scope.verifiers.find(
+          (person) => person.id === verifierId,
+        )?.displayName;
         const accepted = window.confirm(
-          `Назначить задачу «${task.title}» участнику ${recipient.displayName}${manyScopes ? ` в области «${task.scope.name}»` : ""}?\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
+          `Назначить задачу «${task.title}» участнику ${recipient.displayName}${manyScopes ? ` в области «${task.scope.name}»` : ""}?${verifierName ? `\nПроверяет: ${verifierName}` : ""}\n\nКритерии: ${task.criteria}\n\nФонд: ${formatFunds(task)}`,
         );
         if (!accepted) return;
         nextAttempt = {
@@ -318,6 +336,7 @@ export function TaskManagement() {
           body: JSON.stringify({
             assigneeId: recipient.id,
             expectedVersion: task.version,
+            verifierId,
           }),
         };
       } else {
@@ -422,6 +441,7 @@ export function TaskManagement() {
         );
         setDraft(emptyDraft());
         setNewAssignee("");
+        setNewVerifier("");
         setSuccess(
           result.task.openForClaim
             ? `Свободная задача «${result.task.title}» создана. Участники увидят её в разделе «Задачи».`
@@ -438,10 +458,15 @@ export function TaskManagement() {
             body: JSON.stringify({
               assigneeId: recipient.id,
               expectedVersion: result.task.version,
+              verifierId: newVerifier || undefined,
             }),
           };
       } else if (currentAttempt.action === "assign") {
         setAssignees((current) => ({
+          ...current,
+          [currentAttempt.taskId]: "",
+        }));
+        setVerifiers((current) => ({
           ...current,
           [currentAttempt.taskId]: "",
         }));
@@ -695,6 +720,9 @@ export function TaskManagement() {
                     onValueChange={(value) => {
                       setField("openForClaim", value === "open");
                       setNewAssignee(value === "open" ? "" : value);
+                      setNewVerifier((current) =>
+                        current === value ? "" : current,
+                      );
                     }}
                     options={[
                       { value: "", label: "Назначу позже (черновик)" },
@@ -708,6 +736,26 @@ export function TaskManagement() {
                             label: person.displayName,
                           }))
                         : []),
+                    ]}
+                  />
+                </label>
+              ) : null}
+              {newAssignee &&
+              !draft.openForClaim &&
+              newVerifierOptions.length ? (
+                <label className="task-mgmt__wide">
+                  <span id="task-mgmt-verifier-label">Проверяющий</span>
+                  <Select
+                    labelledBy="task-mgmt-verifier-label"
+                    value={newVerifier}
+                    disabled={pending || uncertain}
+                    onValueChange={setNewVerifier}
+                    options={[
+                      { value: "", label: "Без проверяющего" },
+                      ...newVerifierOptions.map((person) => ({
+                        value: person.id,
+                        label: person.displayName,
+                      })),
                     ]}
                   />
                 </label>
@@ -792,6 +840,13 @@ export function TaskManagement() {
                       selectedAssignee={assignees[task.id] ?? ""}
                       onSelect={(value) =>
                         setAssignees((current) => ({
+                          ...current,
+                          [task.id]: value,
+                        }))
+                      }
+                      selectedVerifier={verifiers[task.id] ?? ""}
+                      onSelectVerifier={(value) =>
+                        setVerifiers((current) => ({
                           ...current,
                           [task.id]: value,
                         }))
@@ -906,6 +961,8 @@ function TaskRow({
   scope,
   selectedAssignee,
   onSelect,
+  selectedVerifier,
+  onSelectVerifier,
   disabled,
   onAssign,
   onChange,
@@ -915,6 +972,8 @@ function TaskRow({
   scope: ScopeOption | undefined;
   selectedAssignee: string;
   onSelect(value: string): void;
+  selectedVerifier: string;
+  onSelectVerifier(value: string): void;
   disabled: boolean;
   onAssign(): void;
   onChange(action: "edit" | "cancel"): void;
@@ -939,6 +998,7 @@ function TaskRow({
             ? `${priorityNames[task.priority]} · `
             : ""}
           {task.assignee ? `${task.assignee.displayName} · ` : ""}
+          {task.verifier ? `Проверяет: ${task.verifier.displayName} · ` : ""}
           до {formatDate(task.dueAt)} · {formatFunds(task)}
         </p>
       </div>
@@ -966,6 +1026,30 @@ function TaskRow({
                   ]}
                 />
               </label>
+              {scope.verifiers.some(
+                (person) => person.id !== selectedAssignee,
+              ) ? (
+                <label>
+                  <span id={`task-mgmt-verifier-label-${task.id}`}>
+                    Проверяющий
+                  </span>
+                  <Select
+                    labelledBy={`task-mgmt-verifier-label-${task.id}`}
+                    value={selectedVerifier}
+                    disabled={disabled}
+                    onValueChange={onSelectVerifier}
+                    options={[
+                      { value: "", label: "Без проверяющего" },
+                      ...scope.verifiers
+                        .filter((person) => person.id !== selectedAssignee)
+                        .map((person) => ({
+                          value: person.id,
+                          label: person.displayName,
+                        })),
+                    ]}
+                  />
+                </label>
+              ) : null}
               <button
                 type="button"
                 className="task-mgmt__button"

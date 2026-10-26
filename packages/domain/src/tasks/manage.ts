@@ -23,6 +23,7 @@ export type ManagedTask = {
   assignee: Assignee | null;
   openForClaim: boolean;
   manageable: boolean;
+  verifier: Assignee | null;
 };
 export type CreateTaskData = {
   scopeId: string;
@@ -46,7 +47,11 @@ type MutationBase = {
 export type CreateTaskInput = MutationBase & { data: CreateTaskData };
 export type AssignTaskInput = MutationBase & {
   taskId: string;
-  data: { assigneeId: string; expectedVersion: number };
+  data: {
+    assigneeId: string;
+    expectedVersion: number;
+    verifierId?: string | undefined;
+  };
 };
 export type EditTaskInput = MutationBase & {
   taskId: string;
@@ -69,7 +74,8 @@ export type TaskManagementResult =
         | "idempotency_conflict"
         | "disabled"
         | "rules_invalid"
-        | "assignee_invalid";
+        | "assignee_invalid"
+        | "verifier_invalid";
     }
   | { kind: "conflict"; currentVersion: number };
 
@@ -83,11 +89,13 @@ const ownOrReviewer = `(t.created_by = $1 OR EXISTS (SELECT 1 FROM impuls.role_b
 const selectTask = `SELECT ${ownOrReviewer} AS manageable, t.id, t.title, t.criteria, t.category_code, t.priority,
   t.status, t.due_at, t.fund_xp, t.fund_points, t.rule_set_id, r.version_number,
   t.version, t.updated_at, s.id AS scope_id, s.kind, s.name,
-  u.id AS assignee_id, u.display_name, t.open_for_claim
+  u.id AS assignee_id, u.display_name, t.open_for_claim, v.id AS verifier_id, v.display_name AS verifier_name
   FROM impuls.tasks t JOIN impuls.rule_sets r ON r.id = t.rule_set_id
   JOIN impuls.access_scopes s ON s.id = t.scope_id
   LEFT JOIN impuls.task_assignments a ON a.task_id = t.id
-  LEFT JOIN impuls.users u ON u.id = a.user_id`;
+  LEFT JOIN impuls.users u ON u.id = a.user_id
+  LEFT JOIN impuls.task_verifiers tv ON tv.task_id = t.id
+  LEFT JOIN impuls.users v ON v.id = tv.user_id`;
 type TaskRow = {
   id: string;
   title: string;
@@ -109,6 +117,8 @@ type TaskRow = {
   display_name: string | null;
   open_for_claim: boolean;
   manageable: boolean;
+  verifier_id: string | null;
+  verifier_name: string | null;
 };
 function mapTask(row: TaskRow): ManagedTask {
   return {
@@ -132,6 +142,10 @@ function mapTask(row: TaskRow): ManagedTask {
         : null,
     openForClaim: row.open_for_claim,
     manageable: row.manageable,
+    verifier:
+      row.verifier_id && row.verifier_name
+        ? { id: row.verifier_id, displayName: row.verifier_name }
+        : null,
   };
 }
 export async function listManagedTasks(
@@ -175,7 +189,7 @@ export async function readTaskManagementOptions(
      WHERE ${manageBinding} GROUP BY s.id ORDER BY s.id`,
     [actorId],
   );
-  const [members, rules] = await Promise.all([
+  const [members, verifiers, rules] = await Promise.all([
     pool.query<{ scope_id: string; id: string; display_name: string }>(
       `SELECT m.scope_id, u.id, u.display_name FROM impuls.task_scope_members m
        JOIN impuls.users u ON u.id = m.user_id AND u.active
@@ -185,6 +199,21 @@ export async function readTaskManagementOptions(
        AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE b.user_id = $2 AND b.action = 'task.assign'
          AND b.scope_id = m.scope_id AND b.revoked_at IS NULL AND b.valid_from <= clock_timestamp()
          AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp()))
+       ORDER BY u.id`,
+      [
+        options.enabled
+          ? scopes.rows.filter((s) => s.can_assign).map((s) => s.id)
+          : [],
+        actorId,
+      ],
+    ),
+    pool.query<{ scope_id: string; id: string; display_name: string }>(
+      `SELECT b.scope_id, u.id, u.display_name FROM impuls.role_bindings b
+       JOIN impuls.users u ON u.id = b.user_id AND u.active
+       WHERE b.action = 'task.verify' AND b.scope_id = ANY($1::uuid[]) AND b.revoked_at IS NULL
+       AND b.valid_from <= clock_timestamp() AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp())
+       AND u.id <> $2
+       AND EXISTS (SELECT 1 FROM impuls.users actor WHERE actor.id = $2 AND actor.active)
        ORDER BY u.id`,
       [
         options.enabled
@@ -216,6 +245,9 @@ export async function readTaskManagementOptions(
       assignees: members.rows
         .filter((m) => m.scope_id === s.id)
         .map((m) => ({ id: m.id, displayName: m.display_name })),
+      verifiers: verifiers.rows
+        .filter((v) => v.scope_id === s.id)
+        .map((v) => ({ id: v.id, displayName: v.display_name })),
     })),
     ruleSets: rules.rows.map((r) => ({ id: r.id, version: r.version_number })),
   };
@@ -394,6 +426,23 @@ async function manageTask(
       );
       if (membership.rowCount !== 1)
         return await reject({ kind: "assignee_invalid" });
+      if (input.data.verifierId !== undefined) {
+        if (input.data.verifierId === input.data.assigneeId)
+          return await reject({ kind: "verifier_invalid" });
+        const verifier = await client.query(
+          `SELECT u.id FROM impuls.users u WHERE u.id = $1 AND u.active
+          AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE b.user_id = u.id AND b.action = 'task.verify'
+            AND b.scope_id = $2 AND b.revoked_at IS NULL AND b.valid_from <= clock_timestamp()
+            AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp())) FOR SHARE`,
+          [input.data.verifierId, scopeId],
+        );
+        if (verifier.rowCount !== 1)
+          return await reject({ kind: "verifier_invalid" });
+        await client.query(
+          "INSERT INTO impuls.task_verifiers (task_id,user_id) VALUES ($1,$2)",
+          [taskId, input.data.verifierId],
+        );
+      }
       await client.query(
         "INSERT INTO impuls.task_assignments (task_id,user_id) VALUES ($1,$2)",
         [taskId, input.data.assigneeId],
@@ -501,7 +550,10 @@ async function manageTask(
           scopeId,
           ruleSetId: ruleId,
           ...(input.action === "assign"
-            ? { assigneeId: input.data.assigneeId }
+            ? {
+                assigneeId: input.data.assigneeId,
+                verifierId: input.data.verifierId ?? null,
+              }
             : {}),
         }),
       ],
@@ -519,6 +571,16 @@ async function manageTask(
       );
       if (membership.rowCount !== 1)
         return await reject({ kind: "assignee_invalid" });
+      if (input.data.verifierId !== undefined) {
+        const verifier = await client.query(
+          `SELECT b.id FROM impuls.role_bindings b JOIN impuls.users u ON u.id = b.user_id AND u.active
+          WHERE b.user_id = $1 AND b.action = 'task.verify' AND b.scope_id = $2 AND b.revoked_at IS NULL
+          AND b.valid_from <= clock_timestamp() AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp())`,
+          [input.data.verifierId, scopeId],
+        );
+        if (verifier.rowCount === 0)
+          return await reject({ kind: "verifier_invalid" });
+      }
     }
     const response = { task };
     const status = input.action === "create" ? 201 : 200;

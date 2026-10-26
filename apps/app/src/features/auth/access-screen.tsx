@@ -374,7 +374,9 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
                       ) ?? false,
                     canReview:
                       state.permissions?.some(
-                        (permission) => permission.action === "task.review",
+                        (permission) =>
+                          permission.action === "task.review" ||
+                          permission.action === "task.verify",
                       ) ?? false,
                     canManageTasks:
                       state.permissions?.some(

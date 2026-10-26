@@ -190,3 +190,26 @@ describe("task management contracts", () => {
     ).toBe(false);
   });
 });
+
+describe("ordinary task verifier", () => {
+  it("accepts an optional verifier with the assignment", () => {
+    expect(
+      taskAssignRequestSchema.safeParse({
+        assigneeId: ids.assignee,
+        expectedVersion: 1,
+        verifierId: ids.rules,
+      }).success,
+    ).toBe(true);
+    expect(
+      taskAssignRequestSchema.safeParse({
+        assigneeId: ids.assignee,
+        expectedVersion: 1,
+        verifierId: "not-a-uuid",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("defaults a task without a verifier to null", () => {
+    expect(managementTaskSchema.parse(task).verifier).toBeNull();
+  });
+});

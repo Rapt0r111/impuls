@@ -21,6 +21,8 @@ export type ReviewQueueItem = {
     options: AcceptanceOptions;
   };
   author: { id: string; displayName: string };
+  recommendation: { verifierName: string; xp: number; points: number } | null;
+  canRecommend: boolean;
   task: AssignedTaskSummary & Pick<AssignedTaskDetail, "criteria" | "scope">;
 };
 export type TaskReturnResponse = {
@@ -34,7 +36,16 @@ export type TaskReturnResponse = {
   task: { id: string; status: "needs_work"; version: number };
 };
 
-const permissionPredicate = `b.user_id = $1 AND b.action = 'task.review'
+// Accepting is the commander's decision (task.review). The task's chosen verifier
+// (task.verify and a task_verifiers row) may only return the report for rework.
+const reviewRight = (action: "return" | "accept") =>
+  action === "accept"
+    ? `b.action = 'task.review'`
+    : `(b.action = 'task.review' OR (b.action = 'task.verify' AND EXISTS (
+        SELECT 1 FROM impuls.task_verifiers tv WHERE tv.task_id = t.id AND tv.user_id = $1)))`;
+const permissionPredicate = (
+  action: "return" | "accept",
+) => `b.user_id = $1 AND ${reviewRight(action)}
   AND b.scope_id = t.scope_id AND b.revoked_at IS NULL
   AND b.valid_from <= clock_timestamp()
   AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp())`;
@@ -60,6 +71,11 @@ type QueueRow = {
   scope_kind: ReviewQueueItem["task"]["scope"]["kind"];
   scope_name: string;
   rule_definition: unknown;
+  can_accept: boolean;
+  is_verifier: boolean;
+  recommended_xp: number | null;
+  recommended_points: number | null;
+  recommended_by: string | null;
 };
 
 export async function listReviewQueue(
@@ -77,16 +93,21 @@ export async function listReviewQueue(
     SELECT sub.id AS submission_id, sub.text, sub.created_at AS submitted_at, sub.attempt_number,
       u.id AS author_id, u.display_name, t.id AS task_id, t.title, t.criteria, t.priority,
       t.due_at, t.fund_xp, t.fund_points, r.version_number AS rule_version, r.definition AS rule_definition, t.version, t.updated_at,
-      s.id AS scope_id, s.kind AS scope_kind, s.name AS scope_name
+      s.id AS scope_id, s.kind AS scope_kind, s.name AS scope_name,
+      EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${permissionPredicate("accept")}) AS can_accept,
+      EXISTS (SELECT 1 FROM impuls.task_verifiers tv WHERE tv.task_id = t.id AND tv.user_id = $1) AS is_verifier,
+      vr.recommended_xp, vr.recommended_points, rv.display_name AS recommended_by
     FROM impuls.tasks t
     JOIN impuls.task_assignments a ON a.task_id = t.id
     JOIN impuls.users u ON u.id = a.user_id AND u.active = true
     JOIN impuls.access_scopes s ON s.id = t.scope_id
     JOIN impuls.rule_sets r ON r.id = t.rule_set_id
     JOIN LATERAL (SELECT * FROM impuls.submissions WHERE task_id = t.id ORDER BY attempt_number DESC LIMIT 1) sub ON true
+    LEFT JOIN impuls.verifier_recommendations vr ON vr.submission_id = sub.id
+    LEFT JOIN impuls.users rv ON rv.id = vr.verifier_id
     WHERE t.status = 'in_review' AND a.user_id <> $1 AND sub.author_id <> $1
       AND EXISTS (SELECT 1 FROM impuls.users actor WHERE actor.id = $1 AND actor.active = true)
-      AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${permissionPredicate})
+      AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${permissionPredicate("return")})
       AND NOT EXISTS (SELECT 1 FROM impuls.reviews rev WHERE rev.submission_id = sub.id)
       AND ($2::uuid IS NULL OR sub.id > $2)
     ORDER BY sub.id LIMIT $3`,
@@ -101,6 +122,7 @@ export async function listReviewQueue(
       attemptNumber: row.attempt_number,
       acceptance: (() => {
         const enabled =
+          row.can_accept &&
           options.allowSyntheticAccrual === true &&
           economyZone(row.rule_definition) !== null;
         return {
@@ -114,6 +136,15 @@ export async function listReviewQueue(
         };
       })(),
       author: { id: row.author_id, displayName: row.display_name },
+      recommendation:
+        row.recommended_xp === null || row.recommended_by === null
+          ? null
+          : {
+              verifierName: row.recommended_by,
+              xp: row.recommended_xp,
+              points: row.recommended_points!,
+            },
+      canRecommend: row.is_verifier,
       task: {
         id: row.task_id,
         title: row.title,
@@ -218,7 +249,7 @@ export async function reviewTaskSubmission(
     if (
       !(
         await client.query(
-          `SELECT 1 FROM impuls.role_bindings b JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate} LIMIT 1`,
+          `SELECT 1 FROM impuls.role_bindings b JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate(input.action)} LIMIT 1`,
           [input.actorId, current.id],
         )
       ).rowCount
@@ -236,7 +267,7 @@ export async function reviewTaskSubmission(
     // locks sessions after its binding, so the same order avoids a deadlock.
     const permission = await client.query(
       `SELECT b.id FROM impuls.role_bindings b
-      JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate} ORDER BY b.id FOR SHARE OF b`,
+      JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate(input.action)} ORDER BY b.id FOR SHARE OF b`,
       [input.actorId, current.id],
     );
     if (!permission.rowCount) return await reject({ kind: "not_found" });
@@ -326,7 +357,7 @@ export async function reviewTaskSubmission(
     // Locks do not stop wall-clock expiry. Recheck after acquiring all locks,
     // including an idempotency key another request may have held.
     const stillPermitted = await client.query(
-      `SELECT 1 FROM impuls.role_bindings b JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate} LIMIT 1`,
+      `SELECT 1 FROM impuls.role_bindings b JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate(input.action)} LIMIT 1`,
       [input.actorId, current.id],
     );
     if (!stillPermitted.rowCount) return await reject({ kind: "not_found" });
@@ -484,7 +515,7 @@ export async function reviewTaskSubmission(
     if (
       !(
         await client.query(
-          `SELECT 1 FROM impuls.role_bindings b JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate} LIMIT 1`,
+          `SELECT 1 FROM impuls.role_bindings b JOIN impuls.tasks t ON t.id = $2 WHERE ${permissionPredicate(input.action)} LIMIT 1`,
           [input.actorId, current.id],
         )
       ).rowCount

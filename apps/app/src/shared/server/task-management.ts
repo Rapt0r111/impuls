@@ -171,6 +171,13 @@ export async function handleTaskManagementMutation(
           "Исполнитель недоступен в этой области",
           id,
         );
+      case "verifier_invalid":
+        return errorResponse(
+          422,
+          "TASK_VERIFIER_INVALID",
+          "Проверяющий недоступен в этой области",
+          id,
+        );
     }
   } catch {
     return errorResponse(503, "UNAVAILABLE", "Сервис временно недоступен", id);
