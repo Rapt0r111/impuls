@@ -81,8 +81,8 @@ for (const key of keys)
   );
 for (const r of Object.values(rewards)) {
   await db.query(
-    `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds)
-     VALUES($1,$2,$3,1,$4,'Косметика; синтетические условия',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 second',$5)`,
+    `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds)
+     VALUES($1,$2,$3,1,$4,'Косметика; синтетические условия',30,'cosmetic',true,clock_timestamp()-interval '1 second',$5)`,
     // Only the expiry reward has a due time (versions are immutable).
     [
       r.versionId,

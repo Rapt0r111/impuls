@@ -69,9 +69,9 @@ export async function creditAcceptedTask(
   const seasonKey = acceptanceSeason(input.at, input.timeZone);
   await client.query(
     `INSERT INTO impuls.ledger_entries
-    (user_id, review_id, task_id, task_title, rule_set_id, rule_version, currency, kind, amount, mode, season_key, time_zone, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, 'xp', 'task_acceptance', $7, 'synthetic', $9, $10, $11, $11),
-           ($1, $2, $3, $4, $5, $6, 'points', 'task_acceptance', $8, 'synthetic', $9, $10, $11, $11)`,
+    (user_id, review_id, task_id, task_title, rule_set_id, rule_version, currency, kind, amount, season_key, time_zone, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, 'xp', 'task_acceptance', $7, $9, $10, $11, $11),
+           ($1, $2, $3, $4, $5, $6, 'points', 'task_acceptance', $8, $9, $10, $11, $11)`,
     [
       input.userId,
       input.reviewId,

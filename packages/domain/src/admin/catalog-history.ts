@@ -76,7 +76,7 @@ export async function readAdminCatalogHistory(
           AND b.revoked_at IS NULL AND b.valid_from<=access.as_of AND (b.valid_until IS NULL OR b.valid_until>access.as_of))
     ), versions AS MATERIALIZED (
       SELECT r.* FROM impuls.reward_versions r JOIN selected s ON s.id=r.scope_id
-      WHERE r.reward_id=$5 AND r.mode='synthetic' AND r.kind='cosmetic'
+      WHERE r.reward_id=$5 AND r.kind='cosmetic'
     ), anchor AS MATERIALIZED (
       SELECT * FROM versions WHERE id=$6
     ), current AS MATERIALIZED (

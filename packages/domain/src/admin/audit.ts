@@ -302,7 +302,7 @@ export async function readAudit(
       LEFT JOIN impuls.reviews r ON r.id=coalesce(e.review_id,c.review_id)
       LEFT JOIN impuls.submissions sub ON sub.id=r.submission_id
       JOIN impuls.tasks t ON t.id=coalesce(e.task_id,sub.task_id)
-      JOIN impuls.rule_sets rules ON rules.id=t.rule_set_id AND rules.definition->>'mode'='synthetic'
+      JOIN impuls.rule_sets rules ON rules.id=t.rule_set_id
       JOIN selected ON selected.id=t.scope_id
       JOIN impuls.users actor ON actor.id=e.actor_id
       WHERE $5::text IS NULL OR e.action=$5
@@ -317,8 +317,8 @@ export async function readAudit(
           'expiresAt',to_char(d.expires_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
           'recipient',jsonb_build_object('id',recipient.id,'displayName',recipient.display_name)) AS reward,NULL::jsonb AS catalog,NULL::jsonb AS quota,NULL::jsonb AS creation,NULL::jsonb AS cancellation,NULL::jsonb AS access,NULL::jsonb AS member
       FROM impuls.audit_events e
-      JOIN impuls.redemptions d ON d.id=e.redemption_id AND d.mode='synthetic'
-      JOIN impuls.reward_versions rv ON rv.id=d.reward_version_id AND rv.mode='synthetic' AND rv.kind='cosmetic'
+      JOIN impuls.redemptions d ON d.id=e.redemption_id
+      JOIN impuls.reward_versions rv ON rv.id=d.reward_version_id AND rv.kind='cosmetic'
       JOIN selected ON selected.id=d.scope_id
       LEFT JOIN impuls.users actor ON actor.id=e.actor_id
       JOIN impuls.users recipient ON recipient.id=d.user_id
@@ -332,7 +332,7 @@ export async function readAudit(
             'enabled',r.enabled,'effectiveFrom',to_char(r.effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
             'reservationSeconds',r.reservation_seconds)),NULL::jsonb,NULL::jsonb,NULL::jsonb,NULL::jsonb,NULL::jsonb
       FROM impuls.catalog_publications p
-      JOIN impuls.reward_versions r ON r.id=p.published_version_id AND r.mode='synthetic' AND r.kind='cosmetic'
+      JOIN impuls.reward_versions r ON r.id=p.published_version_id AND r.kind='cosmetic'
       JOIN impuls.reward_versions previous ON previous.id=p.previous_version_id
       JOIN selected ON selected.id=r.scope_id JOIN impuls.users actor ON actor.id=p.actor_id
       WHERE $5::text IS NULL OR $5='catalog.publish'
@@ -353,7 +353,7 @@ export async function readAudit(
             'enabled',r.enabled,'effectiveFrom',to_char(r.effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
             'reservationSeconds',r.reservation_seconds)),NULL::jsonb,NULL::jsonb,NULL::jsonb
       FROM impuls.catalog_creations p
-      JOIN impuls.reward_versions r ON r.id=p.initial_version_id AND r.mode='synthetic' AND r.kind='cosmetic'
+      JOIN impuls.reward_versions r ON r.id=p.initial_version_id AND r.kind='cosmetic'
       JOIN selected ON selected.id=r.scope_id JOIN impuls.users actor ON actor.id=p.actor_id
       WHERE $5::text IS NULL OR $5='catalog.create'
       UNION ALL
@@ -363,7 +363,7 @@ export async function readAudit(
           'conditions',r.conditions,'price',r.price,'enabled',r.enabled,
           'effectiveFrom',to_char(r.effective_from AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
           'reservationSeconds',r.reservation_seconds)),NULL::jsonb,NULL::jsonb
-      FROM impuls.catalog_cancellations c JOIN impuls.reward_versions r ON r.id=c.version_id AND r.mode='synthetic' AND r.kind='cosmetic'
+      FROM impuls.catalog_cancellations c JOIN impuls.reward_versions r ON r.id=c.version_id AND r.kind='cosmetic'
       JOIN selected ON selected.id=r.scope_id JOIN impuls.users actor ON actor.id=c.actor_id
       WHERE $5::text IS NULL OR $5='catalog.cancel'
       UNION ALL

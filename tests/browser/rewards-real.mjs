@@ -54,8 +54,8 @@ for (const key of ["a", "b"])
     [ids[key], scope],
   );
 await db.query(
-  `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from)
-   VALUES($1,$2,$3,1,$4,'Косметика; синтетические условия',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 second')`,
+  `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from)
+   VALUES($1,$2,$3,1,$4,'Косметика; синтетические условия',30,'cosmetic',true,clock_timestamp()-interval '1 second')`,
   [versionId, rewardId, scope, title],
 );
 await db.query(

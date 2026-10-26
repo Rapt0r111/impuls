@@ -111,7 +111,7 @@ const url = process.env.TEST_DATABASE_URL,
         [owner.id, s],
       );
       await admin.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,$4,'Синтетическая косметика', $5,'cosmetic','synthetic',true,clock_timestamp()-interval '1 minute',$6)",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,$4,'Синтетическая косметика', $5,'cosmetic',true,clock_timestamp()-interval '1 minute',$6)",
         [
           version,
           reward,
@@ -201,7 +201,7 @@ const url = process.env.TEST_DATABASE_URL,
           ?.reservationSeconds,
       ).toBe(3600);
       await admin.query(
-        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,2,'New','New',99,'cosmetic','synthetic',false,clock_timestamp(),100)",
+        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds) VALUES($1,$2,2,'New','New',99,'cosmetic',false,clock_timestamp(),100)",
         [f.reward, scope],
       );
       expect(
@@ -764,7 +764,7 @@ const url = process.env.TEST_DATABASE_URL,
     it("honours saved terms after disabled latest price, revoked membership and original quota expiry", async () => {
       const f = await fixture(scope, 23, 1200);
       await admin.query(
-        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,2,'New','New',99,'cosmetic','synthetic',false,clock_timestamp())",
+        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,2,'New','New',99,'cosmetic',false,clock_timestamp())",
         [f.reward, scope],
       );
       await admin.query(

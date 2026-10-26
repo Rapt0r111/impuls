@@ -381,7 +381,7 @@ const url = process.env.TEST_DATABASE_URL,
       ).toBe(false);
       const id = randomUUID();
       await owner.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,$3,1,'Invalid enabled identity','Synthetic',19,'cosmetic','synthetic',true,clock_timestamp())",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,$3,1,'Invalid enabled identity','Synthetic',19,'cosmetic',true,clock_timestamp())",
         [id, randomUUID(), scope],
       );
       await expect(

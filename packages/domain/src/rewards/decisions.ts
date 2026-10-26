@@ -79,7 +79,7 @@ export async function readRedemptionReview(
         cursor.purpose === purpose
           ? (
               await client.query<{ status: string }>(
-                "SELECT status FROM impuls.redemptions WHERE id=$1 AND scope_id=$2 AND user_id<>$3 AND mode='synthetic'",
+                "SELECT status FROM impuls.redemptions WHERE id=$1 AND scope_id=$2 AND user_id<>$3",
                 [cursor.id, scope!.id, actorId],
               )
             ).rows[0]
@@ -100,9 +100,9 @@ export async function readRedemptionReview(
             `SELECT d.*,s.name AS scope_name,u.display_name AS recipient_name,
               (SELECT display_name FROM impuls.users WHERE id=d.decision_actor_id) AS decision_actor_name FROM impuls.redemptions d
       JOIN impuls.access_scopes s ON s.id=d.scope_id JOIN impuls.users u ON u.id=d.user_id
-      WHERE d.scope_id=$1 AND d.user_id<>$2 AND d.status=$5 AND d.mode='synthetic'
+      WHERE d.scope_id=$1 AND d.user_id<>$2 AND d.status=$5
         AND ($3::uuid IS NULL OR (d.created_at,d.id)<(
-          SELECT a.created_at,a.id FROM impuls.redemptions a WHERE a.id=$3 AND a.scope_id=$1 AND a.user_id<>$2 AND a.status=$5 AND a.mode='synthetic'))
+          SELECT a.created_at,a.id FROM impuls.redemptions a WHERE a.id=$3 AND a.scope_id=$1 AND a.user_id<>$2 AND a.status=$5))
       ORDER BY d.created_at DESC,d.id DESC LIMIT $4`,
             [
               scope.id,
@@ -344,8 +344,8 @@ export async function decideRedemption(
       [current.quota_period_id, approve ? 1 : 0, at],
     );
     await client.query(
-      `INSERT INTO impuls.ledger_entries(user_id,redemption_id,currency,kind,amount,reserved_delta,original_entry_id,mode,season_key,time_zone,created_at,updated_at)
-      VALUES($1,$2,'points',$3,$4,$5,$6,'synthetic',$7,$8,$9,$9)`,
+      `INSERT INTO impuls.ledger_entries(user_id,redemption_id,currency,kind,amount,reserved_delta,original_entry_id,season_key,time_zone,created_at,updated_at)
+      VALUES($1,$2,'points',$3,$4,$5,$6,$7,$8,$9,$9)`,
       [
         current.user_id,
         current.id,
@@ -383,7 +383,7 @@ export async function decideRedemption(
       ],
     );
     await client.query(
-      "INSERT INTO impuls.notification_outbox(recipient_id,redemption_id,kind,mode,created_at,updated_at) VALUES($1,$2,$3,'synthetic',$4,$4)",
+      "INSERT INTO impuls.notification_outbox(recipient_id,redemption_id,kind,created_at,updated_at) VALUES($1,$2,$3,$4,$4)",
       [
         current.user_id,
         current.id,

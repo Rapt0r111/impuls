@@ -101,7 +101,7 @@ integration(
       // Proposals take the latest effective synthetic rule, which parallel test files change, so
       // this file inserts one only when none is effective. The acceptance test pins its own rule.
       const effective = await admin.query(
-        "SELECT 1 FROM impuls.rule_sets WHERE definition->>'mode' = 'synthetic' AND effective_from <= clock_timestamp()",
+        "SELECT 1 FROM impuls.rule_sets WHERE effective_from <= clock_timestamp()",
       );
       if (effective.rowCount === 0) {
         rulesId = randomUUID();

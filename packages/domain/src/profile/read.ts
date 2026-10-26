@@ -59,7 +59,7 @@ export async function readParticipantProfile(
         version_number: number;
         definition: unknown;
       }>(
-        "SELECT id,version_number,definition FROM impuls.rule_sets WHERE definition->>'mode'='synthetic' AND definition ? 'progression' AND effective_from <= statement_timestamp() ORDER BY effective_from DESC,version_number DESC,id DESC LIMIT 1",
+        "SELECT id,version_number,definition FROM impuls.rule_sets WHERE definition ? 'progression' AND effective_from <= statement_timestamp() ORDER BY effective_from DESC,version_number DESC,id DESC LIMIT 1",
       )
     ).rows[0];
     const thresholds = rule ? syntheticLevelThresholds(rule.definition) : null;

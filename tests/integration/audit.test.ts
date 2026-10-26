@@ -38,7 +38,6 @@ const url = process.env.TEST_DATABASE_URL,
   const tokens = users.map(() => randomBytes(32).toString("base64url")),
     hashes = tokens.map((t) => createHash("sha256").update(t).digest());
   const rule = randomUUID(),
-    realRule = randomUUID(),
     tasks: string[] = [];
   let expectedIds: string[] = [],
     correctionId = "";
@@ -119,24 +118,19 @@ const url = process.env.TEST_DATABASE_URL,
       "INSERT INTO impuls.task_scope_members(scope_id,user_id) VALUES($1,$2)",
       [scope, participant],
     );
-    for (const [r, mode] of [
-      [rule, "synthetic"],
-      [realRule, "production"],
-    ])
-      await admin.query(
-        "INSERT INTO impuls.rule_sets(id,version_number,definition,effective_from,created_by) VALUES($1,$2,$3::jsonb,now()-interval '1 minute',$4)",
-        [
-          r,
-          randomInt(1e6, 2e9),
-          JSON.stringify({
-            mode,
-            economy: { approved: mode === "synthetic" },
-            timeZone: "Europe/Moscow",
-            acceptance: { enabled: true },
-          }),
-          actor,
-        ],
-      );
+    await admin.query(
+      "INSERT INTO impuls.rule_sets(id,version_number,definition,effective_from,created_by) VALUES($1,$2,$3::jsonb,now()-interval '1 minute',$4)",
+      [
+        rule,
+        randomInt(1e6, 2e9),
+        JSON.stringify({
+          economy: { approved: true },
+          timeZone: "Europe/Moscow",
+          acceptance: { enabled: true },
+        }),
+        actor,
+      ],
+    );
     for (const [i, u] of users.entries())
       await admin.query(
         "INSERT INTO impuls.sessions(user_id,session_hash,expires_at) VALUES($1,$2,now()+interval '1 hour')",
@@ -278,16 +272,6 @@ const url = process.env.TEST_DATABASE_URL,
           data: data("Hidden neighbouring evidence", neighbour),
         }),
       ).id,
-    );
-    const nonSynthetic = randomUUID();
-    tasks.push(nonSynthetic);
-    await admin.query(
-      "INSERT INTO impuls.tasks(id,scope_id,rule_set_id,created_by,title,criteria,category_code,priority,status,due_at,fund_xp,fund_points) VALUES($1,$2,$3,$4,'Non-synthetic hidden','Criterion','test','normal','draft',now(),0,0)",
-      [nonSynthetic, scope, realRule, actor],
-    );
-    await admin.query(
-      "INSERT INTO impuls.audit_events(actor_id,task_id,action,request_id,reason,diff,created_at,updated_at) VALUES($1,$2,'task.create',$3,'Non-synthetic hidden','{}',now(),now())",
-      [actor, nonSynthetic, randomUUID()],
     );
   }, 30000);
   it("reads all seven committed actions with separate scope and typed evidence", async () => {
@@ -611,7 +595,7 @@ const url = process.env.TEST_DATABASE_URL,
       );
       await admin.query(
         "DELETE FROM impuls.rule_sets WHERE id=ANY($1::uuid[])",
-        [[rule, realRule]],
+        [[rule]],
       );
       await admin.query(
         "DELETE FROM impuls.access_scopes WHERE id=ANY($1::uuid[])",

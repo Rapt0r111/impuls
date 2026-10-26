@@ -87,7 +87,7 @@ const url = process.env.TEST_DATABASE_URL,
         quota = randomUUID();
       rewards.push(rewardId);
       await admin.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,'Original synthetic title','Original synthetic conditions',30,'cosmetic','synthetic',true,clock_timestamp()-interval '1 minute',3600)",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,1,'Original synthetic title','Original synthetic conditions',30,'cosmetic',true,clock_timestamp()-interval '1 minute',3600)",
         [id, rewardId, scope],
       );
       await admin.query(

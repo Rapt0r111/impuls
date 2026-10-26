@@ -158,7 +158,7 @@ export async function fulfillRedemption(
     ).rows[0]!;
     const entitlement = (
       await client.query<{ id: string }>(
-        "INSERT INTO impuls.entitlements(redemption_id,user_id,reward_id,scope_id,actor_id,reason,mode,created_at) VALUES($1,$2,$3,$4,$5,$6,'synthetic',$7) RETURNING id",
+        "INSERT INTO impuls.entitlements(redemption_id,user_id,reward_id,scope_id,actor_id,reason,created_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id",
         [
           current.id,
           current.user_id,
@@ -201,7 +201,7 @@ export async function fulfillRedemption(
       ],
     );
     await client.query(
-      "INSERT INTO impuls.notification_outbox(recipient_id,redemption_id,kind,mode,created_at,updated_at) VALUES($1,$2,'reward.fulfilled','synthetic',$3,$3)",
+      "INSERT INTO impuls.notification_outbox(recipient_id,redemption_id,kind,created_at,updated_at) VALUES($1,$2,'reward.fulfilled',$3,$3)",
       [current.user_id, current.id, at],
     );
     const response: Response = {

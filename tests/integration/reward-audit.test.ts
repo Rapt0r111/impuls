@@ -63,7 +63,7 @@ const url = process.env.TEST_DATABASE_URL,
       rewards.push(reward);
       quotas.push(quota);
       await admin.query(
-        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,$3,1,'Сохранённый знак','Исходные синтетические условия',30,'cosmetic','synthetic',true,now()-interval '1 minute')",
+        "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,$3,1,'Сохранённый знак','Исходные синтетические условия',30,'cosmetic',true,now()-interval '1 minute')",
         [version, reward, atScope],
       );
       await admin.query(
@@ -192,7 +192,7 @@ const url = process.env.TEST_DATABASE_URL,
       entitlementId = issued.response.redemption.fulfillment!.entitlementId;
       // A later catalog version must not rewrite the historical request snapshot.
       await admin.query(
-        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,2,'Новая позиция','Новые условия',99,'cosmetic','synthetic',true,now())",
+        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,2,'Новая позиция','Новые условия',99,'cosmetic',true,now())",
         [fulfilled.reward, scope],
       );
       const primary = (

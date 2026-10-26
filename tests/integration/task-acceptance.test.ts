@@ -270,7 +270,7 @@ const url = process.env.TEST_DATABASE_URL;
         action: "task.accept",
         reason: f.input.reason,
         kind: "task.accepted",
-        mode: "synthetic",
+        mode: null,
         status: "pending",
         diff: { xp: 17, points: 9, to: "accepted" },
       });

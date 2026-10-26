@@ -70,7 +70,7 @@ const url = process.env.TEST_DATABASE_URL,
     const id = randomUUID();
     versions.push(id);
     await admin.query(
-      "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,$4,$5,'Explicit synthetic cosmetic conditions',7,'cosmetic','synthetic',$6,$7,3600)",
+      "INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from,reservation_seconds) VALUES($1,$2,$3,$4,$5,'Explicit synthetic cosmetic conditions',7,'cosmetic',$6,$7,3600)",
       [
         id,
         reward,
@@ -353,7 +353,7 @@ const url = process.env.TEST_DATABASE_URL,
         [5, "2020-01-01T00:00:00Z"],
       ] as const)
         await admin.query(
-          "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from) VALUES($1,$2,$3,'Synthetic tied version','Explicit synthetic terms',11,'cosmetic','synthetic',true,$4)",
+          "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,enabled,effective_from) VALUES($1,$2,$3,'Synthetic tied version','Explicit synthetic terms',11,'cosmetic',true,$4)",
           [reward, scope, v, time],
         );
       const found: number[] = [],

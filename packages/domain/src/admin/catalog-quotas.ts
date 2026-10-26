@@ -75,7 +75,7 @@ export async function readAdminCatalogQuotas(
           AND b.revoked_at IS NULL AND b.valid_from<=access.as_of AND (b.valid_until IS NULL OR b.valid_until>access.as_of))
     ), identity AS MATERIALIZED (
       SELECT DISTINCT r.reward_id,r.scope_id FROM impuls.reward_versions r JOIN selected s ON s.id=r.scope_id
-      WHERE r.reward_id=$5 AND r.mode='synthetic' AND r.kind='cosmetic'
+      WHERE r.reward_id=$5 AND r.kind='cosmetic'
     ), periods AS MATERIALIZED (
       SELECT q.* FROM impuls.quota_periods q JOIN identity r ON r.reward_id=q.reward_id AND r.scope_id=q.scope_id
     ), anchor AS MATERIALIZED (

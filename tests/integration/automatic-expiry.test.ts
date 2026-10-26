@@ -66,6 +66,8 @@ const require = createRequire(import.meta.url),
       );
       return { id, hash, token };
     }
+    // The first fixture is built on the pre-000027 schema, where mode is still required.
+    let legacySchema = true;
     async function fixture(seconds: number | null = 1, price = 30) {
       const owner = await user(),
         reward = randomUUID(),
@@ -81,7 +83,7 @@ const require = createRequire(import.meta.url),
       );
       await db.query(
         `INSERT INTO impuls.reward_versions(id,reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds)
-      VALUES($1,$2,$3,1,'Synthetic expiry cosmetic','Saved expiry terms',$4,'cosmetic','synthetic',true,clock_timestamp()-interval '1 minute',$5)`,
+      VALUES($1,$2,$3,1,'Synthetic expiry cosmetic','Saved expiry terms',$4,'cosmetic',${legacySchema ? "'synthetic'" : "NULL"},true,clock_timestamp()-interval '1 minute',$5)`,
         [version, reward, scope, price, seconds],
       );
       await db.query(
@@ -160,6 +162,16 @@ const require = createRequire(import.meta.url),
       await db.query(
         "CREATE TABLE impuls.catalog_cancellations(version_id uuid); GRANT SELECT ON impuls.catalog_cancellations TO impuls_app",
       );
+      // The reserve code no longer writes mode; this pre-000027 schema still requires it,
+      // so it fills the old value until the legacy fixture is built.
+      for (const table of [
+        "redemptions",
+        "ledger_entries",
+        "notification_outbox",
+      ])
+        await db.query(
+          `ALTER TABLE impuls.${table} ALTER COLUMN mode SET DEFAULT 'synthetic'`,
+        );
       await db.query(
         "INSERT INTO impuls.access_scopes(id,kind,name) VALUES($1,'project','Synthetic expiry scope')",
         [scope],
@@ -182,11 +194,20 @@ const require = createRequire(import.meta.url),
         )
       ).rows[0].value;
       await db.query("DROP TABLE impuls.catalog_cancellations");
+      for (const table of [
+        "redemptions",
+        "ledger_entries",
+        "notification_outbox",
+      ])
+        await db.query(
+          `ALTER TABLE impuls.${table} ALTER COLUMN mode DROP DEFAULT`,
+        );
       await migrate("000027_automatic_reservation_expiry.js");
       for (const file of files.filter(
         (f) => f > "000027_automatic_reservation_expiry.js",
       ))
         await migrate(file);
+      legacySchema = false;
       expect(
         (
           await db.query(
@@ -447,7 +468,7 @@ const require = createRequire(import.meta.url),
         lock.release();
       }
       await db.query(
-        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,2,'Changed terms','Not used',99,'cosmetic','synthetic',false,clock_timestamp(),3600)",
+        "INSERT INTO impuls.reward_versions(reward_id,scope_id,version,title,conditions,price,kind,mode,enabled,effective_from,reservation_seconds) VALUES($1,$2,2,'Changed terms','Not used',99,'cosmetic',NULL,false,clock_timestamp(),3600)",
         [f.reward, scope],
       );
       expect(await expire(worker, true)).toBe(true);
