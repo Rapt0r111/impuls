@@ -9,7 +9,6 @@ export const actionNames: Record<Permission["action"], string> = {
   "task.edit": "Редактирование черновиков",
   "task.cancel": "Отмена задач",
   "task.review": "Проверка результатов",
-  "task.return": "Возврат на доработку",
   "task.verify": "Проверка самостоятельных задач",
   "reward.decide": "Решение по заявкам",
   "reward.fulfill": "Подтверждение выдачи",

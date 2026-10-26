@@ -3,6 +3,7 @@ import {
   selfTaskDecideRequestSchema,
   selfTaskProposeRequestSchema,
   selfTaskResponseSchema,
+  selfTaskResubmitRequestSchema,
   selfTaskVerifyRequestSchema,
   taskIdSchema,
   taskSubmissionHeadersSchema,
@@ -11,6 +12,7 @@ import {
   decideSelfTask,
   hashSessionToken,
   proposeSelfTask,
+  resubmitSelfTask,
   verifySelfTask,
   type SelfTaskResult,
 } from "@impuls/domain";
@@ -26,7 +28,7 @@ import {
   requestId,
 } from "./http";
 
-export type SelfTaskAction = "propose" | "verify" | "decide";
+export type SelfTaskAction = "propose" | "verify" | "decide" | "resubmit";
 
 export async function handleSelfTaskMutation(
   request: NextRequest,
@@ -102,6 +104,16 @@ export async function handleSelfTaskMutation(
         );
       }
       result = await verifySelfTask(getPool(), {
+        ...common,
+        taskId,
+        ...body.data,
+      });
+    } else if (action === "resubmit") {
+      const body = selfTaskResubmitRequestSchema.safeParse(rawBody);
+      if (!body.success || taskId === null) {
+        return errorResponse(400, "BAD_REQUEST", "Неверные данные отчёта", id);
+      }
+      result = await resubmitSelfTask(getPool(), {
         ...common,
         taskId,
         ...body.data,

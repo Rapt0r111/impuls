@@ -8,7 +8,6 @@ export const grantableActions = [
   "task.edit",
   "task.cancel",
   "task.review",
-  "task.return",
   "task.verify",
   "reward.decide",
   "reward.fulfill",

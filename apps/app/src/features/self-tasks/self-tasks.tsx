@@ -333,6 +333,70 @@ function StaleAlert() {
 const onReview = (status: SelfTask["status"]) =>
   status === "awaiting_verification" || status === "awaiting_commander";
 
+// A returned report: the verifier's reason, and the member's edit sent back to the same verifier.
+function ResubmitForm({ task }: { task: SelfTask }) {
+  const { csrfToken, loseAccess } = useAuthorizedSession();
+  const client = useQueryClient();
+  const [text, setText] = useState(task.text);
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const key = useRef<string | null>(null);
+
+  async function send(event: FormEvent) {
+    event.preventDefault();
+    if (pending || text.trim() === "") return;
+    // The same key until the answer is known, so a repeat after a lost reply is not a second send.
+    key.current ??= crypto.randomUUID();
+    setPending(true);
+    setMessage(null);
+    const outcome = await post(
+      `/${task.id}/resubmit`,
+      { expectedVersion: task.version, text },
+      csrfToken,
+      key.current,
+      loseAccess,
+    );
+    setPending(false);
+    if (outcome.ok === "unconfirmed") {
+      setMessage(
+        "Ответ не получен. Нажмите кнопку ещё раз: повтор не создаст вторую отправку.",
+      );
+      return;
+    }
+    key.current = null;
+    if (!outcome.ok) setMessage(outcome.message);
+    await client.invalidateQueries({ queryKey: SELF_KEY });
+  }
+
+  return (
+    <form className="self-decline" onSubmit={(event) => void send(event)}>
+      <p className="self-text">
+        Проверяющий вернул отчёт: {task.returnReason ?? "причина не указана"}
+      </p>
+      <label className="self-field">
+        <span>Исправленный отчёт</span>
+        <textarea
+          value={text}
+          maxLength={2000}
+          onChange={(event) => setText(event.target.value)}
+        />
+      </label>
+      {message ? (
+        <p role="alert" className="self-message">
+          {message}
+        </p>
+      ) : null}
+      <button
+        type="submit"
+        className="tasks-action"
+        disabled={pending || text.trim() === ""}
+      >
+        Отправить снова
+      </button>
+    </form>
+  );
+}
+
 function MyReports({
   title = "Мои отчёты",
   pendingOnly = false,
@@ -359,6 +423,7 @@ function MyReports({
               <span className="self-status">{statusNames[task.status]}</span>
             </div>
             <Requested task={task} />
+            {task.status === "needs_work" ? <ResubmitForm task={task} /> : null}
             <p className="self-hint">Обновлено {dateText(task.updatedAt)}</p>
           </li>
         ))}
@@ -373,6 +438,7 @@ function VerifyQueue() {
   const client = useQueryClient();
   const waiting = useSelfList("verify");
   const [open, setOpen] = useState<string | null>(null);
+  const [mode, setMode] = useState<"decline" | "return">("decline");
   const [reason, setReason] = useState("");
   const [scores, setScores] = useState<Record<string, string>>({});
   const [xps, setXps] = useState<Record<string, string>>({});
@@ -389,7 +455,10 @@ function VerifyQueue() {
     );
   const rows = waiting.data ?? [];
 
-  async function act(task: SelfTask, decision: "approve" | "decline") {
+  async function act(
+    task: SelfTask,
+    decision: "approve" | "decline" | "return",
+  ) {
     if (pendingId) return;
     const raw = scores[task.id] ?? "";
     const score = Number(raw);
@@ -515,7 +584,25 @@ function VerifyQueue() {
                 type="button"
                 className="tasks-action"
                 disabled={pendingId !== null}
-                onClick={() => setOpen(open === task.id ? null : task.id)}
+                onClick={() => {
+                  setMode("return");
+                  setOpen(
+                    open === task.id && mode === "return" ? null : task.id,
+                  );
+                }}
+              >
+                Вернуть на доработку
+              </button>
+              <button
+                type="button"
+                className="tasks-action"
+                disabled={pendingId !== null}
+                onClick={() => {
+                  setMode("decline");
+                  setOpen(
+                    open === task.id && mode === "decline" ? null : task.id,
+                  );
+                }}
               >
                 Отклонить
               </button>
@@ -523,7 +610,11 @@ function VerifyQueue() {
             {open === task.id ? (
               <div className="self-decline">
                 <label className="self-field">
-                  <span>Причина (участник увидит её в истории)</span>
+                  <span>
+                    {mode === "return"
+                      ? "Что исправить (участник увидит это и отправит отчёт снова)"
+                      : "Причина (участник увидит её в истории)"}
+                  </span>
                   <textarea
                     value={reason}
                     maxLength={2000}
@@ -534,9 +625,11 @@ function VerifyQueue() {
                   type="button"
                   className="tasks-action"
                   disabled={pendingId !== null || reason.trim() === ""}
-                  onClick={() => void act(task, "decline")}
+                  onClick={() => void act(task, mode)}
                 >
-                  Отклонить отчёт
+                  {mode === "return"
+                    ? "Вернуть на доработку"
+                    : "Отклонить отчёт"}
                 </button>
               </div>
             ) : null}

@@ -33,11 +33,7 @@ export async function GET(request: NextRequest) {
         id,
       );
     const permissions = await listActivePermissions(getPool(), session.user.id);
-    if (
-      !permissions.some(
-        (p) => p.action === "task.review" || p.action === "task.return",
-      )
-    )
+    if (!permissions.some((p) => p.action === "task.review"))
       return errorResponse(
         403,
         "PERMISSION_DENIED",
