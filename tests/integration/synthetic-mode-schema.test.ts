@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const url = process.env.TEST_DATABASE_URL;
 
-// ADR-0029, этап 2: после миграций 000051 и 000052 схема не требует метки mode = 'synthetic'.
+// ADR-0029, этап 2: после миграций 000051, 000052 и 000053 схема не требует метки mode = 'synthetic'.
 // Старые строки сохраняют значение, новые пишутся без него (mode NULL).
 (url ? describe : describe.skip)(
   "synthetic mode label is gone from the schema",
@@ -74,6 +74,16 @@ const url = process.env.TEST_DATABASE_URL;
         await pool.query<{ def: string }>(
           `SELECT pg_get_functiondef(p.oid) AS def FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
          WHERE n.nspname='impuls' AND p.proname = 'expire_one_synthetic_reservation'`,
+        )
+      ).rows;
+      expect(defs).toHaveLength(1);
+      for (const { def } of defs) expect(def).not.toMatch(/'synthetic'/);
+    });
+    it("writes no fixed label from the task reminders function (000053)", async () => {
+      const defs = (
+        await pool.query<{ def: string }>(
+          `SELECT pg_get_functiondef(p.oid) AS def FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+         WHERE n.nspname='impuls' AND p.proname = 'enqueue_task_due_reminders'`,
         )
       ).rows;
       expect(defs).toHaveLength(1);

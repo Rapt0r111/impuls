@@ -139,7 +139,7 @@ const HOUR = "interval '1 hour'";
       open.map((t) => t.id).sort(),
     );
     for (const row of rows) {
-      expect(row).toMatchObject({ mode: "synthetic", status: "pending" });
+      expect(row).toMatchObject({ mode: null, status: "pending" });
       expect(row.recipient_id).toBe(
         open.find((t) => t.id === row.task_id)!.user,
       );
