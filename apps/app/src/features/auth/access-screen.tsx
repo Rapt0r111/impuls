@@ -313,7 +313,17 @@ export function AccessScreen({ children }: { children?: ReactNode }) {
             className={`access-content${state.kind === "authorized" ? " access-content--authorized" : ""}`}
             aria-labelledby="access-title"
           >
-            {state.kind !== "authorized" ? (
+            {state.kind === "checking" ? (
+              <Image
+                className="boot-mark"
+                src="/brand/boot-mark.svg"
+                width={200}
+                height={200}
+                alt=""
+                aria-hidden="true"
+                unoptimized
+              />
+            ) : state.kind !== "authorized" ? (
               <div
                 className={`access-signal access-signal--${copy.tone}`}
                 aria-hidden="true"

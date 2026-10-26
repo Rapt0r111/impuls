@@ -263,6 +263,15 @@ body::after {
   color: var(--color-error);
 }
 
+/* Знак проверки доступа: анимация внутри boot-mark.svg, здесь только размер и отступ. */
+.boot-mark {
+  display: block;
+  width: min(56vw, 200px);
+  height: auto;
+  max-width: 100%;
+  margin-bottom: 28px;
+}
+
 .access-content h1 {
   max-width: 12ch;
   margin: 0;
