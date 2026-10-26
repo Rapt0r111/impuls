@@ -110,7 +110,11 @@ function ReturnForm({
           ? `Базовый XP за задачу не больше ${TASK_XP_MAX}.`
           : parsedBasePoints > TASK_POINTS_MAX
             ? `Баллы за задачу не больше ${TASK_POINTS_MAX}.`
-            : null;
+            : parsedBaseXp > item.task.fundXp
+              ? `XP не больше фонда задачи (${item.task.fundXp}).`
+              : parsedBasePoints > item.task.fundPoints
+                ? `Баллы не больше фонда задачи (${item.task.fundPoints}).`
+                : null;
   const totalXp = (parsedBaseXp ?? 0) + (bonus?.xp ?? 0);
   const totalPoints = (parsedBasePoints ?? 0) + (bonus?.points ?? 0);
   const [pending, setPending] = useState(false);
