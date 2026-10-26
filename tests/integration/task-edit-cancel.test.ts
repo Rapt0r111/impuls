@@ -943,4 +943,51 @@ const url = process.env.TEST_DATABASE_URL;
     await runtime.end();
     await admin.end();
   });
+  it("lets a member without task.review change and cancel only the tasks they created", async () => {
+    for (const action of ["task.view", "task.edit", "task.cancel"])
+      await grant(creator, action, scope);
+    // New rights revoke the old session.
+    await admin.query("DELETE FROM impuls.sessions WHERE user_id=$1", [
+      creator,
+    ]);
+    await admin.query(
+      "INSERT INTO impuls.sessions(user_id,session_hash,expires_at) VALUES ($1,$2,clock_timestamp()+interval '1 hour')",
+      [creator, hashes[2]],
+    );
+    const asCreator = () => ({
+      ...base(),
+      actorId: creator,
+      sessionHash: hashes[2]!,
+    });
+    const others = await draft();
+    expect(
+      await editTask(runtime, { ...editInput(others), ...asCreator() }),
+    ).toEqual({ kind: "not_found" });
+    expect(
+      await cancelTask(runtime, { ...cancelInput(others), ...asCreator() }),
+    ).toEqual({ kind: "not_found" });
+    const own = await createTask(runtime, {
+      ...asCreator(),
+      data: { ...fields, scopeId: scope, ruleSetId: rule },
+    });
+    if (own.kind !== "ok") throw new Error(own.kind);
+    tasks.push(own.response.task.id);
+    expect(own.response.task.manageable).toBe(true);
+    expect(
+      await editTask(runtime, {
+        ...editInput(own.response.task),
+        ...asCreator(),
+      }),
+    ).toMatchObject({ kind: "ok" });
+    const list = (await listManagedTasks(runtime, creator, { limit: 50 }))
+      .items;
+    expect(list.find((t) => t.id === others.id)?.manageable).toBe(false);
+    expect(list.find((t) => t.id === own.response.task.id)?.manageable).toBe(
+      true,
+    );
+    // The task's creator or a reviewer, here the manager, may still cancel it.
+    expect(await cancelTask(runtime, cancelInput(others))).toMatchObject({
+      kind: "ok",
+    });
+  });
 });

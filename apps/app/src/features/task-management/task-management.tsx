@@ -1007,7 +1007,7 @@ function TaskRow({
         )}
         {!changeForm && (
           <div className="task-mgmt__change-actions">
-            {scope?.canEdit && task.status === "draft" && (
+            {scope?.canEdit && task.manageable && task.status === "draft" && (
               <button
                 type="button"
                 className="task-mgmt__button"
@@ -1018,6 +1018,7 @@ function TaskRow({
               </button>
             )}
             {scope?.canCancel &&
+              task.manageable &&
               !["accepted", "cancelled"].includes(task.status) && (
                 <button
                   type="button"
