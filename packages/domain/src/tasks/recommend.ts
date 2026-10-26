@@ -22,7 +22,8 @@ export type RecommendTaskResult =
   | { kind: "unauthorized" }
   | { kind: "not_found" }
   | { kind: "self_review" }
-  | { kind: "conflict"; currentVersion: number };
+  | { kind: "conflict"; currentVersion: number }
+  | { kind: "over_fund" };
 
 // Только назначенный проверяющий задачи (task.verify и строка task_verifiers) может рекомендовать.
 // Статус и версия задачи не меняются: принимает и начисляет по-прежнему командир.
@@ -50,8 +51,10 @@ export async function recommendTaskSubmission(
         author_id: string;
         assignee_id: string;
         latest_id: string;
+        fund_xp: number;
+        fund_points: number;
       }>(
-        `SELECT t.status, t.version, sub.author_id, a.user_id AS assignee_id,
+        `SELECT t.status, t.version, t.fund_xp, t.fund_points, sub.author_id, a.user_id AS assignee_id,
           (SELECT id FROM impuls.submissions WHERE task_id = t.id ORDER BY attempt_number DESC LIMIT 1) AS latest_id
         FROM impuls.submissions sub JOIN impuls.tasks t ON t.id = sub.task_id
         JOIN impuls.task_assignments a ON a.task_id = t.id
@@ -85,6 +88,12 @@ export async function recommendTaskSubmission(
         kind: "conflict",
         currentVersion: current.version,
       });
+    // The recommendation is advice for the commander's award, which cannot exceed the task fund.
+    if (
+      input.recommendedXp > current.fund_xp ||
+      input.recommendedPoints > current.fund_points
+    )
+      return await reject({ kind: "over_fund" });
     const row = (
       await client.query<{ updated_at: Date }>(
         `INSERT INTO impuls.verifier_recommendations

@@ -171,7 +171,7 @@ const url = process.env.TEST_DATABASE_URL;
         submissionId,
         expectedVersion: 1,
         recommendedXp: xp,
-        recommendedPoints: 25,
+        recommendedPoints: 20,
       });
     expect((await recommend("stranger", 30)).kind).toBe("not_found");
     expect((await recommend("participant", 30)).kind).toBe("not_found");
@@ -184,7 +184,7 @@ const url = process.env.TEST_DATABASE_URL;
     expect(item.recommendation).toEqual({
       verifierName: "Synthetic verifier",
       xp: 30,
-      points: 25,
+      points: 20,
     });
 
     const accept = await reviewTaskSubmission(runtime, {
@@ -222,6 +222,26 @@ const url = process.env.TEST_DATABASE_URL;
     expect(returned.kind).toBe("ok");
     if (returned.kind !== "ok") return;
     expect(returned.response.task.status).toBe("needs_work");
+  });
+
+  it("refuses a recommendation above the task fund", async () => {
+    const { submissionId } = await reviewFixture();
+    const recommend = (xp: number, points: number) =>
+      recommendTaskSubmission(runtime, {
+        actorId: people.verifier,
+        sessionHash: hashes.verifier,
+        submissionId,
+        expectedVersion: 1,
+        recommendedXp: xp,
+        recommendedPoints: points,
+      });
+    expect((await recommend(41, 20)).kind).toBe("over_fund");
+    expect((await recommend(40, 21)).kind).toBe("over_fund");
+    const queue = await listReviewQueue(runtime, people.verifier);
+    expect(
+      queue.items.find((i) => i.submissionId === submissionId)!.recommendation,
+    ).toBeNull();
+    expect((await recommend(40, 20)).kind).toBe("ok");
   });
 
   it("does not let a verifier of a forwarded self-submitted report return or recommend it", async () => {

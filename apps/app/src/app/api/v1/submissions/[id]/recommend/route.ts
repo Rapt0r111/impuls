@@ -84,6 +84,13 @@ export async function POST(
         "Нельзя проверять собственный результат",
         id,
       );
+    if (result.kind === "over_fund")
+      return errorResponse(
+        422,
+        "TASK_RECOMMENDATION_OVER_FUND",
+        "Рекомендация больше фонда задачи",
+        id,
+      );
     if (result.kind === "conflict")
       return errorResponse(
         409,
