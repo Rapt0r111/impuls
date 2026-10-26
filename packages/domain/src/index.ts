@@ -36,6 +36,7 @@ export {
   listSelfTasks,
   proposeSelfTask,
   readSelfTaskOptions,
+  resubmitSelfTask,
   verifySelfTask,
 } from "./tasks/self";
 export type {

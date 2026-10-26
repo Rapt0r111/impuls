@@ -313,6 +313,7 @@ export {
   selfTaskProposeRequestSchema,
   selfTaskQuerySchema,
   selfTaskResponseSchema,
+  selfTaskResubmitRequestSchema,
   selfTaskSchema,
   selfTaskVerifyRequestSchema,
   selfTaskViewSchema,

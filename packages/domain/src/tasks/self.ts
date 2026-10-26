@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { appendTaskEvent } from "./events";
 import { memberOf } from "./claim";
@@ -27,6 +27,7 @@ export type SelfTask = {
   fundXp: number;
   verifiedPoints: number | null;
   verifiedXp: number | null;
+  returnReason: string | null;
   updatedAt: string;
   scope: { id: string; name: string };
   author: { id: string; displayName: string };
@@ -73,7 +74,13 @@ export type VerifySelfTaskInput = Base & {
 } & (
     | { decision: "approve"; fundPoints: number; fundXp: number }
     | { decision: "decline"; reason: string }
+    | { decision: "return"; reason: string }
   );
+export type ResubmitSelfTaskInput = Base & {
+  taskId: string;
+  expectedVersion: number;
+  text: string;
+};
 export type DecideSelfTaskInput = Base & {
   taskId: string;
   expectedVersion: number;
@@ -93,7 +100,14 @@ const hasRight = (
      AND b.revoked_at IS NULL AND b.valid_from <= clock_timestamp()
      AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp()))`;
 
-const selectSelfTask = `SELECT t.id, t.title, t.criteria, t.status, t.version, t.requested_points, t.requested_xp,
+// The report is the latest submission (the member may have reworked it); criteria stays the first text.
+const selectSelfTask = `SELECT t.id, t.title,
+    COALESCE((SELECT s.text FROM impuls.submissions s WHERE s.task_id = t.id
+               ORDER BY s.attempt_number DESC LIMIT 1), t.criteria) AS criteria,
+    CASE WHEN t.status = 'needs_work' THEN
+      (SELECT r.reason FROM impuls.reviews r JOIN impuls.submissions s ON s.id = r.submission_id
+        WHERE s.task_id = t.id AND r.decision = 'return' ORDER BY r.created_at DESC LIMIT 1)
+    END AS return_reason, t.status, t.version, t.requested_points, t.requested_xp,
     t.fund_points, t.fund_xp, t.verified_points, t.verified_xp, t.updated_at, s.id AS scope_id, s.name AS scope_name,
     u.id AS author_id, u.display_name AS author_name,
     COALESCE((SELECT json_agg(json_build_object('id', v.id, 'displayName', v.display_name)
@@ -116,6 +130,7 @@ type SelfTaskRow = {
   fund_xp: number;
   verified_points: number | null;
   verified_xp: number | null;
+  return_reason: string | null;
   updated_at: Date;
   scope_id: string;
   scope_name: string;
@@ -137,6 +152,7 @@ function toSelfTask(row: SelfTaskRow): SelfTask {
     fundXp: row.fund_xp,
     verifiedPoints: row.verified_points,
     verifiedXp: row.verified_xp,
+    returnReason: row.return_reason,
     updatedAt: row.updated_at.toISOString(),
     scope: { id: row.scope_id, name: row.scope_name },
     author: { id: row.author_id, displayName: row.author_name },
@@ -223,6 +239,7 @@ const OPERATIONS = {
   propose: "selftask.propose",
   verify: "selftask.verify",
   decide: "selftask.decide",
+  resubmit: "selftask.resubmit",
 } as const;
 
 type IdempotencyRow = {
@@ -474,7 +491,7 @@ export function verifySelfTask(pool: Pool, input: VerifySelfTaskInput) {
           actorId: input.actorId,
           kind: "verified",
         });
-      } else {
+      } else if (input.decision === "decline") {
         await client.query(
           `UPDATE impuls.tasks SET status = 'cancelled', version = version + 1,
                   updated_at = clock_timestamp() WHERE id = $1`,
@@ -486,9 +503,124 @@ export function verifySelfTask(pool: Pool, input: VerifySelfTaskInput) {
           kind: "declined",
           reason: input.reason,
         });
+      } else {
+        // Back to the member for rework: the same records as a return in the normal review queue.
+        const latest = await client.query<{ id: string }>(
+          `SELECT id FROM impuls.submissions WHERE task_id = $1 ORDER BY attempt_number DESC LIMIT 1`,
+          [input.taskId],
+        );
+        const submissionId = latest.rows[0]?.id;
+        if (!submissionId) throw new Error("Self task has no report");
+        const at = (
+          await client.query<{ at: Date }>(
+            "SELECT date_trunc('milliseconds', clock_timestamp()) AS at",
+          )
+        ).rows[0]!.at;
+        const review = await client.query<{ id: string }>(
+          `INSERT INTO impuls.reviews (submission_id, reviewer_id, decision, reason, created_at, updated_at)
+           VALUES ($1, $2, 'return', $3, $4, $4) RETURNING id`,
+          [submissionId, input.actorId, input.reason, at],
+        );
+        const reviewId = review.rows[0]!.id;
+        await client.query(
+          `UPDATE impuls.tasks SET status = 'needs_work', version = version + 1, updated_at = $2 WHERE id = $1`,
+          [input.taskId, at],
+        );
+        await appendTaskEvent(client, {
+          taskId: input.taskId,
+          actorId: input.actorId,
+          kind: "returned",
+          submissionId,
+          reviewId,
+        });
+        await client.query(
+          `INSERT INTO impuls.audit_events (actor_id, review_id, action, request_id, reason, diff, created_at, updated_at)
+           VALUES ($1, $2, 'task.return', $3, $4, $5::jsonb, $6, $6)`,
+          [
+            input.actorId,
+            reviewId,
+            randomUUID(),
+            input.reason,
+            JSON.stringify({
+              taskId: input.taskId,
+              from: "awaiting_verification",
+              to: "needs_work",
+              version: current.version + 1,
+            }),
+            at,
+          ],
+        );
+        await client.query(
+          `INSERT INTO impuls.notification_outbox (recipient_id, review_id, kind, created_at, updated_at)
+           VALUES ($1, $2, 'task.returned', $3, $3)`,
+          [current.created_by, reviewId, at],
+        );
       }
       const task = await readSelfTask(client, input.taskId);
       if (!task) throw new Error("Verified task is not readable");
+      return { kind: "ok", status: 200, response: { task } };
+    },
+  );
+}
+
+// The member reworks a returned report and sends it to the same verifier again.
+export function resubmitSelfTask(pool: Pool, input: ResubmitSelfTaskInput) {
+  return runSelfTaskMutation(
+    pool,
+    input,
+    OPERATIONS.resubmit,
+    {
+      taskId: input.taskId,
+      expectedVersion: input.expectedVersion,
+      text: input.text,
+    },
+    async (client) => {
+      const locked = await client.query<{
+        status: SelfTaskStatus;
+        version: number;
+        scope_id: string;
+      }>(
+        `SELECT status, version, scope_id FROM impuls.tasks
+          WHERE id = $1 AND self_submitted AND created_by = $2 FOR UPDATE`,
+        [input.taskId, input.actorId],
+      );
+      const current = locked.rows[0];
+      if (!current) return { kind: "not_found" };
+      if (
+        current.version !== input.expectedVersion ||
+        current.status !== "needs_work"
+      )
+        return { kind: "conflict", currentVersion: current.version };
+      // The member and the verifier must still be allowed, as when the report was sent.
+      const member = await client.query(
+        `SELECT 1 WHERE ${memberOf("$1::uuid", "$2::uuid")}`,
+        [current.scope_id, input.actorId],
+      );
+      if (!member.rowCount) return { kind: "not_found" };
+      const verifier = await client.query(
+        `SELECT 1 FROM impuls.task_verifiers tv JOIN impuls.users u ON u.id = tv.user_id AND u.active
+          WHERE tv.task_id = $1 AND ${hasRight("task.verify", "$2::uuid", "u.id")}
+            AND ${memberOf("$2::uuid", "u.id")}`,
+        [input.taskId, current.scope_id],
+      );
+      if (!verifier.rowCount) return { kind: "verifiers_invalid" };
+      await client.query(
+        `INSERT INTO impuls.submissions (task_id, author_id, attempt_number, text)
+         SELECT $1, $2, COALESCE(max(attempt_number), 0) + 1, $3 FROM impuls.submissions WHERE task_id = $1`,
+        [input.taskId, input.actorId, input.text],
+      );
+      await client.query(
+        `UPDATE impuls.tasks SET status = 'awaiting_verification', version = version + 1,
+                updated_at = clock_timestamp() WHERE id = $1`,
+        [input.taskId],
+      );
+      await appendTaskEvent(client, {
+        taskId: input.taskId,
+        actorId: input.actorId,
+        kind: "proposed",
+      });
+      const task = await readSelfTask(client, input.taskId);
+      if (!task) throw new Error("Resubmitted task is not readable");
       return { kind: "ok", status: 200, response: { task } };
     },
   );

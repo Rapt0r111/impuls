@@ -36,7 +36,15 @@ export const selfTaskVerifyRequestSchema = z.discriminatedUnion("decision", [
     fundXp: taskXpSchema,
   }),
   z.strictObject({ decision: z.literal("decline"), expectedVersion, reason }),
+  // Sends the report back to the member for rework; only the chosen verifier can do it (ADR-0045).
+  z.strictObject({ decision: z.literal("return"), expectedVersion, reason }),
 ]);
+
+// The member edits a returned report and sends it to the same verifier again.
+export const selfTaskResubmitRequestSchema = z.strictObject({
+  expectedVersion,
+  text: z.string().trim().min(1).max(2000),
+});
 
 export const selfTaskDecideRequestSchema = z.discriminatedUnion("decision", [
   z.strictObject({
@@ -68,6 +76,8 @@ export const selfTaskSchema = z.strictObject({
   fundXp: amount,
   verifiedPoints: amount.nullable(),
   verifiedXp: amount.nullable(),
+  // Why the verifier returned the report; set only while it waits for rework.
+  returnReason: z.string().nullable(),
   updatedAt: z.iso.datetime(),
   scope: z.strictObject({ id: z.uuid(), name: z.string() }),
   author: person,

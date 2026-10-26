@@ -6,6 +6,7 @@ import {
   listSelfTasks,
   proposeSelfTask,
   readSelfTaskOptions,
+  resubmitSelfTask,
   verifySelfTask,
 } from "../../packages/domain/src/tasks/self";
 import { reviewTaskSubmission } from "../../packages/domain/src/tasks/reviews";
@@ -266,7 +267,7 @@ integration(
       taskId: string,
       over: {
         expectedVersion?: number;
-        decision?: "approve" | "decline";
+        decision?: "approve" | "decline" | "return";
         reason?: string;
         fundPoints?: number;
         fundXp?: number;
@@ -276,9 +277,9 @@ integration(
         ...base(who),
         taskId,
         expectedVersion: over.expectedVersion ?? 1,
-        ...(over.decision === "decline"
+        ...(over.decision === "decline" || over.decision === "return"
           ? {
-              decision: "decline" as const,
+              decision: over.decision,
               reason: over.reason ?? "Synthetic reason",
             }
           : {
@@ -286,6 +287,17 @@ integration(
               fundPoints: over.fundPoints ?? 25,
               fundXp: over.fundXp ?? 10,
             }),
+      });
+    const resubmit = (
+      who: Who,
+      taskId: string,
+      over: { expectedVersion?: number; text?: string } = {},
+    ) =>
+      resubmitSelfTask(runtime, {
+        ...base(who),
+        taskId,
+        expectedVersion: over.expectedVersion ?? 2,
+        text: over.text ?? "Synthetic fixed result",
       });
     const decide = (
       who: Who,
@@ -541,6 +553,87 @@ integration(
         version: 2,
         assignees: [],
         kinds: ["proposed", "declined"],
+      });
+    });
+
+    it("lets only the chosen verifier return a report for rework, and the member sends it again", async () => {
+      const id = await created();
+      expect(await verify("verifier2", id, { decision: "return" })).toEqual({
+        kind: "not_found",
+      });
+      expect(await verify("member", id, { decision: "return" })).toEqual({
+        kind: "not_found",
+      });
+      expect(
+        await verify("verifier", id, {
+          decision: "return",
+          expectedVersion: 9,
+        }),
+      ).toEqual({ kind: "conflict", currentVersion: 1 });
+      expect(
+        await verify("verifier", id, {
+          decision: "return",
+          reason: "Synthetic missing part",
+        }),
+      ).toMatchObject({
+        kind: "ok",
+        response: {
+          task: {
+            status: "needs_work",
+            version: 2,
+            returnReason: "Synthetic missing part",
+          },
+        },
+      });
+      expect(await state(id)).toMatchObject({
+        status: "needs_work",
+        assignees: [],
+        kinds: ["proposed", "returned"],
+      });
+      const outbox = await admin.query(
+        `SELECT o.kind, o.recipient_id FROM impuls.notification_outbox o
+         JOIN impuls.reviews r ON r.id = o.review_id
+         JOIN impuls.submissions s ON s.id = r.submission_id
+         WHERE s.task_id = $1`,
+        [id],
+      );
+      expect(outbox.rows).toEqual([
+        { kind: "task.returned", recipient_id: users.member },
+      ]);
+
+      expect(await resubmit("verifier", id)).toEqual({ kind: "not_found" });
+      expect(await resubmit("member", id, { expectedVersion: 1 })).toEqual({
+        kind: "conflict",
+        currentVersion: 2,
+      });
+      expect(await resubmit("member", id)).toMatchObject({
+        kind: "ok",
+        response: {
+          task: {
+            status: "awaiting_verification",
+            version: 3,
+            text: "Synthetic fixed result",
+            returnReason: null,
+          },
+        },
+      });
+      const attempts = await admin.query(
+        "SELECT attempt_number, text FROM impuls.submissions WHERE task_id = $1 ORDER BY attempt_number",
+        [id],
+      );
+      expect(attempts.rows).toEqual([
+        { attempt_number: 1, text: "Synthetic result of the work" },
+        { attempt_number: 2, text: "Synthetic fixed result" },
+      ]);
+      expect(await resubmit("member", id, { expectedVersion: 3 })).toEqual({
+        kind: "conflict",
+        currentVersion: 3,
+      });
+      expect(
+        await verify("verifier", id, { expectedVersion: 3 }),
+      ).toMatchObject({
+        kind: "ok",
+        response: { task: { status: "awaiting_commander" } },
       });
     });
 

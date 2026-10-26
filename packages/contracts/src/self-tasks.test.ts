@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   selfTaskDecideRequestSchema,
   selfTaskProposeRequestSchema,
+  selfTaskResubmitRequestSchema,
   selfTaskVerifyRequestSchema,
 } from "./self-tasks";
 
@@ -113,6 +114,33 @@ describe("self-submitted task requests", () => {
         reason: "Synthetic",
       }).success,
     ).toBe(true);
+  });
+
+  it("lets the verifier return a report with a reason, and the member send it again with a text", () => {
+    expect(
+      selfTaskVerifyRequestSchema.safeParse({
+        expectedVersion: 1,
+        decision: "return",
+        reason: "Synthetic",
+      }).success,
+    ).toBe(true);
+    expect(
+      selfTaskVerifyRequestSchema.safeParse({
+        expectedVersion: 1,
+        decision: "return",
+        reason: "   ",
+      }).success,
+    ).toBe(false);
+    expect(
+      selfTaskResubmitRequestSchema.safeParse({
+        expectedVersion: 2,
+        text: "Synthetic",
+      }).success,
+    ).toBe(true);
+    expect(
+      selfTaskResubmitRequestSchema.safeParse({ expectedVersion: 2, text: " " })
+        .success,
+    ).toBe(false);
   });
 
   it("lets the commander forward with XP only, the points being the verifier's score", () => {
