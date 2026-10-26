@@ -33,7 +33,12 @@ export async function GET(request: NextRequest) {
         id,
       );
     const permissions = await listActivePermissions(getPool(), session.user.id);
-    if (!permissions.some((p) => p.action === "task.review"))
+    // A chosen verifier sees the reports they can return; accepting stays with task.review.
+    if (
+      !permissions.some(
+        (p) => p.action === "task.review" || p.action === "task.verify",
+      )
+    )
       return errorResponse(
         403,
         "PERMISSION_DENIED",

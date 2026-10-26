@@ -6,10 +6,12 @@ import { XpLimitHint } from "@/shared/ui/xp-limit-hint";
 
 import {
   apiErrorSchema,
+  TASK_POINTS_MAX,
   TASK_XP_MAX,
   reviewListResponseSchema,
   taskReturnResponseSchema,
   taskAcceptanceResponseSchema,
+  taskRecommendationResponseSchema,
   type ReviewQueueItem,
 } from "@impuls/contracts";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,11 +63,18 @@ function ReturnForm({
     useAuthorizedSession();
   const client = useQueryClient();
   const [reason, setReason] = useState("");
-  const [action, setAction] = useState<"return" | "accept">("return");
+  const [action, setAction] = useState<"return" | "accept" | "recommend">(
+    "return",
+  );
   const [confirmed, setConfirmed] = useState(false);
   const { adjustment, bonuses } = item.acceptance.options;
-  const [baseXp, setBaseXp] = useState(String(item.task.fundXp));
-  const [basePoints, setBasePoints] = useState(String(item.task.fundPoints));
+  // A verifier's recommendation is the starting point; the commander can still change it.
+  const [baseXp, setBaseXp] = useState(
+    String(item.recommendation?.xp ?? item.task.fundXp),
+  );
+  const [basePoints, setBasePoints] = useState(
+    String(item.recommendation?.points ?? item.task.fundPoints),
+  );
   const [bonusCode, setBonusCode] = useState("");
   const bonus = bonuses.find((b) => b.code === bonusCode) ?? null;
   const parsedBaseXp = /^\d{1,7}$/.test(baseXp) ? Number(baseXp) : null;
@@ -91,6 +100,16 @@ function ReturnForm({
             ? adjustment
               ? `XP от ${adjustment.minXp} до ${adjustment.maxXp}, баллы от ${adjustment.minPoints} до ${adjustment.maxPoints} по настройкам начислений.`
               : "Настройки начислений не разрешают корректировку."
+            : null;
+  const recommendProblem =
+    action !== "recommend"
+      ? null
+      : parsedBaseXp === null || parsedBasePoints === null
+        ? "Укажите целые неотрицательные значения."
+        : parsedBaseXp > TASK_XP_MAX
+          ? `Базовый XP за задачу не больше ${TASK_XP_MAX}.`
+          : parsedBasePoints > TASK_POINTS_MAX
+            ? `Баллы за задачу не больше ${TASK_POINTS_MAX}.`
             : null;
   const totalXp = (parsedBaseXp ?? 0) + (bonus?.xp ?? 0);
   const totalPoints = (parsedBasePoints ?? 0) + (bonus?.points ?? 0);
@@ -122,7 +141,82 @@ function ReturnForm({
     return () => reportDirty(false);
   }, [reason, confirmed, pending, uncertain, adjusted, bonusCode, reportDirty]);
 
+  async function sendRecommendation() {
+    if (
+      running.current ||
+      pending ||
+      recommendProblem !== null ||
+      parsedBaseXp === null ||
+      parsedBasePoints === null
+    )
+      return;
+    running.current = true;
+    setPending(true);
+    setError(null);
+    setSuccess(null);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch(
+        `/api/v1/submissions/${item.submissionId}/recommend`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify({
+            expectedVersion: item.task.version,
+            recommendedXp: parsedBaseXp,
+            recommendedPoints: parsedBasePoints,
+          }),
+        },
+      );
+      if (!response.ok) {
+        if (response.status === 429) {
+          setError(mutationLimitMessage(response));
+          return;
+        }
+        const parsed = apiErrorSchema.safeParse(
+          await response.json().catch(() => null),
+        );
+        const code = parsed.success ? parsed.data.code : undefined;
+        if (response.status === 401 || code === "ACCESS_REVOKED") {
+          loseAccess(response.status);
+          return;
+        }
+        setError(
+          response.status === 409
+            ? "Отчёт уже изменился. Закройте форму и обновите очередь."
+            : response.status === 404 || response.status === 403
+              ? "Отчёт или право проверки больше недоступны. Закройте форму и обновите очередь."
+              : "Рекомендация не сохранена. Значения сохранены в форме; повторите.",
+        );
+        return;
+      }
+      taskRecommendationResponseSchema.parse(await response.json());
+      setSuccess(
+        `Рекомендация сохранена: ${parsedBaseXp} XP и ${parsedBasePoints} баллов. Командир увидит её при приёмке.`,
+      );
+      await client.invalidateQueries({ queryKey: ["review-queue"] });
+    } catch {
+      setError(
+        navigator.onLine
+          ? "Рекомендация не подтверждена. Значения сохранены в форме; повторите."
+          : "Нет соединения. Значения сохранены в форме; восстановите сеть и повторите.",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      running.current = false;
+      setPending(false);
+    }
+  }
+
   async function send() {
+    if (action === "recommend") return sendRecommendation();
     if (
       running.current ||
       blocked ||
@@ -279,6 +373,12 @@ function ReturnForm({
         <p className="tasks-detail-criteria">{item.task.criteria}</p>
         <h4>Отчёт · попытка {item.attemptNumber}</h4>
         <p className="tasks-detail-criteria">{item.text}</p>
+        {item.recommendation && (
+          <p>
+            Рекомендация {item.recommendation.verifierName}:{" "}
+            {item.recommendation.xp} XP и {item.recommendation.points} баллов.
+          </p>
+        )}
       </div>
       {historyScopeIds?.includes(item.task.scope.id) && (
         <>
@@ -293,7 +393,7 @@ function ReturnForm({
           void send();
         }}
       >
-        {item.acceptance.enabled && (
+        {(item.acceptance.enabled || item.canRecommend) && (
           <fieldset
             className="review-decision"
             disabled={pending || uncertain || blocked}
@@ -311,18 +411,65 @@ function ReturnForm({
               />{" "}
               Вернуть на доработку
             </label>
-            <label>
-              <input
-                type="radio"
-                name="review-action"
-                checked={action === "accept"}
-                onChange={() => {
-                  setAction("accept");
-                  setConfirmed(false);
-                }}
-              />{" "}
-              Принять результат
+            {item.acceptance.enabled && (
+              <label>
+                <input
+                  type="radio"
+                  name="review-action"
+                  checked={action === "accept"}
+                  onChange={() => {
+                    setAction("accept");
+                    setConfirmed(false);
+                  }}
+                />{" "}
+                Принять результат
+              </label>
+            )}
+            {item.canRecommend && (
+              <label>
+                <input
+                  type="radio"
+                  name="review-action"
+                  checked={action === "recommend"}
+                  onChange={() => {
+                    setAction("recommend");
+                    setConfirmed(false);
+                  }}
+                />{" "}
+                Рекомендовать ХП и баллы
+              </label>
+            )}
+          </fieldset>
+        )}
+        {action === "recommend" && (
+          <fieldset
+            className="review-award"
+            disabled={pending || uncertain || blocked}
+          >
+            <legend>Рекомендация командиру</legend>
+            <label htmlFor="review-rec-xp">
+              Базовый XP за задачу (до {TASK_XP_MAX})
             </label>
+            <input
+              id="review-rec-xp"
+              inputMode="numeric"
+              value={baseXp}
+              onChange={(event) => setBaseXp(event.target.value.trim())}
+            />
+            <label htmlFor="review-rec-points">
+              Базовые баллы за задачу (до {TASK_POINTS_MAX})
+            </label>
+            <input
+              id="review-rec-points"
+              inputMode="numeric"
+              value={basePoints}
+              onChange={(event) => setBasePoints(event.target.value.trim())}
+            />
+            {recommendProblem && (
+              <p className="task-report-error" role="alert">
+                {recommendProblem}
+              </p>
+            )}
           </fieldset>
         )}
         {action === "accept" && (
@@ -419,28 +566,32 @@ function ReturnForm({
             </label>
           </section>
         )}
-        <label htmlFor="review-reason">
-          {action === "accept" ? "Основание приёмки" : "Причина возврата"}
-        </label>
-        <p id="review-help">
-          {action === "accept"
-            ? bonus || adjusted
-              ? "Объясните корректировку или бонус и чем подтверждено выполнение критериев."
-              : "Укажите, чем подтверждено выполнение критериев. Фонд задаётся серверной версией задачи."
-            : "Что нужно исправить, чтобы выполнить критерии. Возврат не начисляет XP или баллы."}
-        </p>
-        <textarea
-          id="review-reason"
-          maxLength={2000}
-          rows={5}
-          value={reason}
-          disabled={pending || uncertain || blocked}
-          aria-describedby="review-help review-length"
-          onChange={(event) => setReason(event.target.value)}
-        />
-        <p id="review-length" className="task-report-length">
-          {reason.length} / 2000 символов
-        </p>
+        {action !== "recommend" && (
+          <>
+            <label htmlFor="review-reason">
+              {action === "accept" ? "Основание приёмки" : "Причина возврата"}
+            </label>
+            <p id="review-help">
+              {action === "accept"
+                ? bonus || adjusted
+                  ? "Объясните корректировку или бонус и чем подтверждено выполнение критериев."
+                  : "Укажите, чем подтверждено выполнение критериев. Фонд задаётся серверной версией задачи."
+                : "Что нужно исправить, чтобы выполнить критерии. Возврат не начисляет XP или баллы."}
+            </p>
+            <textarea
+              id="review-reason"
+              maxLength={2000}
+              rows={5}
+              value={reason}
+              disabled={pending || uncertain || blocked}
+              aria-describedby="review-help review-length"
+              onChange={(event) => setReason(event.target.value)}
+            />
+            <p id="review-length" className="task-report-length">
+              {reason.length} / 2000 символов
+            </p>
+          </>
+        )}
         {error && (
           <p className="task-report-error" role="alert">
             {error}
@@ -457,9 +608,11 @@ function ReturnForm({
             disabled={
               pending ||
               (!uncertain &&
-                (!reason.trim() ||
-                  (action === "accept" &&
-                    (!confirmed || awardProblem !== null))))
+                (action === "recommend"
+                  ? recommendProblem !== null
+                  : !reason.trim() ||
+                    (action === "accept" &&
+                      (!confirmed || awardProblem !== null))))
             }
             type="submit"
           >
@@ -469,7 +622,9 @@ function ReturnForm({
                 ? "Повторить тот же запрос"
                 : action === "accept"
                   ? "Подтвердить приёмку и начисление"
-                  : "Вернуть на доработку"}
+                  : action === "recommend"
+                    ? "Сохранить рекомендацию"
+                    : "Вернуть на доработку"}
           </button>
         )}
       </form>

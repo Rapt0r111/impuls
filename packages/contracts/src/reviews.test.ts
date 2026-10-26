@@ -3,6 +3,7 @@ import { acceptanceAwardSchema } from "./ledger";
 import {
   reviewListQuerySchema,
   taskAcceptanceRequestSchema,
+  taskRecommendRequestSchema,
   taskReturnRequestSchema,
 } from "./reviews";
 
@@ -90,5 +91,28 @@ describe("acceptance adjustment and bonus contract", () => {
       },
     });
     expect(award.breakdown).toBeNull();
+  });
+});
+
+describe("verifier recommendation contract", () => {
+  it("keeps the recommended XP and points within the task limits", () => {
+    const valid = {
+      expectedVersion: 2,
+      recommendedXp: 40,
+      recommendedPoints: 60,
+    };
+    expect(taskRecommendRequestSchema.safeParse(valid).success).toBe(true);
+    expect(
+      taskRecommendRequestSchema.safeParse({ ...valid, recommendedXp: 101 })
+        .success,
+    ).toBe(false);
+    expect(
+      taskRecommendRequestSchema.safeParse({ ...valid, recommendedPoints: -1 })
+        .success,
+    ).toBe(false);
+    expect(
+      taskRecommendRequestSchema.safeParse({ ...valid, action: "accept" })
+        .success,
+    ).toBe(false);
   });
 });

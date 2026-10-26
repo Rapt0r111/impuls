@@ -57,6 +57,8 @@ export {
   returnTaskSubmission,
   reviewTaskSubmission,
 } from "./tasks/reviews";
+export { recommendTaskSubmission } from "./tasks/recommend";
+export type { RecommendTaskResult } from "./tasks/recommend";
 export { readAccountLedger } from "./ledger/read";
 export { readRewardCatalog, readMyRedemptions } from "./rewards/read";
 export { mutateRedemption } from "./rewards/write";

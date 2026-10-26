@@ -43,6 +43,17 @@ export const reviewQueueItemSchema = z.object({
       options: { adjustment: null, bonuses: [] },
     }),
   author: z.object({ id: z.uuid(), displayName: z.string().min(1) }),
+  // Рекомендация проверяющего за этот отчёт; командир видит её в форме приёмки.
+  recommendation: z
+    .object({
+      verifierName: z.string().min(1).max(80),
+      xp: taskXpSchema,
+      points: taskPointsSchema,
+    })
+    .nullable()
+    .default(null),
+  // Проверяющий задачи может рекомендовать значения и вернуть отчёт, но не принять его.
+  canRecommend: z.boolean().default(false),
   task: assignedTaskSummarySchema.extend({
     criteria: z.string().min(1).max(2000),
     scope: z.object({
@@ -73,6 +84,19 @@ export const taskReturnResponseSchema = z.object({
     id: z.uuid(),
     status: z.literal("needs_work"),
     version: z.number().int().positive(),
+  }),
+});
+export const taskRecommendRequestSchema = z.strictObject({
+  expectedVersion: z.number().int().positive(),
+  recommendedXp: taskXpSchema,
+  recommendedPoints: taskPointsSchema,
+});
+export const taskRecommendationResponseSchema = z.object({
+  recommendation: z.object({
+    submissionId: z.uuid(),
+    xp: taskXpSchema,
+    points: taskPointsSchema,
+    updatedAt: z.iso.datetime(),
   }),
 });
 export const taskAcceptanceRequestSchema = z.strictObject({
