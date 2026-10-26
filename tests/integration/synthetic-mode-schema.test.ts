@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const url = process.env.TEST_DATABASE_URL;
 
-// ADR-0029, этап 2: после миграции 000051 схема не требует метки mode = 'synthetic'.
+// ADR-0029, этап 2: после миграций 000051 и 000052 схема не требует метки mode = 'synthetic'.
 // Старые строки сохраняют значение, новые пишутся без него (mode NULL).
 (url ? describe : describe.skip)(
   "synthetic mode label is gone from the schema",
@@ -51,11 +51,13 @@ const url = process.env.TEST_DATABASE_URL;
               "notification_outbox_worker_read",
               "redemptions_expiry_service",
               "ledger_expiry_service_read",
+              "ledger_expiry_service_insert",
+              "outbox_expiry_service",
             ],
           ],
         )
       ).rows;
-      expect(policies).toHaveLength(3);
+      expect(policies).toHaveLength(5);
       for (const policy of policies)
         expect(`${policy.qual ?? ""} ${policy.with_check ?? ""}`).not.toMatch(
           /mode/,
@@ -66,6 +68,16 @@ const url = process.env.TEST_DATABASE_URL;
         )
       ).rows[0];
       expect(index?.indexdef).not.toMatch(/mode/);
+    });
+    it("writes no fixed label from the automatic expiry function (000052)", async () => {
+      const defs = (
+        await pool.query<{ def: string }>(
+          `SELECT pg_get_functiondef(p.oid) AS def FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+         WHERE n.nspname='impuls' AND p.proname = 'expire_one_synthetic_reservation'`,
+        )
+      ).rows;
+      expect(defs).toHaveLength(1);
+      for (const { def } of defs) expect(def).not.toMatch(/'synthetic'/);
     });
     it("keeps the expiry functions callable without the label", async () => {
       const status = (
