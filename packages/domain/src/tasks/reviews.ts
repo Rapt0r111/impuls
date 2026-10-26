@@ -37,11 +37,12 @@ export type TaskReturnResponse = {
 };
 
 // Accepting is the commander's decision (task.review). The task's chosen verifier
-// (task.verify and a task_verifiers row) may only return the report for rework.
+// (task.verify and a task_verifiers row) may only return an ordinary task's report for rework.
+// A forwarded self-submitted task keeps its verifier row, but its verifier decisions stay in ADR-0045.
 const reviewRight = (action: "return" | "accept") =>
   action === "accept"
     ? `b.action = 'task.review'`
-    : `(b.action = 'task.review' OR (b.action = 'task.verify' AND EXISTS (
+    : `(b.action = 'task.review' OR (b.action = 'task.verify' AND NOT t.self_submitted AND EXISTS (
         SELECT 1 FROM impuls.task_verifiers tv WHERE tv.task_id = t.id AND tv.user_id = $1)))`;
 const permissionPredicate = (
   action: "return" | "accept",

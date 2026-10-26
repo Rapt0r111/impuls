@@ -223,4 +223,47 @@ const url = process.env.TEST_DATABASE_URL;
     if (returned.kind !== "ok") return;
     expect(returned.response.task.status).toBe("needs_work");
   });
+
+  it("does not let a verifier of a forwarded self-submitted report return or recommend it", async () => {
+    const taskId = randomUUID();
+    await admin.query(
+      `INSERT INTO impuls.tasks (id, scope_id, rule_set_id, created_by, title, criteria, category_code, priority, status, due_at, fund_xp, fund_points, self_submitted, requested_points)
+       VALUES ($1, $2, $3, $4, 'Synthetic self report', 'Synthetic criteria', 'test', 'normal', 'in_review', now(), 40, 20, true, 20)`,
+      [taskId, scope, rules, people.commander],
+    );
+    await admin.query(
+      "INSERT INTO impuls.task_assignments (task_id, user_id) VALUES ($1, $2)",
+      [taskId, people.participant],
+    );
+    await admin.query(
+      "INSERT INTO impuls.task_verifiers (task_id, user_id) VALUES ($1, $2)",
+      [taskId, people.verifier],
+    );
+    const submissionId = (
+      await admin.query<{ id: string }>(
+        "INSERT INTO impuls.submissions (task_id, author_id, attempt_number, text) VALUES ($1, $2, 1, 'Synthetic self report') RETURNING id",
+        [taskId, people.participant],
+      )
+    ).rows[0]!.id;
+
+    const recommend = await recommendTaskSubmission(runtime, {
+      actorId: people.verifier,
+      sessionHash: hashes.verifier,
+      submissionId,
+      expectedVersion: 1,
+      recommendedXp: 30,
+      recommendedPoints: 25,
+    });
+    expect(recommend.kind).toBe("not_found");
+
+    const returned = await returnTaskSubmission(runtime, {
+      actorId: people.verifier,
+      sessionHash: hashes.verifier,
+      submissionId,
+      expectedVersion: 1,
+      reason: "Synthetic return of a self report",
+      idempotencyKey: randomUUID(),
+    });
+    expect(returned.kind).toBe("not_found");
+  });
 });

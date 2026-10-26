@@ -55,7 +55,7 @@ export async function recommendTaskSubmission(
           (SELECT id FROM impuls.submissions WHERE task_id = t.id ORDER BY attempt_number DESC LIMIT 1) AS latest_id
         FROM impuls.submissions sub JOIN impuls.tasks t ON t.id = sub.task_id
         JOIN impuls.task_assignments a ON a.task_id = t.id
-        WHERE sub.id = $1
+        WHERE sub.id = $1 AND NOT t.self_submitted
           AND EXISTS (SELECT 1 FROM impuls.task_verifiers tv WHERE tv.task_id = t.id AND tv.user_id = $2)
           AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE b.user_id = $2 AND b.action = 'task.verify'
             AND b.scope_id = t.scope_id AND b.revoked_at IS NULL AND b.valid_from <= clock_timestamp()
