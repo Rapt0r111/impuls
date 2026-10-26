@@ -84,7 +84,7 @@ const url = process.env.TEST_DATABASE_URL;
         [id],
       );
     await admin.query(
-      `INSERT INTO impuls.rule_sets(id,version_number,definition,effective_from,created_by) VALUES ($1,$2,'{"mode":"synthetic","timeZone":"Europe/Moscow","acceptance":{"enabled":true}}',clock_timestamp()-interval '1 day',$3)`,
+      `INSERT INTO impuls.rule_sets(id,version_number,definition,effective_from,created_by) VALUES ($1,$2,'{"mode":"synthetic","economy":{"approved":true},"timeZone":"Europe/Moscow","acceptance":{"enabled":true}}',clock_timestamp()-interval '1 day',$3)`,
       [rule, randomInt(1_000_000, 1_500_000_000), manager],
     );
     for (const action of [

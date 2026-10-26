@@ -31,6 +31,8 @@ const thresholds = z
 const fields = {
   timeZone: zone,
   acceptanceEnabled: z.boolean(),
+  // The owner's approval of the economy (ADR-0029, P-04). Without it nothing is credited.
+  economyApproved: z.boolean(),
   // Lowest share of the task fund the reviewer may award; null — no adjustment.
   minPercent: z.number().int().min(0).max(100).nullable(),
   bonuses: z

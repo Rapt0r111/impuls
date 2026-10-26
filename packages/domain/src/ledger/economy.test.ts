@@ -3,7 +3,7 @@ import {
   acceptanceOptions,
   acceptanceSeason,
   resolveAcceptanceAward,
-  syntheticEconomyZone,
+  economyZone,
 } from "./economy";
 
 describe("acceptance adjustment and bonus options", () => {
@@ -257,11 +257,11 @@ describe("acceptance options as shares of the task fund (ADR-0031)", () => {
   });
 });
 
-describe("synthetic acceptance policy and server month", () => {
-  it("requires an explicitly enabled synthetic version and valid timezone", () => {
+describe("acceptance policy and server month", () => {
+  it("requires an approved economy, an enabled acceptance and a valid timezone", () => {
     expect(
-      syntheticEconomyZone({
-        mode: "synthetic",
+      economyZone({
+        economy: { approved: true },
         timeZone: "Europe/Moscow",
         acceptance: { enabled: true },
       }),
@@ -269,15 +269,25 @@ describe("synthetic acceptance policy and server month", () => {
     for (const rules of [
       null,
       {},
-      { mode: "production", timeZone: "UTC", acceptance: { enabled: true } },
+      // The first version has no approval, so it credits nothing (ADR-0029).
+      { mode: "synthetic", timeZone: "UTC", acceptance: { enabled: true } },
       {
-        mode: "synthetic",
+        economy: { approved: "yes" },
+        timeZone: "UTC",
+        acceptance: { enabled: true },
+      },
+      {
+        economy: { approved: true },
         timeZone: "Invalid/Zone",
         acceptance: { enabled: true },
       },
-      { mode: "synthetic", timeZone: "UTC", acceptance: { enabled: false } },
+      {
+        economy: { approved: true },
+        timeZone: "UTC",
+        acceptance: { enabled: false },
+      },
     ])
-      expect(syntheticEconomyZone(rules)).toBeNull();
+      expect(economyZone(rules)).toBeNull();
   });
   it("places a UTC timestamp on the correct side of the Moscow month boundary", () => {
     expect(

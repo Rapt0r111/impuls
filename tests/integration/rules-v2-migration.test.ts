@@ -5,7 +5,7 @@ import { Pool, type PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   acceptanceOptions,
-  syntheticEconomyZone,
+  economyZone,
 } from "../../packages/domain/src/ledger/economy";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -141,7 +141,9 @@ const migrationSql = () => {
           ],
         },
       });
-      expect(syntheticEconomyZone(rows[0]!.definition)).toBe("Europe/Moscow");
+      // The migration copies the rules but not the owner's approval, so the version credits
+      // nothing until the owner publishes it with economy approved (ADR-0029).
+      expect(economyZone(rows[0]!.definition)).toBeNull();
     });
   },
 );

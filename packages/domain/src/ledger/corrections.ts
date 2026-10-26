@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Pool } from "pg";
 import { accountBalance, type AccountBalance, type BalanceRow } from "./credit";
-import { syntheticEconomyZone } from "./economy";
+import { economyZone } from "./economy";
 
 type Correction = {
   id: string;
@@ -142,7 +142,7 @@ export async function reverseAcceptance(
       return await reject({ kind: "not_found" });
     if (input.allowSyntheticCorrections !== true)
       return await reject({ kind: "disabled" });
-    if (!syntheticEconomyZone(row.definition))
+    if (!economyZone(row.definition))
       return await reject({ kind: "rules_invalid" });
     const balance = (
       await client.query<BalanceRow>(
@@ -384,7 +384,7 @@ export async function listCorrectableAwards(
           balance: accountBalance(r),
           enabled:
             options.allowSyntheticCorrections === true &&
-            !!syntheticEconomyZone(r.definition) &&
+            !!economyZone(r.definition) &&
             r.active &&
             r.user_id !== actorId &&
             !r.correction_id,

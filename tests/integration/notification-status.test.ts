@@ -269,6 +269,7 @@ const url = process.env.TEST_DATABASE_URL,
         randomInt(1e6, 2e9),
         JSON.stringify({
           mode: "synthetic",
+          economy: { approved: true },
           timeZone: "Europe/Moscow",
           acceptance: { enabled: true },
         }),

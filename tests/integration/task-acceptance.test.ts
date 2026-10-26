@@ -63,6 +63,7 @@ const url = process.env.TEST_DATABASE_URL;
               id === rules
                 ? {
                     mode: "synthetic",
+                    economy: { approved: true },
                     timeZone: "Europe/Moscow",
                     acceptance: { enabled: true },
                   }

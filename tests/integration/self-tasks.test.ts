@@ -112,6 +112,7 @@ integration(
             randomInt(2_000_000_001, 2_100_000_000),
             JSON.stringify({
               mode: "synthetic",
+              economy: { approved: true },
               timeZone: "Europe/Moscow",
               acceptance: { enabled: true },
             }),
@@ -129,6 +130,7 @@ integration(
           randomInt(1_000_000, 2_000_000_000),
           JSON.stringify({
             mode: "synthetic",
+            economy: { approved: true },
             timeZone: "Europe/Moscow",
             acceptance: { enabled: true },
           }),
