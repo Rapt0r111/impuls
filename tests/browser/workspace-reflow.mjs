@@ -170,7 +170,6 @@ async function fixture(browser, width) {
           ruleVersion: 1,
           seasonKey: "2026-10",
           timeZone: "Europe/Moscow",
-          mode: "synthetic",
           createdAt: at,
         },
       ],
@@ -178,7 +177,6 @@ async function fixture(browser, width) {
       asOf: at,
     },
     "/api/v1/leaderboard": {
-      mode: "synthetic",
       timeZone: "Europe/Moscow",
       season: "2026-10",
       scope,
@@ -198,7 +196,6 @@ async function fixture(browser, width) {
       updatedAt: at,
     },
     "/api/v1/me/profile": {
-      mode: "synthetic",
       user: { id, displayName: "Синтетический участник" },
       balance,
       progression: {
@@ -251,7 +248,6 @@ async function fixture(browser, width) {
       nextCursor: null,
     },
     "/api/v1/admin/rewards": {
-      mode: "synthetic",
       scope,
       scopes: [scope],
       canPublish: true,
@@ -264,7 +260,6 @@ async function fixture(browser, width) {
       nextCursor: null,
     },
     "/api/v1/rewards": {
-      mode: "synthetic",
       scope,
       scopes: [scope],
       balance,
@@ -280,13 +275,11 @@ async function fixture(browser, width) {
       updatedAt: at,
     },
     "/api/v1/me/redemptions": {
-      mode: "synthetic",
       items: [],
       nextCursor: null,
       updatedAt: at,
     },
     "/api/v1/admin/audit": {
-      mode: "synthetic",
       scope,
       scopes: [scope],
       items: [],

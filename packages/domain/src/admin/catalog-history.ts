@@ -37,7 +37,6 @@ export async function readAdminCatalogHistory(
   | {
       kind: "ok";
       response: {
-        mode: "synthetic";
         scope: Scope;
         rewardId: string;
         items: Version[];
@@ -125,7 +124,6 @@ export async function readAdminCatalogHistory(
   return {
     kind: "ok",
     response: {
-      mode: "synthetic",
       scope: row.scope,
       rewardId,
       items,

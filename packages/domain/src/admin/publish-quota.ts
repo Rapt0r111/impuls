@@ -21,7 +21,6 @@ export type QuotaPublicationEvidence = {
   capacity: number;
 };
 type Response = {
-  mode: "synthetic";
   scope: string;
   publicationId: string;
   quota: QuotaPublicationEvidence;
@@ -180,7 +179,6 @@ export async function publishQuotaPeriod(
       )
     ).rows[0]!;
     const response: Response = {
-      mode: "synthetic",
       scope: input.scope,
       publicationId: publication.id,
       quota: {

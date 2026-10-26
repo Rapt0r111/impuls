@@ -305,7 +305,6 @@ const require = createRequire(import.meta.url);
     expect(done.status).toBe(200);
     expect(done.headers.get("cache-control")).toContain("no-store");
     expect(await done.json()).toEqual({
-      mode: "synthetic",
       user: { id: ids[0], displayName: wanted },
       changed: true,
     });

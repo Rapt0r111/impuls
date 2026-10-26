@@ -21,7 +21,7 @@ const item = {
   text: "Синтетический отчёт с доказательством выполнения обоих критериев.",
   submittedAt: at,
   attemptNumber: 1,
-  acceptance: { enabled: true, mode: "synthetic" },
+  acceptance: { enabled: true },
   author: { id, displayName: "Синтетический участник" },
   task: {
     id: task,
@@ -47,7 +47,6 @@ const bonusOptions = {
 };
 const bonusModes = ["bonus", "bonus-rejected"];
 const award = {
-  mode: "synthetic",
   xp: 100,
   points: 30,
   ruleVersion: 2,
@@ -65,7 +64,6 @@ const entries = ["xp", "points"].map((currency, index) => ({
   ruleVersion: 2,
   seasonKey: "2026-09",
   timeZone: "Europe/Moscow",
-  mode: "synthetic",
   createdAt: at,
 }));
 const browser = await chromium.launch({ headless: true });
@@ -124,7 +122,7 @@ async function fixture(width, mode = "success") {
             ...item,
             acceptance:
               mode === "hidden"
-                ? { enabled: false, mode: null }
+                ? { enabled: false }
                 : bonusModes.includes(mode)
                   ? { ...item.acceptance, options: bonusOptions }
                   : item.acceptance,

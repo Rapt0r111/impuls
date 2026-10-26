@@ -74,7 +74,6 @@ describe("disabled synthetic identity contract", () => {
       },
     };
     const response = {
-      mode: "synthetic",
       scope: body.scope,
       creationId: randomUUID(),
       creation,
@@ -110,7 +109,6 @@ describe("disabled synthetic identity contract", () => {
       values: [],
     };
     const page = {
-      mode: "synthetic",
       scope: { id: body.scope, name: "Synthetic" },
       scopes: [],
       updatedAt: response.updatedAt,

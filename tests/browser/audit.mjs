@@ -309,7 +309,6 @@ async function fixture(mode = "populated", width = 390, open = true) {
       const next = params.has("cursor"),
         selected = list.slice(next ? 20 : 0, next ? 50 : 20);
       return json(r, {
-        mode: "synthetic",
         scopes: [
           { id: scope, name: "Учебная область" },
           { id: other, name: "Вторая учебная область" },

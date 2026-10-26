@@ -25,7 +25,6 @@ export const ledgerListQuerySchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 export const acceptanceAwardSchema = z.object({
-  mode: z.literal("synthetic"),
   xp: z.number().int().nonnegative(),
   points: z.number().int().nonnegative(),
   // xp/points are the totals credited (base + bonus). Awards saved before the
@@ -94,7 +93,6 @@ export const accountLedgerResponseSchema = z.object({
         ruleVersion: z.number().int().positive().nullable(),
         seasonKey: z.string().regex(/^\d{4}-\d{2}$/),
         timeZone: z.string().min(1).max(80),
-        mode: z.literal("synthetic"),
         createdAt: z.iso.datetime(),
       })
       .refine(

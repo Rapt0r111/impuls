@@ -45,7 +45,6 @@ const quota = z
   })
   .refine((q) => q.capacity === q.reserved + q.used + q.available);
 export const adminCatalogResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope,
   scopes: z.array(scope).min(1),
   items: z
@@ -106,7 +105,6 @@ export const adminCatalogHistoryQuerySchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 export const adminCatalogHistoryResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope,
   rewardId: z.uuid(),
   items: z
@@ -171,7 +169,6 @@ export const adminCatalogQuotaPeriodSchema = z
       Date.parse(q.endsAt) > Date.parse(q.startsAt),
   );
 export const adminCatalogQuotasResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope,
   rewardId: z.uuid(),
   items: z.array(adminCatalogQuotaPeriodSchema).max(50),

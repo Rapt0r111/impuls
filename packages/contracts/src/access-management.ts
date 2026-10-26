@@ -37,7 +37,6 @@ export const accessRevocationRequestSchema = z.strictObject({
   reason: z.string().trim().min(1).max(500),
 });
 export const accessChangeResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   kind: z.enum(["grant", "revoke"]),
   scope: z.uuid(),
   changeId: z.uuid(),
@@ -75,7 +74,6 @@ export const memberRemovalRequestSchema = z.strictObject({
   reason: z.string().trim().min(1).max(500),
 });
 const memberChangeBase = {
-  mode: z.literal("synthetic"),
   scope: z.uuid(),
   changeId: z.uuid(),
   member: z.strictObject({
@@ -109,7 +107,6 @@ export type MemberChangeResponse = z.infer<typeof memberChangeResponseSchema>;
 
 export const accessQuerySchema = z.strictObject({ scope: z.uuid() });
 export const accessListResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope: z.uuid(),
   canManage: z.boolean(),
   canManageMembers: z.boolean(),

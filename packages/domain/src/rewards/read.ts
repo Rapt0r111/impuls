@@ -135,7 +135,6 @@ export async function readRewardCatalog(
     return {
       kind: "ok",
       response: {
-        mode: "synthetic",
         scopes,
         scope: scope ?? null,
         balance,
@@ -238,7 +237,6 @@ export async function readMyRedemptions(
     return {
       kind: "ok",
       response: {
-        mode: "synthetic",
         items: items.map(redemption),
         nextCursor:
           rows.length > limit

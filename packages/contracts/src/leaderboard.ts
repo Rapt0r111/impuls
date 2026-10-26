@@ -31,7 +31,6 @@ export const leaderboardQuerySchema = z.strictObject({
 });
 const xpSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const leaderboardResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   timeZone: z.literal("Europe/Moscow"),
   season: leaderboardSeasonSchema,
   scopes: z.array(z.object({ id: z.uuid(), name: z.string().min(1) })),

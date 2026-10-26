@@ -76,7 +76,6 @@ async function open({ platform, withTask }) {
       if (p === "/api/v1/me/permissions") return json(r, { permissions: [] });
       if (p === "/api/v1/me/profile")
         return json(r, {
-          mode: "synthetic",
           user: {
             id: "a1111111-1111-4111-8111-111111111111",
             displayName: "Участник",
@@ -101,7 +100,6 @@ async function open({ platform, withTask }) {
       if (p === "/api/v1/tasks/open") return json(r, { items: state.free });
       if (p === "/api/v1/leaderboard")
         return json(r, {
-          mode: "synthetic",
           timeZone: "Europe/Moscow",
           season: "2026-10",
           scopes: [],

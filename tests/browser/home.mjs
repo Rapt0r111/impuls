@@ -4,7 +4,6 @@ import { homeFallbackProfile, mockHomeFallback } from "./home-fallback.mjs";
 const origin = process.env.TEST_APP_ORIGIN ?? "http://localhost:3100";
 const id = homeFallbackProfile.user.id;
 const season = {
-  mode: "synthetic",
   timeZone: "Europe/Moscow",
   season: "2026-10",
   scopes: [],

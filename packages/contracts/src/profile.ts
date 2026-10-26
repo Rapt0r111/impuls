@@ -18,7 +18,6 @@ const levelSchema = z.object({
 });
 export const participantProfileResponseSchema = z
   .object({
-    mode: z.literal("synthetic"),
     user: z.object({ id: z.uuid(), displayName: z.string().min(1) }),
     balance: accountBalanceSchema,
     progression: z.discriminatedUnion("state", [
@@ -91,7 +90,6 @@ export const profileNameRequestSchema = z
   .object({ displayName: profileNameSchema })
   .strict();
 export const profileNameResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   user: z.object({ id: z.uuid(), displayName: z.string().min(1) }),
   changed: z.boolean(),
 });

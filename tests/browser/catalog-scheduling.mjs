@@ -94,7 +94,6 @@ async function fixture(width = 320, mode = "ready") {
     (r) => {
       const s = new URL(r.request().url()).searchParams.get("scope") ?? scope;
       return json(r, {
-        mode: "synthetic",
         canPublish: false,
         canSchedule: mode != "read-only",
         scope: {
@@ -171,7 +170,6 @@ async function fixture(width = 320, mode = "ready") {
       return json(
         r,
         {
-          mode: "synthetic",
           scope: body.scope,
           publicationId: actor,
           catalog: {
@@ -556,7 +554,6 @@ try {
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
-              mode: "synthetic",
               scope: { id: scope, name: "Учебная область" },
               rewardId: reward,
               items: [],

@@ -29,7 +29,6 @@ type Terms = {
   reservationSeconds: number | null;
 };
 type Response = {
-  mode: "synthetic";
   scope: string;
   publicationId: string;
   catalog: { rewardId: string; previousVersion: number; published: Terms };
@@ -231,7 +230,6 @@ export async function publishCatalogTerms(
       )
     ).rows[0]!;
     const response: Response = {
-      mode: "synthetic",
       scope: input.scope,
       publicationId: publication.id,
       catalog: {

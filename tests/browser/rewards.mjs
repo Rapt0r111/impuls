@@ -169,7 +169,6 @@ async function fixture(mode = "populated", width = 390) {
           : {}),
       };
       return json(r, {
-        mode: "synthetic",
         scope: mode === "no-scope" ? null : { id, name: "Тестовая область" },
         scopes: mode === "no-scope" ? [] : [{ id, name: "Тестовая область" }],
         balance:
@@ -199,7 +198,6 @@ async function fixture(mode = "populated", width = 390) {
       return json(
         r,
         {
-          mode: "synthetic",
           items:
             changed ||
             mode === "pending" ||
@@ -268,7 +266,6 @@ async function fixture(mode = "populated", width = 390) {
       return json(
         r,
         {
-          mode: "synthetic",
           redemption: {
             ...redemption,
             ...(cancelled

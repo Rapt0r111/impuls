@@ -43,7 +43,6 @@ describe("quota publication boundary", () => {
       capacity: 3,
     };
     const response = {
-      mode: "synthetic",
       scope: id,
       publicationId: id,
       quota,
@@ -74,7 +73,6 @@ describe("quota publication boundary", () => {
       values: [],
     };
     const audit = {
-      mode: "synthetic",
       scope: { id, name: "Synthetic" },
       scopes: [{ id, name: "Synthetic" }],
       updatedAt: body.startsAt,

@@ -19,7 +19,6 @@ export type AccessChangeInput =
     })
   | (Common & { kind: "revoke"; bindingId: string; expectedVersion: number });
 export type AccessChangeResponse = {
-  mode: "synthetic";
   kind: "grant" | "revoke";
   scope: string;
   changeId: string;
@@ -258,7 +257,6 @@ export async function changeAccess(
       )
     ).rows[0]!;
     const response: AccessChangeResponse = {
-      mode: "synthetic",
       kind: input.kind,
       scope: input.scope,
       changeId: change.id,
@@ -291,7 +289,6 @@ type ListResult =
   | { kind: "ok"; response: AccessListResponseShape }
   | { kind: "revoked" | "unauthorized" | "disabled" | "not_found" };
 type AccessListResponseShape = {
-  mode: "synthetic";
   scope: string;
   canManage: boolean;
   canManageMembers: boolean;
@@ -370,7 +367,6 @@ export async function readAccess(
   return {
     kind: "ok",
     response: {
-      mode: "synthetic",
       scope: input.scope,
       canManage:
         input.allowAccessManagement &&

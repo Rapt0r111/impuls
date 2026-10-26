@@ -93,7 +93,6 @@ async function fixture(width = 320, mode = "ready") {
     (r) => {
       const s = new URL(r.request().url()).searchParams.get("scope") ?? scope;
       return json(r, {
-        mode: "synthetic",
         canPublish: mode !== "read-only",
         scope: {
           id: s,
@@ -167,7 +166,6 @@ async function fixture(width = 320, mode = "ready") {
       return json(
         r,
         {
-          mode: "synthetic",
           scope: body.scope,
           publicationId: actor,
           catalog: {

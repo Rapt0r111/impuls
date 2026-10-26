@@ -3,7 +3,6 @@
 // регистрируется первым, поэтому собственные маршруты теста его перекрывают.
 const at = "2026-10-06T10:00:00.000Z";
 export const homeFallbackProfile = {
-  mode: "synthetic",
   user: { id: "a1111111-1111-4111-8111-111111111111", displayName: "Участник" },
   balance: {
     lifetimeXp: 0,
@@ -47,7 +46,6 @@ export async function mockHomeFallback(page) {
     (url) => url.pathname === "/api/v1/me/redemptions",
     (route) =>
       json(route, 200, {
-        mode: "synthetic",
         items: [],
         nextCursor: null,
         updatedAt: at,
@@ -61,7 +59,6 @@ export async function mockHomeFallback(page) {
     (url) => url.pathname === "/api/v1/leaderboard",
     (route) =>
       json(route, 200, {
-        mode: "synthetic",
         timeZone: "Europe/Moscow",
         season: "2026-10",
         scopes: [],

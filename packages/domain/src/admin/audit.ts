@@ -145,7 +145,6 @@ const rewardOnlyFields: readonly Field[] = [
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export type AuditPage = {
-  mode: "synthetic";
   scopes: Scope[];
   scope: Scope;
   updatedAt: string;
@@ -420,7 +419,6 @@ export async function readAudit(
   return {
     kind: "ok",
     response: {
-      mode: "synthetic",
       scope: gate.scope,
       scopes: gate.scopes,
       updatedAt: gate.as_of.toISOString(),

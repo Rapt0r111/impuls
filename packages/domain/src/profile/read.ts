@@ -98,7 +98,6 @@ export async function readParticipantProfile(
     return {
       kind: "ok" as const,
       response: {
-        mode: "synthetic" as const,
         user: { id: actorId, displayName: user.display_name },
         balance,
         progression: {

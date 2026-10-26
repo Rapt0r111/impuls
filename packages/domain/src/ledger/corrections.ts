@@ -268,7 +268,6 @@ export async function reverseAcceptance(
           seasonKey: row.season_key,
           ruleVersion: row.rule_version,
           balanceVersion: next.version,
-          mode: "synthetic",
         }),
         at,
       ],

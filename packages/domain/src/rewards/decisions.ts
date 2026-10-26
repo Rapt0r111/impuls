@@ -130,7 +130,6 @@ export async function readRedemptionReview(
     return {
       kind: "ok",
       response: {
-        mode: "synthetic",
         scopes,
         scope: scope ?? null,
         items: items.map((r) => ({
@@ -169,7 +168,6 @@ type Input = {
   requestId: string;
 };
 type Response = {
-  mode: "synthetic";
   redemption: ReturnType<typeof redemption>;
 };
 type Result =
@@ -396,7 +394,6 @@ export async function decideRedemption(
       ],
     );
     const response: Response = {
-      mode: "synthetic",
       redemption: redemption(updated),
     };
     await client.query(

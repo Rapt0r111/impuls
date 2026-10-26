@@ -99,7 +99,6 @@ async function fixture(width = 320, mode = "ready") {
     (r) => {
       const s = new URL(r.request().url()).searchParams.get("scope") ?? scope;
       return json(r, {
-        mode: "synthetic",
         canCreate: mode !== "read-only",
         scope: {
           id: s,
@@ -183,7 +182,6 @@ async function fixture(width = 320, mode = "ready") {
       return json(
         r,
         {
-          mode: "synthetic",
           scope: body.scope,
           creationId: actor,
           creation: { rewardId: createdReward, initial: current },
@@ -197,7 +195,6 @@ async function fixture(width = 320, mode = "ready") {
     (u) => u.pathname === "/api/v1/admin/audit",
     (r) =>
       json(r, {
-        mode: "synthetic",
         scope: { id: scope, name: "Учебная область" },
         scopes: [{ id: scope, name: "Учебная область" }],
         updatedAt: "2026-10-05T12:00:00.123456Z",

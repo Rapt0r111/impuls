@@ -25,7 +25,6 @@ export type LedgerEntry = {
   ruleVersion: number | null;
   seasonKey: string;
   timeZone: string;
-  mode: "synthetic";
   createdAt: string;
 };
 export type AccountLedger = {
@@ -147,7 +146,6 @@ export async function readAccountLedger(
           ruleVersion: r.rule_version,
           seasonKey: r.season_key,
           timeZone: r.time_zone,
-          mode: "synthetic",
           createdAt: r.created_at.toISOString(),
         })),
         nextCursor:

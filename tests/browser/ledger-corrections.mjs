@@ -123,7 +123,6 @@ async function fixture(width = 390, mode = "success") {
                   ruleVersion: 2,
                   seasonKey: "2026-09",
                   timeZone: "Europe/Moscow",
-                  mode: "synthetic",
                   createdAt: at,
                 },
               ]

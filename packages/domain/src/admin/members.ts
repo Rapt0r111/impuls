@@ -31,7 +31,6 @@ type Member = {
   validUntil: string | null;
 };
 export type MemberChangeResponse = {
-  mode: "synthetic";
   scope: string;
   changeId: string;
   member: Member;
@@ -161,7 +160,6 @@ export async function changeMember(
           ])
         ).rows[0]!;
         response = {
-          mode: "synthetic",
           kind: "admit",
           scope: input.scope,
           changeId: row.change_id,
@@ -197,7 +195,6 @@ export async function changeMember(
           ])
         ).rows[0]!;
         response = {
-          mode: "synthetic",
           kind: "remove",
           scope: input.scope,
           changeId: row.change_id,

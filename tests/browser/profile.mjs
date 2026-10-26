@@ -71,7 +71,6 @@ async function fixture(mode = "populated", width = 390) {
         const changed = body.displayName !== name;
         name = body.displayName;
         return json(r, {
-          mode: "synthetic",
           user: { id, displayName: name },
           changed,
         });
@@ -92,7 +91,6 @@ async function fixture(mode = "populated", width = 390) {
         );
       const xp = mode === "empty" ? 0 : mode === "maximum" ? 250 : 125;
       return json(r, {
-        mode: "synthetic",
         user: { id, displayName: name },
         balance: {
           lifetimeXp: xp,

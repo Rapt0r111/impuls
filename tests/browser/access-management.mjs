@@ -114,7 +114,6 @@ async function fixture(
     (u) => u.pathname === "/api/v1/admin/access",
     (r) =>
       json(r, {
-        mode: "synthetic",
         scope,
         canManage,
         canManageMembers,
@@ -151,7 +150,6 @@ async function fixture(
       return json(
         r,
         {
-          mode: "synthetic",
           kind: posts.at(-1).path.endsWith("revocations") ? "revoke" : "grant",
           scope,
           changeId: crypto.randomUUID(),
@@ -193,7 +191,6 @@ async function fixture(
       if (removing) people = people.filter((m) => m !== gone);
       else people = [...people, added];
       const base = {
-        mode: "synthetic",
         scope,
         changeId: crypto.randomUUID(),
         updatedAt: "2026-10-09T10:00:00.000Z",

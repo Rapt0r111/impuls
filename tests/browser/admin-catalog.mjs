@@ -147,7 +147,6 @@ async function fixture(mode = "ready", width = 320) {
         );
       const empty = mode === "empty" || selected === other;
       return json(r, {
-        mode: "synthetic",
         scope: scopes.find((s) => s.id === selected),
         scopes,
         updatedAt: "2026-10-04T10:00:00.000Z",
@@ -197,7 +196,6 @@ async function fixture(mode = "ready", width = 320) {
         );
       const second = params.has("cursor");
       return json(r, {
-        mode: "synthetic",
         scope: scopes.find((s) => s.id === params.get("scope")),
         rewardId: reward,
         items:
@@ -260,7 +258,6 @@ async function fixture(mode = "ready", width = 320) {
         );
       const second = params.has("cursor");
       return json(r, {
-        mode: "synthetic",
         scope: scopes.find((s) => s.id === params.get("scope")),
         rewardId: reward,
         items:

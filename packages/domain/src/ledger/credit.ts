@@ -33,7 +33,6 @@ export function accountBalance(row?: BalanceRow): AccountBalance {
       };
 }
 export type AcceptanceAward = {
-  mode: "synthetic";
   xp: number;
   points: number;
   breakdown: {
@@ -109,7 +108,6 @@ export async function creditAcceptedTask(
     [input.reviewId, input.userId],
   );
   return {
-    mode: "synthetic",
     xp: input.xp,
     points: input.points,
     breakdown: {

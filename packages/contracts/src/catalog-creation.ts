@@ -17,7 +17,6 @@ export const catalogCreationEvidenceSchema = z.strictObject({
   }),
 });
 export const catalogCreationResponseSchema = z.strictObject({
-  mode: z.literal("synthetic"),
   scope: z.uuid(),
   creationId: z.uuid(),
   creation: catalogCreationEvidenceSchema,

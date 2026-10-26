@@ -141,7 +141,6 @@ export const redemptionSchema = z
     },
   );
 export const rewardCatalogResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   scopes: z.array(scopeSchema),
   scope: scopeSchema.nullable(),
   balance: accountBalanceSchema,
@@ -174,22 +173,18 @@ export const rewardCatalogResponseSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 export const redemptionListResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   items: z.array(redemptionSchema),
   nextCursor: z.string().nullable(),
   updatedAt: z.iso.datetime(),
 });
 export const redemptionMutationResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   redemption: redemptionSchema,
   balance: accountBalanceSchema,
 });
 export const redemptionDecisionResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   redemption: redemptionSchema,
 });
 export const redemptionReviewResponseSchema = z.object({
-  mode: z.literal("synthetic"),
   scopes: z.array(scopeSchema),
   scope: scopeSchema.nullable(),
   items: z.array(
