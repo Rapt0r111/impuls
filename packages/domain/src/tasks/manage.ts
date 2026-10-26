@@ -22,6 +22,7 @@ export type ManagedTask = {
   scope: Scope;
   assignee: Assignee | null;
   openForClaim: boolean;
+  manageable: boolean;
 };
 export type CreateTaskData = {
   scopeId: string;
@@ -76,7 +77,10 @@ const activeBinding = `b.user_id = $1 AND b.revoked_at IS NULL
   AND b.valid_from <= clock_timestamp()
   AND (b.valid_until IS NULL OR b.valid_until > clock_timestamp())`;
 const manageBinding = `${activeBinding} AND b.action IN ('task.view', 'task.create', 'task.assign', 'task.edit', 'task.cancel')`;
-const selectTask = `SELECT t.id, t.title, t.criteria, t.category_code, t.priority,
+// Править и отменять чужую задачу может только тот, кто принимает работу (task.review).
+const ownOrReviewer = `(t.created_by = $1 OR EXISTS (SELECT 1 FROM impuls.role_bindings b
+  WHERE ${activeBinding} AND b.action = 'task.review' AND b.scope_id = t.scope_id))`;
+const selectTask = `SELECT ${ownOrReviewer} AS manageable, t.id, t.title, t.criteria, t.category_code, t.priority,
   t.status, t.due_at, t.fund_xp, t.fund_points, t.rule_set_id, r.version_number,
   t.version, t.updated_at, s.id AS scope_id, s.kind, s.name,
   u.id AS assignee_id, u.display_name, t.open_for_claim
@@ -104,6 +108,7 @@ type TaskRow = {
   assignee_id: string | null;
   display_name: string | null;
   open_for_claim: boolean;
+  manageable: boolean;
 };
 function mapTask(row: TaskRow): ManagedTask {
   return {
@@ -126,6 +131,7 @@ function mapTask(row: TaskRow): ManagedTask {
         ? { id: row.assignee_id, displayName: row.display_name }
         : null,
     openForClaim: row.open_for_claim,
+    manageable: row.manageable,
   };
 }
 export async function listManagedTasks(
@@ -267,6 +273,7 @@ async function manageTask(
         }>(
           `SELECT t.scope_id, t.rule_set_id, t.status, t.version FROM impuls.tasks t
          WHERE t.id = $2 AND EXISTS (SELECT 1 FROM impuls.role_bindings b WHERE ${activeBinding} AND b.action = $3 AND b.scope_id = t.scope_id)
+         AND (${input.action === "assign" ? "true" : ownOrReviewer})
          FOR UPDATE OF t`,
           [input.actorId, input.taskId, `task.${input.action}`],
         )
@@ -457,8 +464,12 @@ async function manageTask(
         : {}),
     });
     const task = mapTask(
-      (await client.query<TaskRow>(`${selectTask} WHERE t.id=$1`, [taskId]))
-        .rows[0]!,
+      (
+        await client.query<TaskRow>(`${selectTask} WHERE t.id=$2`, [
+          input.actorId,
+          taskId,
+        ])
+      ).rows[0]!,
     );
     await client.query(
       `INSERT INTO impuls.audit_events (actor_id,task_id,action,request_id,reason,diff,created_at,updated_at)
