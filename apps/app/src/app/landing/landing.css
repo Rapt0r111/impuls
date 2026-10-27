@@ -4,14 +4,15 @@
   min-height: 100dvh;
   max-width: 1040px;
   margin: 0 auto;
-  padding: 0 16px 48px;
+  padding: 0 max(16px, var(--app-safe-right)) max(48px, var(--app-safe-bottom))
+    max(16px, var(--app-safe-left));
   color: var(--color-ink);
   overflow-wrap: break-word;
 }
 
 .landing-top {
   position: sticky;
-  top: 12px;
+  top: calc(12px + var(--app-safe-top));
   z-index: 10;
   display: flex;
   align-items: center;
@@ -154,6 +155,8 @@
 }
 
 .landing-section {
+  /* Якорь не прячется под липкой шапкой. */
+  scroll-margin-top: calc(96px + var(--app-safe-top));
   padding: 48px 0 0;
 }
 
