@@ -39,7 +39,7 @@
 .open-task-scope,
 .open-task-due {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .open-task-criteria {
   display: -webkit-box;
@@ -88,5 +88,5 @@
 }
 .open-tasks-banner small {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }

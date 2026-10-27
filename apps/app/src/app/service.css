@@ -180,7 +180,7 @@
   border-radius: 18px;
   background: rgb(255 255 255 / 0.04);
   color: var(--color-ink);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.45;
   cursor: pointer;
 }
@@ -268,7 +268,7 @@
 }
 :is(.tasks-section, .task-mgmt) :is(.audit-list, .admin-catalog-items) h3,
 :is(.tasks-section, .task-mgmt) .profile-block h3 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.3;
 }

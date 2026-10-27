@@ -151,7 +151,7 @@
   border-radius: 16px;
   background: rgb(255 255 255 / 0.12);
   color: #e6eff1;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   animation: pop 0.6s 0.35s var(--ease-pop) both;
 }
@@ -170,7 +170,7 @@
 }
 .ranking-podium b {
   color: var(--color-gold);
-  font-size: 22px;
+  font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
 @keyframes podium-grow {
@@ -190,7 +190,7 @@
   border-radius: 14px;
   background: rgb(255 255 255 / 0.07);
   border-color: var(--color-edge);
-  font-size: 15px;
+  font-size: 14px;
 }
 .ranking-self {
   padding: 14px 16px;
@@ -222,7 +222,7 @@
 .ranking-table tbody td:first-child {
   padding-left: 12px;
   color: var(--color-muted);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
 }
 .ranking-table tbody td:last-child {
@@ -364,7 +364,7 @@
     rgb(220 232 235 / 0.06)
   );
   color: #e6eff1;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   transform-origin: 50% 100%;
   animation: podium-grow 0.8s 0.15s var(--ease-out) both;

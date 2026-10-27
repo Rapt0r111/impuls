@@ -60,7 +60,7 @@
   align-items: center;
   gap: 10px;
   min-height: 44px;
-  font-size: 15px;
+  font-size: 14px;
 }
 .self-list {
   display: grid;
@@ -92,7 +92,7 @@
 }
 .self-status {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .self-text {
   margin: 0;

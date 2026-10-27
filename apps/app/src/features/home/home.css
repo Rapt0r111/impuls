@@ -331,7 +331,7 @@ html[data-view="home"] body::after {
 }
 .home .greet small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
 }
 .home .greet strong {
@@ -395,7 +395,7 @@ html[data-view="home"] body::after {
   color: #1b1300;
   background: var(--gold);
   box-shadow: 0 0 0 2px #050d0c;
-  font: 700 10.5px/1 var(--home-num);
+  font: 700 12px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
 }
 .home .pop-wrap {
@@ -466,7 +466,7 @@ html[data-view="home"] body::after {
 }
 .home .pop-head b {
   color: #f2fbf8;
-  font: 700 15px/1 var(--home-display);
+  font: 700 14px/1 var(--home-display);
 }
 .home .new-pill {
   padding: 5px 10px;
@@ -501,7 +501,7 @@ html[data-view="home"] body::after {
 .home .pop-empty {
   padding: 16px 18px 20px;
   color: var(--muted);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.4;
 }
 .home .day-lbl {
@@ -538,7 +538,7 @@ html[data-view="home"] body::after {
   border: 0;
   color: #04110e;
   background: color-mix(in srgb, var(--accent) 80%, #0b1e1c);
-  font: 700 11.5px/1 var(--home-body);
+  font: 700 12px/1 var(--home-body);
   cursor: pointer;
   scroll-snap-align: end;
 }
@@ -596,7 +596,7 @@ html[data-view="home"] body::after {
   justify-content: space-between;
   gap: 8px;
   color: #f2fbf8;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
 }
 .home .note .t time {
@@ -609,7 +609,7 @@ html[data-view="home"] body::after {
 .home .note p {
   margin: 3px 0 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -694,7 +694,7 @@ html[data-view="home"] body::after {
   border-radius: 14px;
   color: #cfe3de;
   background: rgb(255 255 255 / 0.035);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.4;
 }
 .home .state button {
@@ -767,7 +767,7 @@ html[data-view="home"] body::after {
   color: #04110e;
   background: linear-gradient(140deg, var(--accent), #1c8f78);
   box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--accent) 70%, transparent);
-  font: 600 19px/1 var(--home-num);
+  font: 600 18px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
 }
 .home .lv-text {
@@ -779,16 +779,16 @@ html[data-view="home"] body::after {
 }
 .home .lv-title {
   color: #f2fbf8;
-  font: 700 15px/1.2 var(--home-display);
+  font: 700 14px/1.2 var(--home-display);
 }
 .home .lv-sub {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.3;
 }
 .home .lv-pct {
   color: var(--accent);
-  font: 600 15px/1 var(--home-num);
+  font: 600 14px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -0.01em;
 }
@@ -834,7 +834,7 @@ html[data-view="home"] body::after {
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent),
     0 0 14px var(--accent);
-  animation: home-knob-ping 2.6s ease-out 1.6s infinite;
+  animation: home-knob-ping 2.6s var(--ease-out) 1.6s infinite;
 }
 .home .ticks {
   display: flex;
@@ -900,7 +900,7 @@ html[data-view="home"] body::after {
 }
 .home .tile .lbl {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -911,7 +911,7 @@ html[data-view="home"] body::after {
   gap: 4px;
   min-height: 16px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.3;
 }
 .home .tile .chip {
@@ -959,7 +959,7 @@ html[data-view="home"] body::after {
   gap: 8px;
   margin: -2px 2px 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.35;
 }
 .home .hint svg {
@@ -986,7 +986,7 @@ html[data-view="home"] body::after {
   margin: 0;
   padding-left: 20px;
   color: #cfe3de;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
 }
 .home .guide li {
@@ -1052,11 +1052,11 @@ html[data-view="home"] body::after {
 .home .free-t h3 {
   margin: 0;
   color: #f2fbf8;
-  font: 700 15px/1.2 var(--home-display);
+  font: 700 14px/1.2 var(--home-display);
 }
 .home .free-t span {
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.3;
   font-variant-numeric: tabular-nums;
 }
@@ -1075,7 +1075,7 @@ html[data-view="home"] body::after {
   border-radius: 15px;
   color: #04110e;
   background: linear-gradient(135deg, var(--accent), #2fb99b);
-  font: 800 15px/1.2 var(--home-body);
+  font: 700 14px/1.2 var(--home-body);
   text-align: center;
   text-decoration: none;
   cursor: pointer;
@@ -1128,7 +1128,7 @@ html[data-view="home"] body::after {
   gap: 10px;
   min-width: 0;
   color: #cfe3de;
-  font-size: 15px;
+  font-size: 14px;
 }
 .home .month .dot {
   flex: none;
@@ -1136,10 +1136,10 @@ html[data-view="home"] body::after {
   height: 8px;
   border-radius: 50%;
   background: var(--accent);
-  animation: home-ping 2.2s ease-out infinite;
+  animation: home-ping 2.2s var(--ease-out) infinite;
 }
 .home .month b {
-  font: 600 22px/1 var(--home-num);
+  font: 600 20px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -0.01em;
 }
@@ -1229,7 +1229,7 @@ html[data-view="home"] body::after {
 .home .sheet-head p {
   margin: 3px 0 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 .home .sheet .scale {
   margin-top: 18px;
@@ -1249,7 +1249,7 @@ html[data-view="home"] body::after {
 }
 .home .stop b {
   color: #cfe3de;
-  font: 600 13px/1 var(--home-num);
+  font: 600 14px/1 var(--home-num);
 }
 .home .stop.now b {
   color: var(--accent);
@@ -1306,7 +1306,7 @@ html[data-view="home"] body::after {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.4;
 }
 .home .reward {
@@ -1330,11 +1330,11 @@ html[data-view="home"] body::after {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .home .reward .price {
   color: var(--gold);
-  font: 600 15px/1 var(--home-num);
+  font: 600 14px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
   white-space: nowrap;
 }
@@ -1348,7 +1348,7 @@ html[data-view="home"] body::after {
   border-radius: 14px;
   color: #cfe3de;
   background: rgb(255 255 255 / 0.04);
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.45;
 }
 .home .note-box svg {
@@ -1538,7 +1538,7 @@ html[data-view="home"] body::after {
     0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent),
     0 26px 60px -14px color-mix(in srgb, var(--accent) 80%, transparent),
     inset 0 2px 0 rgb(255 255 255 / 0.35);
-  font: 700 64px/1 var(--home-num);
+  font: 700 60px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
   animation: lu-badge 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
 }
@@ -1560,8 +1560,8 @@ html[data-view="home"] body::after {
 }
 .home .lu-eyebrow {
   color: var(--gold);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   animation: home-rise-lg 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.7s both;
@@ -1569,7 +1569,7 @@ html[data-view="home"] body::after {
 .home .lu-copy h2 {
   margin-top: 12px;
   color: #f6fffc;
-  font: 700 34px/1.1 var(--home-display);
+  font: 700 30px/1.1 var(--home-display);
   letter-spacing: -0.02em;
   animation: home-rise-lg 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s both;
 }
@@ -1577,7 +1577,7 @@ html[data-view="home"] body::after {
   max-width: 280px;
   margin: 12px auto 0;
   color: #cfe3de;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.45;
   animation: home-rise-lg 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.95s both;
 }
@@ -1594,13 +1594,13 @@ html[data-view="home"] body::after {
 }
 .home .lu-xp b {
   color: var(--accent);
-  font: 600 22px/1 var(--home-num);
+  font: 600 20px/1 var(--home-num);
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -0.01em;
 }
 .home .lu-xp span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .home .lu-xp .cnt {
   animation: home-count-down 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 1.1s both;
@@ -1628,7 +1628,7 @@ html[data-view="home"] body::after {
   align-items: baseline;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .home .lu-next-top b {
   color: #f2fbf8;
@@ -1667,7 +1667,7 @@ html[data-view="home"] body::after {
     padding: 14px;
   }
   .home .tile .n {
-    font-size: 32px;
+    font-size: 30px;
   }
   .home .level {
     padding: 14px 14px 12px;
