@@ -1,0 +1,373 @@
+/* Лендинг на отдельном маршруте /landing. Цвета и шрифт из tokens.css и Manrope (400 и 700). */
+.landing {
+  box-sizing: border-box;
+  min-height: 100dvh;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  color: var(--color-ink);
+  overflow-wrap: break-word;
+}
+
+.landing-top {
+  position: sticky;
+  top: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-edge);
+  border-radius: 24px;
+  background: var(--color-glass);
+  backdrop-filter: blur(14px);
+}
+
+.landing-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--color-ink);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+  text-decoration: none;
+}
+
+.landing-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-decoration: none;
+  transition: color 300ms ease-out;
+}
+
+.landing-link:hover {
+  color: var(--color-ink);
+}
+
+.landing-hero {
+  padding: 64px 0 0;
+}
+
+.landing-eyebrow {
+  margin: 0;
+  color: var(--color-mint);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.landing-title {
+  max-width: 680px;
+  margin: 16px 0 0;
+  background: linear-gradient(90deg, #edf5f2, #b2c6cc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 40px;
+  text-wrap: balance;
+}
+
+.landing-lead {
+  max-width: 680px;
+  margin: 16px 0 0;
+  color: var(--color-muted);
+  font-size: 18px;
+  line-height: 28px;
+  text-wrap: pretty;
+}
+
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.landing-proof {
+  margin: 24px 0 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+
+.landing-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--color-mint);
+  color: #03241b;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 300ms ease-out,
+    transform 200ms ease-out;
+}
+
+.landing-button:hover {
+  background: var(--color-mint-hover);
+}
+
+.landing-button:active {
+  transform: scale(0.98);
+}
+
+.landing-button--ghost {
+  border-color: var(--color-edge);
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.landing-button--ghost:hover {
+  background: rgb(255 255 255 / 0.07);
+}
+
+.landing-tagline {
+  padding: 96px 0 32px;
+}
+
+.landing-tagline-text {
+  max-width: 680px;
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 40px;
+  text-wrap: balance;
+}
+
+.landing-section {
+  padding: 48px 0 0;
+}
+
+.landing-h2 {
+  max-width: 680px;
+  margin: 0 0 24px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 36px;
+  text-wrap: balance;
+}
+
+.landing-cards,
+.landing-steps {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-card,
+.landing-step {
+  padding: 24px;
+  border: 1px solid var(--color-edge);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 0.045);
+}
+
+.landing-card h3,
+.landing-step h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 28px;
+  text-wrap: balance;
+}
+
+.landing-card p,
+.landing-step p {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 24px;
+  text-wrap: pretty;
+}
+
+.landing-step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.landing-step-number {
+  display: grid;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--color-mint-tint);
+  color: var(--color-mint);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.landing-faq {
+  display: grid;
+  gap: 12px;
+}
+
+.landing-faq details {
+  padding: 0 24px;
+  border: 1px solid var(--color-edge);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.045);
+}
+
+.landing-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.landing-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.landing-faq summary::after {
+  flex: none;
+  color: var(--color-mint);
+  font-size: 24px;
+  line-height: 24px;
+  content: "+";
+  transition: transform 300ms ease-out;
+}
+
+.landing-faq details[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.landing-faq details p {
+  margin: 0 0 24px;
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 24px;
+  text-wrap: pretty;
+}
+
+.landing-final {
+  margin-top: 48px;
+  padding: 32px 24px;
+  border: 1px solid var(--color-edge);
+  border-radius: 24px;
+  background: var(--color-mint-tint);
+}
+
+.landing-final .landing-lead {
+  margin-bottom: 24px;
+}
+
+.landing-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-edge);
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.landing-footer p {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .landing-hero {
+    padding-top: 96px;
+  }
+
+  .landing-title {
+    font-size: 48px;
+    line-height: 48px;
+  }
+
+  .landing-tagline-text {
+    font-size: 48px;
+    line-height: 48px;
+  }
+
+  .landing-h2 {
+    font-size: 30px;
+  }
+}
+
+@media (min-width: 720px) {
+  .landing-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .landing-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .landing-step {
+    flex-direction: column;
+  }
+}
+
+/* Слова и блоки появляются только при работающем JS (класс landing-js), см. landing-motion.tsx. */
+.landing-js .reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-js .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.landing-js .tagline-word {
+  opacity: 0.3;
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-js .tagline-word.is-visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-js .reveal,
+  .landing-js .tagline-word {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .landing-button,
+  .landing-link,
+  .landing-faq summary::after {
+    transition: none;
+  }
+
+  .landing-button:active {
+    transform: none;
+  }
+}

@@ -97,6 +97,13 @@
   grid-column: 1 / -1;
 }
 
+/* Поле после подсказок стоит вне сетки полей: подпись и выбор оформляем так же. */
+label.task-mgmt__wide:not(.task-mgmt__fields > *) {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+}
+
 /* Два коротких числовых поля в одну строку даже на 320–390 px. */
 .task-mgmt__pair {
   grid-column: 1 / -1;
