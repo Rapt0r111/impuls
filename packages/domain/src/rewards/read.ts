@@ -105,7 +105,7 @@ export async function readRewardCatalog(
             quota_id: string;
             starts_at: Date;
             ends_at: Date;
-            available: number;
+            available: number | null;
             has_pending: boolean;
             owned: boolean;
           }>(

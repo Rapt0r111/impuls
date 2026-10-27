@@ -7,7 +7,7 @@ export const quotaPublicationRequestSchema = z
     scope: z.uuid(),
     startsAt: instant,
     endsAt: instant,
-    capacity: z.number().int().min(0).max(1000000),
+    capacity: z.number().int().min(0).max(1000000).nullable(),
     reason: z.string().trim().min(1).max(2000),
   })
   .refine((v) => v.endsAt > v.startsAt);
@@ -17,7 +17,7 @@ export const quotaPublicationEvidenceSchema = z
     periodId: z.uuid(),
     startsAt: instant,
     endsAt: instant,
-    capacity: z.number().int().min(0).max(1000000),
+    capacity: z.number().int().min(0).max(1000000).nullable(),
   })
   .refine((v) => v.endsAt > v.startsAt);
 export const quotaPublicationResponseSchema = z.strictObject({

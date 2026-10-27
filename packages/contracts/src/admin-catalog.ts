@@ -38,12 +38,17 @@ const quota = z
     id: z.uuid(),
     startsAt: z.iso.datetime(),
     endsAt: z.iso.datetime(),
-    capacity: z.number().int().nonnegative(),
+    capacity: z.number().int().nonnegative().nullable(),
     reserved: z.number().int().nonnegative(),
     used: z.number().int().nonnegative(),
-    available: z.number().int().nonnegative(),
+    available: z.number().int().nonnegative().nullable(),
   })
-  .refine((q) => q.capacity === q.reserved + q.used + q.available);
+  .refine((q) =>
+    q.capacity === null
+      ? q.available === null
+      : q.available !== null &&
+        q.capacity === q.reserved + q.used + q.available,
+  );
 export const adminCatalogResponseSchema = z.strictObject({
   scope,
   scopes: z.array(scope).min(1),
@@ -156,16 +161,19 @@ export const adminCatalogQuotaPeriodSchema = z
     id: z.uuid(),
     startsAt: z.iso.datetime(),
     endsAt: z.iso.datetime(),
-    capacity: z.number().int().min(0).max(1000000),
+    capacity: z.number().int().min(0).max(1000000).nullable(),
     reserved: z.number().int().nonnegative(),
     used: z.number().int().nonnegative(),
-    available: z.number().int().nonnegative(),
+    available: z.number().int().nonnegative().nullable(),
     version: z.number().int().positive(),
     state: z.enum(["past", "current", "scheduled"]),
   })
   .refine(
     (q) =>
-      q.capacity === q.reserved + q.used + q.available &&
+      (q.capacity === null
+        ? q.available === null
+        : q.available !== null &&
+          q.capacity === q.reserved + q.used + q.available) &&
       Date.parse(q.endsAt) > Date.parse(q.startsAt),
   );
 export const adminCatalogQuotasResponseSchema = z.strictObject({

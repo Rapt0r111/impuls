@@ -289,15 +289,19 @@ export function CatalogAdmin() {
                   </div>
                   {item.quota ? (
                     <div className="admin-reward-places">
-                      <progress
-                        max={item.quota.capacity}
-                        value={item.quota.used + item.quota.reserved}
-                        aria-label={`Занято ${item.quota.used + item.quota.reserved} из ${item.quota.capacity}`}
-                      />
+                      {item.quota.capacity === null ? null : (
+                        <progress
+                          max={item.quota.capacity}
+                          value={item.quota.used + item.quota.reserved}
+                          aria-label={`Занято ${item.quota.used + item.quota.reserved} из ${item.quota.capacity}`}
+                        />
+                      )}
                       <span>
                         Выдано {item.quota.used} · ждут решения{" "}
-                        {item.quota.reserved} · свободно {item.quota.available}{" "}
-                        из {item.quota.capacity}
+                        {item.quota.reserved} ·{" "}
+                        {item.quota.capacity === null
+                          ? "без лимита"
+                          : `свободно ${item.quota.available} из ${item.quota.capacity}`}
                       </span>
                     </div>
                   ) : null}
@@ -393,7 +397,11 @@ export function CatalogAdmin() {
                           ).map(([label, value]) => (
                             <div key={label}>
                               <dt>{label}</dt>
-                              <dd>{value.toLocaleString("ru-RU")}</dd>
+                              <dd>
+                                {value === null
+                                  ? "Без лимита"
+                                  : value.toLocaleString("ru-RU")}
+                              </dd>
                             </div>
                           ))}
                         </dl>

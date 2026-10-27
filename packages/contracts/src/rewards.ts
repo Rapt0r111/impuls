@@ -163,7 +163,7 @@ export const rewardCatalogResponseSchema = z.object({
         id: z.uuid(),
         startsAt: z.iso.datetime(),
         endsAt: z.iso.datetime(),
-        available: z.number().int().nonnegative(),
+        available: z.number().int().nonnegative().nullable(),
       }),
       hasPendingRequest: z.boolean(),
       owned: z.boolean().default(false),

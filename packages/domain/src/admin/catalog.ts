@@ -19,10 +19,10 @@ type Item = {
     id: string;
     startsAt: string;
     endsAt: string;
-    capacity: number;
+    capacity: number | null;
     reserved: number;
     used: number;
-    available: number;
+    available: number | null;
   } | null;
 };
 type Cursor = {

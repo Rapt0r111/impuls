@@ -337,7 +337,8 @@ export function AuditLog() {
               ) : null}
               {item.quota ? (
                 <p className="audit-task">
-                  Всего мест при публикации: {item.quota.capacity} ·{" "}
+                  Всего мест при публикации:{" "}
+                  {item.quota.capacity ?? "без лимита"} ·{" "}
                   {date(item.quota.startsAt)} — {date(item.quota.endsAt)}.
                 </p>
               ) : null}

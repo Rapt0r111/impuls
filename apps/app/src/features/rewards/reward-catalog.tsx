@@ -535,6 +535,10 @@ export function RewardCatalog() {
                         const short =
                           item.price - first.balance.availablePoints;
                         const soldOut = item.quota.available === 0;
+                        const left =
+                          item.quota.available === null
+                            ? "Без лимита"
+                            : `Осталось ${item.quota.available}`;
                         return (
                           <li key={item.id} className="reward-card">
                             <RewardBadge title={item.title} />
@@ -549,7 +553,7 @@ export function RewardCatalog() {
                               <span>
                                 {soldOut
                                   ? "Закончились"
-                                  : `Осталось ${item.quota.available} · до ${date(item.quota.endsAt)}`}
+                                  : `${left} · до ${date(item.quota.endsAt)}`}
                               </span>
                             </p>
                             {!item.owned &&

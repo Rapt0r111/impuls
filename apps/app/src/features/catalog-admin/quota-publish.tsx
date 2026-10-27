@@ -34,6 +34,7 @@ export function QuotaPublish({
     [end, setEnd] = useState(""),
     [endTime, setEndTime] = useState(""),
     [capacity, setCapacity] = useState(""),
+    [unlimited, setUnlimited] = useState(false),
     [reason, setReason] = useState("");
   const [preview, setPreview] = useState<QuotaPublicationRequest | null>(null),
     [status, setStatus] = useState(""),
@@ -47,7 +48,14 @@ export function QuotaPublish({
     alive = useRef(true),
     controller = useRef<AbortController | null>(null);
   const dirty = Boolean(
-    start || startTime || end || endTime || capacity || reason || preview,
+    start ||
+    startTime ||
+    end ||
+    endTime ||
+    capacity ||
+    unlimited ||
+    reason ||
+    preview,
   );
   useEffect(() => {
     reportDirty(dirty);
@@ -144,12 +152,16 @@ export function QuotaPublish({
       scope,
       startsAt,
       endsAt,
-      capacity: /^(0|[1-9]\d*)$/.test(capacity) ? Number(capacity) : NaN,
+      capacity: unlimited
+        ? null
+        : /^(0|[1-9]\d*)$/.test(capacity)
+          ? Number(capacity)
+          : NaN,
       reason,
     });
     if (!parsed.success) {
       setStatus(
-        "Укажите начало и более поздний конец в UTC, целое число мест от 0 до 1 000 000 и основание.",
+        "Укажите начало и более поздний конец в UTC, число мест от 0 до 1 000 000 либо «Без лимита», и основание.",
       );
       return;
     }
@@ -177,8 +189,8 @@ export function QuotaPublish({
             Конец: {readable(preview.endsAt)} (не включается).
           </p>
           <p>
-            Всего мест: {preview.capacity}. В новом периоде резервов и выдач
-            пока нет.
+            Всего мест: {preview.capacity ?? "без лимита"}. В новом периоде
+            резервов и выдач пока нет.
           </p>
           <p className="admin-catalog-conditions">
             Основание: {preview.reason}
@@ -255,10 +267,19 @@ export function QuotaPublish({
             <span>Всего мест</span>
             <input
               inputMode="numeric"
-              required
+              required={!unlimited}
+              disabled={unlimited}
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
             />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={unlimited}
+              onChange={(e) => setUnlimited(e.target.checked)}
+            />
+            <span>Без лимита</span>
           </label>
           <p className="notification-note">
             От 0 до 1 000 000. Ноль мест — резервирование в этом периоде
