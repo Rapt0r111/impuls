@@ -143,6 +143,7 @@ export const redemptionSchema = z
 export const rewardCatalogResponseSchema = z.object({
   scopes: z.array(scopeSchema),
   scope: scopeSchema.nullable(),
+  canRequest: z.boolean().default(false),
   balance: accountBalanceSchema,
   items: z.array(
     z.object({

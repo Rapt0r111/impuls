@@ -523,6 +523,12 @@ export function RewardCatalog() {
                       />
                     </div>
                   )}
+                  {first.scope && !first.canRequest ? (
+                    <p className="notification-note">
+                      Вы смотрите каталог как администратор. Заявки подают
+                      участники области.
+                    </p>
+                  ) : null}
                   {items.length === 0 ? (
                     <p className="tasks-empty">
                       {first.scope
@@ -556,7 +562,8 @@ export function RewardCatalog() {
                                   : `${left} · до ${date(item.quota.endsAt)}`}
                               </span>
                             </p>
-                            {!item.owned &&
+                            {first.canRequest &&
+                            !item.owned &&
                             !item.hasPendingRequest &&
                             !soldOut &&
                             short > 0 ? (
@@ -582,7 +589,7 @@ export function RewardCatalog() {
                                     ? "Ждёт решения"
                                     : "Закончились"}
                               </p>
-                            ) : short > 0 ? null : (
+                            ) : short > 0 || !first.canRequest ? null : (
                               <div className="reward-card-actions">
                                 <button
                                   className="tasks-action task-report-primary"
