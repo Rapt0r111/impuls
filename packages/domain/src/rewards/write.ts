@@ -63,7 +63,7 @@ type QuotaRow = {
   id: string;
   starts_at: Date;
   ends_at: Date;
-  capacity: number;
+  capacity: number | null;
   reserved: number;
   used: number;
 };
@@ -226,7 +226,10 @@ export async function mutateRedemption(
         ).rowCount
       )
         return await reject({ kind: "already_pending" });
-      if (quota.reserved + quota.used >= quota.capacity)
+      if (
+        quota.capacity !== null &&
+        quota.reserved + quota.used >= quota.capacity
+      )
         return await reject({ kind: "quota_full" });
       price = reward!.price;
       if (Number(balance.available_points) < price)

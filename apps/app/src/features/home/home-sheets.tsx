@@ -250,7 +250,9 @@ export function PointsSheet({
   const affordable = (catalog.data?.items ?? [])
     .filter(
       (item) =>
-        !item.owned && item.price <= available && item.quota.available > 0,
+        !item.owned &&
+        item.price <= available &&
+        (item.quota.available === null || item.quota.available > 0),
     )
     .sort((a, b) => b.price - a.price)
     .slice(0, 2);
@@ -275,10 +277,12 @@ export function PointsSheet({
               <b>{item.title}</b>
               <span>
                 Хватает на{" "}
-                {Math.min(
-                  Math.floor(available / item.price),
-                  item.quota.available,
-                )}
+                {item.quota.available === null
+                  ? Math.floor(available / item.price)
+                  : Math.min(
+                      Math.floor(available / item.price),
+                      item.quota.available,
+                    )}
               </span>
             </div>
             <span className="price">{item.price} б.</span>

@@ -17,7 +17,7 @@ type Plan = {
   title: string;
   conditions: string;
   price: number;
-  capacity: number;
+  capacity: number | null;
   endsAt: string;
   reason: string;
 };
@@ -70,6 +70,7 @@ export function RewardQuickCreate({
   const [conditions, setConditions] = useState("");
   const [price, setPrice] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [unlimited, setUnlimited] = useState(false);
   const [until, setUntil] = useState(defaultEnd);
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
@@ -79,7 +80,7 @@ export function RewardQuickCreate({
   const [started, setStarted] = useState(false);
   const running = useRef(false);
   const alive = useRef(true);
-  const dirty = Boolean(title || conditions || price || capacity);
+  const dirty = Boolean(title || conditions || price || capacity || unlimited);
   useEffect(() => {
     reportDirty(dirty);
     return () => reportDirty(false);
@@ -235,15 +236,19 @@ export function RewardQuickCreate({
       reservationSeconds: null,
       reason,
     });
-    const places = /^[1-9]\d*$/.test(capacity) ? Number(capacity) : NaN;
+    const places = unlimited
+      ? null
+      : /^[1-9]\d*$/.test(capacity)
+        ? Number(capacity)
+        : NaN;
     if (
       !parsed.success ||
-      !(places >= 1 && places <= 1_000_000) ||
+      (places !== null && !(places >= 1 && places <= 1_000_000)) ||
       !ends ||
       !(ends.getTime() > Date.now() + 2 * 60_000)
     ) {
       setStatus(
-        "Заполните все поля: цена и количество — целые числа больше нуля, дата окончания — позже сегодняшнего дня.",
+        "Заполните все поля: цена и количество — целые числа больше нуля или отметьте «Без лимита», дата окончания — позже сегодняшнего дня.",
       );
       return;
     }
@@ -316,11 +321,20 @@ export function RewardQuickCreate({
         <span>Сколько штук можно получить</span>
         <input
           inputMode="numeric"
-          required
-          disabled={locked}
+          required={!unlimited}
+          disabled={locked || unlimited}
           value={capacity}
           onChange={(event) => setCapacity(event.target.value.trim())}
         />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={unlimited}
+          disabled={locked}
+          onChange={(event) => setUnlimited(event.target.checked)}
+        />
+        <span>Без лимита</span>
       </label>
       <label>
         <span>Доступно до</span>
@@ -344,7 +358,11 @@ export function RewardQuickCreate({
             <strong>{title.trim()}</strong>
             <span>
               {/^[1-9]\d*$/.test(price) ? `${price} баллов` : "Цена не задана"}
-              {/^[1-9]\d*$/.test(capacity) ? ` · ${capacity} шт.` : ""}
+              {unlimited
+                ? " · без лимита"
+                : /^[1-9]\d*$/.test(capacity)
+                  ? ` · ${capacity} шт.`
+                  : ""}
             </span>
           </div>
         </div>

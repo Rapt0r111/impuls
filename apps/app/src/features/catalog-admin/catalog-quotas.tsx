@@ -190,7 +190,11 @@ export function CatalogQuotas({
                         ).map(([label, value]) => (
                           <div key={label}>
                             <dt>{label}</dt>
-                            <dd>{value.toLocaleString("ru-RU")}</dd>
+                            <dd>
+                              {value === null
+                                ? "Без лимита"
+                                : value.toLocaleString("ru-RU")}
+                            </dd>
                           </div>
                         ))}
                       </dl>

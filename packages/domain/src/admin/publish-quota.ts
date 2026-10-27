@@ -9,7 +9,7 @@ type Input = {
   requestId: string;
   startsAt: string;
   endsAt: string;
-  capacity: number;
+  capacity: number | null;
   reason: string;
   allowPublication: boolean;
 };
@@ -18,7 +18,7 @@ export type QuotaPublicationEvidence = {
   periodId: string;
   startsAt: string;
   endsAt: string;
-  capacity: number;
+  capacity: number | null;
 };
 type Response = {
   scope: string;
@@ -134,7 +134,7 @@ export async function publishQuotaPeriod(
     const valid = (
       await client.query<{ valid: boolean; overlap: boolean }>(
         `SELECT
-      ($3::timestamptz>clock_timestamp() AND $4::timestamptz>$3::timestamptz AND $5::integer BETWEEN 0 AND 1000000) valid,
+      ($3::timestamptz>clock_timestamp() AND $4::timestamptz>$3::timestamptz AND ($5::integer IS NULL OR $5::integer BETWEEN 0 AND 1000000)) valid,
       EXISTS(SELECT 1 FROM impuls.quota_periods WHERE reward_id=$1 AND scope_id=$2 AND starts_at<$4::timestamptz AND ends_at>$3::timestamptz) overlap`,
         [
           input.rewardId,
