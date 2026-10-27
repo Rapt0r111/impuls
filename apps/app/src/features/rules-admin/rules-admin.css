@@ -36,7 +36,7 @@
   gap: 12px;
   min-height: 44px;
   color: var(--color-ink);
-  font-size: 15px;
+  font-size: 14px;
 }
 .rules-form .notification-note {
   margin: 0;
@@ -79,7 +79,7 @@
   gap: 6px;
   margin: 8px 0 0;
   padding-left: 1.1em;
-  font-size: 15px;
+  font-size: 14px;
 }
 .rules-more {
   display: grid;

@@ -127,11 +127,11 @@
 }
 .notification-tiles dt {
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .notification-tiles dd {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
