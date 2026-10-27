@@ -242,8 +242,13 @@
 :is(.tasks-section, .task-mgmt) details[open] > :not(summary) {
   animation: rise 0.45s var(--ease-out) backwards;
 }
-:is(.tasks-section, .task-mgmt) details > :last-child {
+/* Закрытый блок состоит из одного summary: отступ снизу оставляем только у раскрытого содержимого. */
+:is(.tasks-section, .task-mgmt) details[open] > :last-child {
   margin-bottom: 16px;
+}
+/* Список выбора внутри раскрывающегося блока не должен обрезаться рамкой блока. */
+:is(.tasks-section, .task-mgmt) details:has(.ui-select) {
+  overflow: visible;
 }
 /* Раскрывающееся внутри карточки не должно становиться карточкой в карточке. */
 :is(.tasks-section, .task-mgmt) :is(li, .profile-block) details {
