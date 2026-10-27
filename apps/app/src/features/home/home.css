@@ -331,7 +331,7 @@ html[data-view="home"] body::after {
 }
 .home .greet small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
 }
 .home .greet strong {
@@ -609,7 +609,7 @@ html[data-view="home"] body::after {
 .home .note p {
   margin: 3px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -783,7 +783,7 @@ html[data-view="home"] body::after {
 }
 .home .lv-sub {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.3;
 }
 .home .lv-pct {
@@ -900,7 +900,7 @@ html[data-view="home"] body::after {
 }
 .home .tile .lbl {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -911,7 +911,7 @@ html[data-view="home"] body::after {
   gap: 4px;
   min-height: 16px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.3;
 }
 .home .tile .chip {
@@ -959,7 +959,7 @@ html[data-view="home"] body::after {
   gap: 8px;
   margin: -2px 2px 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.35;
 }
 .home .hint svg {
@@ -1056,7 +1056,7 @@ html[data-view="home"] body::after {
 }
 .home .free-t span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.3;
   font-variant-numeric: tabular-nums;
 }
@@ -1229,7 +1229,7 @@ html[data-view="home"] body::after {
 .home .sheet-head p {
   margin: 3px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .home .sheet .scale {
   margin-top: 18px;
@@ -1306,7 +1306,7 @@ html[data-view="home"] body::after {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.4;
 }
 .home .reward {
@@ -1330,7 +1330,7 @@ html[data-view="home"] body::after {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .home .reward .price {
   color: var(--gold);
@@ -1348,7 +1348,7 @@ html[data-view="home"] body::after {
   border-radius: 14px;
   color: #cfe3de;
   background: rgb(255 255 255 / 0.04);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.45;
 }
 .home .note-box svg {
@@ -1560,7 +1560,7 @@ html[data-view="home"] body::after {
 }
 .home .lu-eyebrow {
   color: var(--gold);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
