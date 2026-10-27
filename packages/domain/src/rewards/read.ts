@@ -29,11 +29,22 @@ export async function readRewardCatalog(
       await client.query("ROLLBACK");
       return { kind: access !== "ok" ? access : "disabled" } as const;
     }
+    // Администратор области видит её каталог только для просмотра: заявки требуют членства.
     const scopes = (
-      await client.query<{ id: string; name: string }>(
-        `SELECT s.id,s.name FROM impuls.task_scope_members m JOIN impuls.access_scopes s ON s.id=m.scope_id
-       WHERE m.user_id=$1 AND m.revoked_at IS NULL AND m.valid_from<=clock_timestamp()
-       AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp()) ORDER BY s.name,s.id`,
+      await client.query<{ id: string; name: string; member: boolean }>(
+        `WITH members AS (
+          SELECT m.scope_id FROM impuls.task_scope_members m
+          WHERE m.user_id=$1 AND m.revoked_at IS NULL AND m.valid_from<=clock_timestamp()
+          AND (m.valid_until IS NULL OR m.valid_until>clock_timestamp())
+        ), admins AS (
+          SELECT b.scope_id FROM impuls.role_bindings b
+          WHERE b.user_id=$1 AND b.action='admin.catalog' AND b.revoked_at IS NULL
+          AND b.valid_from<=clock_timestamp() AND (b.valid_until IS NULL OR b.valid_until>clock_timestamp())
+        )
+        SELECT s.id,s.name,s.id IN (SELECT scope_id FROM members) AS member
+        FROM impuls.access_scopes s
+        WHERE s.id IN (SELECT scope_id FROM members UNION SELECT scope_id FROM admins)
+        ORDER BY s.name,s.id`,
         [actorId],
       )
     ).rows;
@@ -135,8 +146,9 @@ export async function readRewardCatalog(
     return {
       kind: "ok",
       response: {
-        scopes,
-        scope: scope ?? null,
+        scopes: scopes.map(({ id, name }) => ({ id, name })),
+        scope: scope ? { id: scope.id, name: scope.name } : null,
+        canRequest: scope?.member ?? false,
         balance,
         items: items.map((r) => ({
           id: r.id,

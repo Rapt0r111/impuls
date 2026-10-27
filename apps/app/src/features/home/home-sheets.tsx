@@ -247,7 +247,7 @@ export function PointsSheet({
       return rewardCatalogResponseSchema.parse(await response.json());
     },
   });
-  const affordable = (catalog.data?.items ?? [])
+  const affordable = (catalog.data?.canRequest ? catalog.data.items : [])
     .filter(
       (item) =>
         !item.owned &&
